@@ -1518,7 +1518,19 @@ static void oa_scene(void)
         oa_vp_draw();
     else if (oa_pp_on())
         oa_pp_draw();
-    if (oa_dbp) {                                         /* DRAWBAR PRESET MODE: over every page, the bars live */
+    if (oa_dbp && oa_dbp_sv) {                            /* SAVE in the mode (0.9.73): its own pop-up, the key, then the confirmation */
+        int32_t hs = 8 + 2 * AF_M.h + 6 + AF_L.h + 6 + AF_S.h + 8, ys = (240 - hs) / 2;
+        cv_rect(7, ys - 2, 226, hs + 4, C_ORANGE);
+        cv_rect(9, ys, 222, hs, RGB565(0x00, 0x00, 0x00));
+        ctext(120, ys + 8, &AF_M, "Choose key (middle octave", C_AMBER, RGB565(0x00, 0x00, 0x00));
+        ctext(120, ys + 8 + AF_M.h, &AF_M, "- C to B) to save", C_AMBER, RGB565(0x00, 0x00, 0x00));
+        if (oa_dbp_sv == 2u)
+            ctext(120, ys + 8 + 2 * AF_M.h + 6, &AF_L, OA_NN[oa_dbp_slot], C_CREAM, RGB565(0x00, 0x00, 0x00));
+        else
+            cv_rect(120 - 22, ys + 8 + 2 * AF_M.h + 6 + 27, 44, 3, C_CREAM);   /* the "__" (the font has no underscore): a bar under the note's place */
+        if (oa_dbp_sv == 2u)
+            ctext(120, ys + hs - 8 - AF_S.h, &AF_S, "Press SAVE again to confirm", C_CREAM, RGB565(0x00, 0x00, 0x00));
+    } else if (oa_dbp) {                                  /* DRAWBAR PRESET MODE: over every page, the bars live */
         /* the title, the bars (x 19 .. 220, 101 px high) and the text under them in AF_S (0.9.46, owner: taller, the text larger;
          * its first line, 237 px in AF_S, is broken after "Presets"); centred on the screen */
         int32_t hgt = 6 + AF_M.h + 4 + 101 + 10 + AF_S.h + AF_S.h + 4 + AF_S.h + 8, y0 = (240 - hgt) / 2, by = y0 + 6 + AF_M.h + 4;
@@ -1527,19 +1539,9 @@ static void oa_scene(void)
         cv_rect(9, y0, 222, hgt, RGB565(0x00, 0x00, 0x00));
         ctext(120, y0 + 6, &AF_M, "DRAWBAR PRESET MODE", C_AMBER, RGB565(0x00, 0x00, 0x00));
         oa_upper_bars(by - HU10(930));
-        const char *t1 = "Middle Octave: Drawbar Presets", *t2 = "Other Keys: Various switches", *t3 = "SAVE: Store current as preset";
-        if (oa_dbp_sv == 1u) {
-            t1 = "Press key (middle octave - C to B)";
-            t2 = "to store";
-            t3 = "";
-        } else if (oa_dbp_sv == 2u) {
-            t1 = "Press SAVE again to confirm";
-            t2 = OA_NN[oa_dbp_slot];
-            t3 = "";
-        }
-        ctext(120, ty, &AF_S, t1, C_CREAM, RGB565(0x00, 0x00, 0x00));
-        ctext(120, ty + AF_S.h, &AF_S, t2, C_CREAM, RGB565(0x00, 0x00, 0x00));
-        ctext(120, ty + 2 * AF_S.h + 4, &AF_S, t3, C_CREAM, RGB565(0x00, 0x00, 0x00));
+        ctext(120, ty, &AF_S, "Middle Octave: Drawbar Presets", C_CREAM, RGB565(0x00, 0x00, 0x00));
+        ctext(120, ty + AF_S.h, &AF_S, "Other Keys: Various switches", C_CREAM, RGB565(0x00, 0x00, 0x00));
+        ctext(120, ty + 2 * AF_S.h + 4, &AF_S, "SAVE: Store current as preset", C_CREAM, RGB565(0x00, 0x00, 0x00));
     }
     if (oa_fl_on()) {                                     /* a quick message (0.5 s), over the DRAWBAR PRESET pop-up */
         int32_t w = text_w(&AF_M, oa_fl) + 28;
