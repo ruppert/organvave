@@ -454,6 +454,7 @@ static uint8_t oa_cfg_dirty;
 static uint8_t oa_scr;                                   /* SCREEN: the panel's gamma, 0 NORMAL, 1 VIVID (settings row 7, byte 7; lcd.c) */
 static uint8_t oa_ccmap[OA_NCTL];                         /* the CC (1..119) that sets each patch byte, 0 none */
 static const char *const OA_SRC[3] = {"USB", "MIDI", "ALL"};       /* fm_midi_src 0, 1, 3 */
+static const char *const OA_SCR[5] = {"NORMAL", "VIVID", "STRONG", "EXTRA", "DEEP"};   /* SCREEN's presets (lcd.c lcd_gamma) */
 static uint8_t *oa_cfg_byte(uint32_t r, uint32_t i) { return &set_bytes[r % 16u][i % 32u]; }
 static void oa_cfg_load(void)
 {
@@ -476,7 +477,7 @@ static void oa_cfg_load(void)
         fm_midi_src = 3;
         fm_midi_base(0);
     }
-    oa_scr = *oa_cfg_byte(7, 7) == 1u ? 1u : 0u;
+    oa_scr = *oa_cfg_byte(7, 7) < 5u ? *oa_cfg_byte(7, 7) : 0u;
     lcd_gamma(oa_scr);                                    /* the panel's colours, as saved (v0.9.69) */
     fm_bend_mode = 0;
     fm_bt = 0;
@@ -621,7 +622,7 @@ static void scr_global(void)
         str_cpy(b, "OFF", 4);
     oa_gl_line(106, "PEDAL CHANNEL", b, oa_gl_row == 3u);
     oa_gl_line(130, "MIDI CC", ">", oa_gl_row == 4u);
-    oa_gl_line(154, "SCREEN", oa_scr ? "VIVID" : "NORMAL", oa_gl_row == 5u);
+    oa_gl_line(154, "SCREEN", OA_SCR[oa_scr], oa_gl_row == 5u);
     oa_gl_line(178, "ABOUT", ">", oa_gl_row == 6u);
     oa_scrollbar(0u, OA_NROW, OA_NROW, 230, 30, 186);
     footer("SELECT: ITEM   ALGO: VALUE   GLO: BACK");
@@ -1972,7 +1973,7 @@ static void oa_input(void)
                     panic_req |= 1u;
                     oa_cfg_dirty = 1;
                 } else if (oa_gl_row == 5u) {
-                    oa_scr = (uint8_t)clamp((int32_t)oa_scr + d, 0, 1);
+                    oa_scr = (uint8_t)clamp((int32_t)oa_scr + d, 0, 4);
                     lcd_gamma(oa_scr);
                     oa_cfg_dirty = 1;
                 } else if (oa_gl_row == 4u)
