@@ -832,7 +832,7 @@ static int32_t oa_step(int32_t v, int32_t s, int32_t mx)   /* one detent: 8 on t
 /* Every FX page is a list of rows. SELECT picks a row (it is drawn lit), ALGORITHM changes the picked row's value (clockwise: more),
  * and the knobs 1 to 4 go straight to the first four rows. A list longer than the screen scrolls with the pick. The rows of a page
  * are what oa_val shows and oa_adj1 changes (one detent). */
-#define OA_VIS 7u                                       /* rows on the screen (AF_M, 24 px apart) */
+#define OA_VIS 8u                                       /* rows on the screen (AF_M, 24 px apart: 34 .. 202, down to the foot rule) */
 static const uint8_t OA_NR[9] = {0, 0, 5, 12, 7, 4, 6, 5, 29};   /* (DRIVE 7 rows since 0.9.44: the tone stack) */
 static const char *const OA_LB[9][29] = {
     {0},
@@ -1241,7 +1241,7 @@ static void oa_rows(uint32_t pg, const char *state)
                 rrect(14 + c * 8, y + 14, 6, 4, 1, c < v.mv ? C_AMBER : RGB565(0x3a, 0x26, 0x14));
         rtext(214, y, &AF_M, v.t, v.on ? C_AMBER : C_DIM, bg);
     }
-    oa_scrollbar(top, OA_VIS, n, 230, 30, 186);
+    oa_scrollbar(top, OA_VIS, n, 230, 30, 190);
     footer("SELECT: ITEM    ALGORITHM: VALUE");
 }
 
