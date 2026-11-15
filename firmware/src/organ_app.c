@@ -452,7 +452,7 @@ static void oa_sv_letter(int32_t s)
  * 0xC5, the lower and pedal channels; rows 8..10 hold the CC of each patch byte (0 none) */
 #define OA_NCTL 84u                                       /* the patch bytes a CC may drive (OP_UB .. OP_SPLIT_PT; OP_DRV_FAT, unused, is skipped in the list) */
 #define OA_NROW 10u                                       /* (0.9.74: TUNING, TRANSPOSE, FACTORY RESET, SUPPORT ORGANVAVE from FMini-1; ABOUT last) */
-#define OA_GL_VIS 6u                                      /* the rows on the screen; the list scrolls */
+#define OA_GL_VIS 8u                                      /* the rows on the screen (34 .. 202, the foot rule at 226); the list scrolls */
 static uint8_t oa_gl;                                     /* 0 closed, 1 the list, 2 MIDI CC, 3 ABOUT, 4 FACTORY RESET's question, 5 SUPPORT */
 static uint8_t oa_gl_row;                                 /* 0 MIDI IN, 1 UPPER, 2 LOWER, 3 PEDAL, 4 MIDI CC, 5 TUNING, 6 TRANSPOSE, 7 FACTORY RESET, 8 SUPPORT, 9 ABOUT */
 static uint8_t oa_gl_top;                                 /* GLOBAL: the first row on the screen */
@@ -688,7 +688,7 @@ static void scr_global(void)
         }
         oa_gl_line((int32_t)(34u + 24u * (r - oa_gl_top)), GL_LB[r], v, oa_gl_row == r);
     }
-    oa_scrollbar(oa_gl_top, OA_GL_VIS, OA_NROW, 230, 30, 186);
+    oa_scrollbar(oa_gl_top, OA_GL_VIS, OA_NROW, 230, 30, 190);
     footer("SELECT: ITEM   ALGO: VALUE   GLO: BACK");
 }
 
