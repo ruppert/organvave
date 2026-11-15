@@ -135,6 +135,20 @@ static volatile uint8_t org_dbp_mode, org_dbp_key;
 static volatile uint16_t cpu_pop;       /* overload: blocks left of the "Warning: CPU High" popup (0.5 s; audio.c shed_voice arms it) */
 static volatile uint8_t org_shed_req;   /* overload: release the oldest key at the next fragment (org_fragment) */
 
+/* GLOBAL's TUNING (0.9.74): the wheels' increments scaled by hz / 440 in RAM, rebuilt when it changes (never per block);
+ * at 440 the table is ORG_WINC itself, bit for bit */
+static uint32_t org_wtab_ram[3][91];
+static uint32_t org_tune_hz = 440;
+static void org_set_tuning(uint32_t hz)
+{
+    uint32_t t, n;
+    org_tune_hz = hz;
+    for (t = 0; t < 3u; t++)
+        for (n = 0; n < 91u; n++)
+            org_wtab_ram[t][n] = (uint32_t)((uint64_t)ORG_WINC[t][n] * hz / 440u);
+    org.wtab = org_wtab_ram;
+}
+
 static void org_init(void)
 {
     uint32_t i;
@@ -159,7 +173,7 @@ static void org_init(void)
     org.pdec_slow = ORG_PERC_SLOW;
     org.atk = ORG_ATK;
     org.rel = ORG_REL;
-    org.wtab = ORG_WINC;
+    org_set_tuning(org_tune_hz);                            /* (the tuning kept over an engine change) */
     org.pbus_cur = 3u | (4u << 4) | (9u << 8);
     org.swell = 32768;
     org.mg = 32768;                                         /* the output volume: full (OP_EXPR 0) */

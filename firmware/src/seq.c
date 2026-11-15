@@ -26,7 +26,8 @@ static uint32_t kb_pitch(const track_t *t, uint32_t k, int32_t oct)
 {
     return (uint32_t)clamp(53 + (int32_t)k + 12 * oct + t->p[P_TRANS], 0, 127);
 }
-static uint32_t kb_map(const track_t *t, uint32_t k) { return kb_pitch(t, k, song.octave); }
+static int32_t glo_transpose;             /* GLOBAL's TRANSPOSE (organ_app.c): -12 .. +12 on the keys played */
+static uint32_t kb_map(const track_t *t, uint32_t k) { return (uint32_t)clamp((int32_t)kb_pitch(t, k, song.octave) + glo_transpose, 0, 127); }
 
 /* ------------------------------------------------------------- arp --- */
 static void arp_add(track_t *t, uint32_t note)

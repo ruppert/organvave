@@ -349,7 +349,7 @@ static void params(void)
     org.xtalk = 0;
     f1 = freq_of(33);
     printf("organ adv: A4 %.3f Hz at the stored tuning, %.3f at 440\n", f1, f0);
-    check("TUNING and TEMPERAMENT are fixed: the stored bytes are not read (A4 stays at 440, the 60 Hz gear)", fabs(f1 / f0 - 1.0) < 0.001 && org.wtab == ORG_WINC && org.temp == 0);
+    check("TUNING and TEMPERAMENT are fixed: the stored bytes are not read (A4 stays at 440, the 60 Hz gear)", fabs(f1 / f0 - 1.0) < 0.001 && memcmp(org.wtab, ORG_WINC, sizeof ORG_WINC) == 0 && org.temp == 0);
     org_patch[OP_TUNING] = 0;
     org_patch[OP_TEMP] = 0;
     org_pgen++;

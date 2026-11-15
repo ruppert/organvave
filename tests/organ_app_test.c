@@ -22,6 +22,29 @@ static uint32_t frame_hash(void)                        /* what a frame draws (o
 }
 
 static const char *shot_dir;
+/* with a directory argument: the screen as it is now, as a .ppm (the GLOBAL and SUPPORT shots) */
+static void shot_write(const char *name, int force)   /* (force: redraw even if the screen signature is unchanged) */
+{
+    char path[200];
+    FILE *f;
+    uint32_t i;
+    if (!shot_dir)
+        return;
+    ui.force = (uint8_t)force;
+    (void)frame_hash();
+    snprintf(path, sizeof path, "%s/%s.ppm", shot_dir, name);
+    f = fopen(path, "wb");
+    if (!f)
+        return;
+    fprintf(f, "P6\n240 240\n255\n");
+    for (i = 0; i < 240u * 240u; i++) {
+        uint16_t c = (uint16_t)((host_screen[i] >> 8) | (host_screen[i] << 8));
+        unsigned char px[3] = {(unsigned char)(((c >> 11) & 31) * 255 / 31), (unsigned char)(((c >> 5) & 63) * 255 / 63), (unsigned char)((c & 31) * 255 / 31)};
+        fwrite(px, 1, 3, f);
+    }
+    fclose(f);
+}
+
 int main(int argc, char **argv)
 {
     int bad = 0;
@@ -258,13 +281,54 @@ int main(int argc, char **argv)
     }
     fm_midi_base(0);
     press(B_GLO);
-    oa_gl_row = 5;
+    oa_gl_row = 9;                                        /* ABOUT is the last row (0.9.74) */
     turn(EN_ALGO, 1);
     bad += check("  .. ABOUT", oa_gl == 3);
     turn(EN_ALGO, 1);
     bad += check("  .. an encoder goes back to the list", oa_gl == 1);
     press(B_GLO);
     bad += check("GLO again: closed", oa_gl == 0);
+
+    /* 0.9.74, FMini-1's GLOBAL: TUNING (410 .. 470 Hz; the wheels follow), TRANSPOSE (-12 .. +12 on the keys), kept in the settings */
+    press(B_GLO);
+    oa_gl_row = 5;
+    turn(EN_ALGO, 1);
+    bad += check("TUNING: 441 Hz on ALGORITHM", oa_tune == 441u);
+    bad += check("  .. the wheels follow: 441 / 440 of the factory table",
+                 org.wtab[0][45] == (uint32_t)((uint64_t)ORG_WINC[0][45] * 441u / 440u) &&
+                 org.wtab[2][5] == (uint32_t)((uint64_t)ORG_WINC[2][5] * 441u / 440u));
+    for (i = 0; i < 40u; i++) turn(EN_ALGO, 1);
+    bad += check("  .. 470 Hz at the top", oa_tune == 470u);
+    for (i = 0; i < 80u; i++) turn(EN_ALGO, -1);
+    bad += check("  .. 410 Hz at the bottom", oa_tune == 410u);
+    for (i = 0; i < 30u; i++) turn(EN_ALGO, 1);
+    bad += check("  .. 440 again: the factory table, bit for bit", oa_tune == 440u && org.wtab[1][30] == ORG_WINC[1][30]);
+    turn(EN_SELECT, 1);
+    for (i = 0; i < 30u; i++) turn(EN_ALGO, 1);
+    bad += check("TRANSPOSE: +12 at the top", glo_transpose == 12);
+    {
+        uint32_t n0 = kb_pitch(TSEL, 7u, song.octave);
+        bad += check("  .. the keys sound 12 up", kb_map(TSEL, 7u) == (n0 + 12u > 127u ? 127u : n0 + 12u));
+    }
+    for (i = 0; i < 60u; i++) turn(EN_ALGO, -1);
+    bad += check("  .. -12 at the bottom", glo_transpose == -12);
+    for (i = 0; i < 12u; i++) turn(EN_ALGO, 1);
+    bad += check("  .. back to 0", glo_transpose == 0);
+    shot_write("global_top", 0);
+    turn(EN_SELECT, -1);
+    oa_gl_row = 5;
+    oa_tune = 455u; org_set_tuning(455u); glo_transpose = 5;   /* kept in the settings: read back */
+    oa_cfg_dirty = 1;
+    oa_cfg_save();
+    oa_tune = 440u; org_set_tuning(440u); glo_transpose = 0;
+    oa_cfg_load();
+    bad += check("TUNING 455 Hz and TRANSPOSE +5 are read back from the settings",
+                 oa_tune == 455u && glo_transpose == 5 && org.wtab[0][45] == (uint32_t)((uint64_t)ORG_WINC[0][45] * 455u / 440u));
+    oa_tune = 440u; org_set_tuning(440u); glo_transpose = 0;
+    oa_cfg_dirty = 1;
+    oa_cfg_save();
+    press(B_GLO);
+    bad += check("GLO closes the list", oa_gl == 0);
 
     /* octave keys: -2..2 */
     for (i = 0; i < 4u; i++) press(B_OCTUP);
@@ -600,7 +664,7 @@ int main(int argc, char **argv)
             turn(EN_SELECT, 1);
             bad += check("  .. SELECT picks the next row", oa_row[8] == 1);
             turn(EN_SELECT, -1);
-            bad += check("  .. the tuning is fixed: the patch's TUNING byte is not read (60 Hz gear, A 440)", org_ci(OP_TUNING, 0) == 64 && !org.temp && org.wtab == ORG_WINC);
+            bad += check("  .. the tuning is fixed: the patch's TUNING byte is not read (60 Hz gear, A 440)", org_ci(OP_TUNING, 0) == 64 && !org.temp && memcmp(org.wtab, ORG_WINC, sizeof ORG_WINC) == 0);
             turn(EN_K1, 1);
             bad += check("  .. knob 1 is SPLIT: OFF -> ON", org_patch[OP_SPLIT] == 1);
             turn(EN_K2, 3);
@@ -964,6 +1028,33 @@ int main(int argc, char **argv)
         org_set(OP_DRV_GAIN, 0);
         TSEL->p[P_REV] = 0;
     }
+
+    /* 0.9.74: SUPPORT ORGANVAVE (its QR screen: any key goes back) and FACTORY RESET (NO first; SAVE on YES resets all) */
+    press(B_GLO);
+    oa_gl_row = 8;
+    turn(EN_ALGO, 1);
+    bad += check("SUPPORT ORGANVAVE: the QR screen", oa_gl == 5);
+    shot_write("support", 1);
+    press(B_OCTUP);
+    bad += check("  .. any key goes back to GLOBAL's row", oa_gl == 1 && oa_gl_row == 8);
+    oa_gl_row = 7;
+    oa_tune = 450u; org_set_tuning(450u); glo_transpose = 3;
+    fm_ch_up = 5; oa_ccmap[0] = 21; oa_dbp_tab[0][0] = OA_DBP[0][0] == 1 ? 2 : 1;
+    turn(EN_ALGO, 1);
+    bad += check("FACTORY RESET asks first, NO first", oa_gl == 4 && oa_fr_yes == 0);
+    shot_write("factory_reset", 1);
+    press(B_SAVE);
+    bad += check("  .. SAVE on NO goes back: nothing reset", oa_gl == 1 && oa_tune == 450u && glo_transpose == 3 && fm_ch_up == 5);
+    turn(EN_ALGO, 1);
+    bad += check("  .. opened again: NO", oa_gl == 4 && oa_fr_yes == 0);
+    turn(EN_ALGO, 1);
+    bad += check("  .. ALGORITHM turns it to YES", oa_fr_yes == 1);
+    press(B_SAVE);
+    bad += check("  .. SAVE on YES resets: closed", oa_gl == 0);
+    bad += check("  .. every user preset is gone", oa_nuser() == 0 && TSEL->user == 0);
+    bad += check("  .. GLOBAL's settings are the factory ones (440 Hz, TRANSPOSE 0, UPPER ALL, MIDI ALL, no CC)",
+                 oa_tune == 440u && glo_transpose == 0 && fm_ch_up == 0 && fm_midi_src == 3 && oa_ccmap[0] == 0);
+    bad += check("  .. the drawbar presets are the factory ones", oa_dbp_tab[0][0] == OA_DBP[0][0]);
 
     printf("%s\n", bad ? "ORGAN APP TEST FAILED" : "organ app test passed");
     return bad != 0;

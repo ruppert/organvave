@@ -326,6 +326,29 @@ static int up_put(uint32_t k, const up_rec_t *r)
     return flash_ok ? 0 : 3;
 }
 
+/* FACTORY RESET (GLOBAL, 0.9.74): every user preset forgotten: the banks and the organ patches' table cleared, then to flash.
+ * 0 ok, 2 flash error (the RAM is cleared anyway), 3 no flash; 2 too while the transport runs (nothing written) */
+static int up_reset_all(void)
+{
+    uint32_t b;
+    int rc = 0;
+    if (transport_busy()) {
+        ui_message("STOP TO SAVE");
+        return 2;
+    }
+    for (b = 0; b < UP_SLOTS / UP_PER_BANK; b++) {
+        memset(&up_bank[b], 0, sizeof up_bank[b]);
+        if (flash_ok && st_save(OBJ_UPRESET0 + b, &up_bank[b], sizeof up_bank[b]))
+            rc = 2;
+    }
+    upf_empty();
+    if (flash_ok && st_save(OBJ_UPFM6, &upf, sizeof upf))
+        rc = 2;
+    TSEL->user = 0;
+    up_gen++;
+    return !flash_ok && !rc ? 3 : rc;
+}
+
 /* the record's name = name (at most 12), 0 or "": the automatic one (engine name + slot number, "ORGAN 07") */
 static void up_set_name(up_rec_t *r, uint32_t k, const char *name)
 {

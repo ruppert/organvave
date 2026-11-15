@@ -451,9 +451,13 @@ static void oa_sv_letter(int32_t s)
  * (settings.c set_bytes): row 7 holds FMini-1's layout for the two MIDI bytes (so they carry over) and, since 0.9.5, the marker
  * 0xC5, the lower and pedal channels; rows 8..10 hold the CC of each patch byte (0 none) */
 #define OA_NCTL 84u                                       /* the patch bytes a CC may drive (OP_UB .. OP_SPLIT_PT; OP_DRV_FAT, unused, is skipped in the list) */
-#define OA_NROW 6u
-static uint8_t oa_gl;                                     /* 0 closed, 1 the list, 2 MIDI CC, 3 ABOUT */
-static uint8_t oa_gl_row;                                 /* 0 MIDI IN, 1 UPPER, 2 LOWER, 3 PEDAL, 4 MIDI CC, 5 ABOUT */
+#define OA_NROW 10u                                       /* (0.9.74: TUNING, TRANSPOSE, FACTORY RESET, SUPPORT ORGANVAVE from FMini-1; ABOUT last) */
+#define OA_GL_VIS 6u                                      /* the rows on the screen; the list scrolls */
+static uint8_t oa_gl;                                     /* 0 closed, 1 the list, 2 MIDI CC, 3 ABOUT, 4 FACTORY RESET's question, 5 SUPPORT */
+static uint8_t oa_gl_row;                                 /* 0 MIDI IN, 1 UPPER, 2 LOWER, 3 PEDAL, 4 MIDI CC, 5 TUNING, 6 TRANSPOSE, 7 FACTORY RESET, 8 SUPPORT, 9 ABOUT */
+static uint8_t oa_gl_top;                                 /* GLOBAL: the first row on the screen */
+static uint8_t oa_fr_yes;                                 /* FACTORY RESET's question: 1 YES, 0 NO (the default) */
+static uint32_t oa_tune = 440;                            /* TUNING, 410 .. 470 Hz (settings row 7, bytes 8..10 with TRANSPOSE) */
 static uint8_t oa_cc_row;                                 /* MIDI CC: the control highlighted (its patch byte) */
 static uint8_t oa_cfg_dirty;
 static uint8_t oa_ccmap[OA_NCTL];                         /* the CC (1..119) that sets each patch byte, 0 none */
@@ -488,6 +492,14 @@ static void oa_cfg_load(void)
             if (v <= 8u)
                 oa_dbp_tab[i / 9u][i % 9u] = v;
         }
+    oa_tune = 440u;                                       /* TUNING and TRANSPOSE as they were, else A 440 and 0 */
+    glo_transpose = 0;
+    if (*oa_cfg_byte(7, 8) == 0x7Bu) {
+        uint32_t tb = *oa_cfg_byte(7, 9), tr = *oa_cfg_byte(7, 10);
+        oa_tune = tb <= 60u ? 410u + tb : 440u;
+        glo_transpose = tr <= 24u ? (int32_t)tr - 12 : 0;
+    }
+    org_set_tuning(oa_tune);
     fm_bend_mode = 0;
     fm_bt = 0;
 }
@@ -506,6 +518,9 @@ static void oa_cfg_save(void)
     *oa_cfg_byte(7, 6) = fm_ch_pd;
     for (i = 0; i < OA_NCTL; i++)
         *oa_cfg_byte(8u + i / 32u, i) = oa_ccmap[i];
+    *oa_cfg_byte(7, 8) = 0x7B;
+    *oa_cfg_byte(7, 9) = (uint8_t)(oa_tune - 410u);
+    *oa_cfg_byte(7, 10) = (uint8_t)(glo_transpose + 12);
     *oa_cfg_byte(11, 0) = 0xD8;
     *oa_cfg_byte(11, 1) = 0x3B;
     for (i = 0; i < 12u * 9u; i++)
@@ -516,6 +531,26 @@ static void oa_gl_close(void)
 {
     oa_gl = 0;
     oa_cfg_save();
+}
+/* FACTORY RESET's YES (0.9.74, as FMini-1's): every user preset forgotten, GLOBAL's settings as they come, the drawbar
+ * presets the factory ones, the sound playing the first factory preset; saved */
+static void oa_factory_reset(void)
+{
+    uint32_t i;
+    int rc = up_reset_all();
+    fm_midi_src = 3;
+    fm_midi_base(0);
+    memset(oa_ccmap, 0, sizeof oa_ccmap);
+    for (i = 0; i < 12u * 9u; i++)
+        oa_dbp_tab[i / 9u][i % 9u] = OA_DBP[i / 9u][i % 9u];
+    oa_tune = 440u;
+    org_set_tuning(oa_tune);
+    glo_transpose = 0;
+    panic_req |= 1u;                                      /* (the notes held: none may hang) */
+    oa_cfg_dirty = 1;
+    oa_cfg_save();
+    apply_preset_to(TSEL, 0);
+    oa_flash(rc == 0 ? "RESET DONE" : "RESET ERROR");
 }
 /* the next control of the MIDI CC list (OP_DRV_FAT is not one) */
 static int32_t oa_cc_nb(uint32_t at, int32_t s)        /* the control after (s > 0) or before at, or -1 at the end of the list */
@@ -613,30 +648,110 @@ static void oa_gl_line(int32_t y, const char *lb, const char *val, int hot)
     ltext(14, y, &AF_M, lb, hot ? C_AMBER : C_CREAM, bg);
     rtext(214, y, &AF_M, val, hot ? C_AMBER : C_CREAM, bg);
 }
+static void oa_gl_signed(char *b, int32_t v)          /* +3, -5, 0 */
+{
+    if (v == 0) {
+        str_cpy(b, "0", 4);
+        return;
+    }
+    b[0] = v > 0 ? '+' : '-';
+    fmt_int(b + 1, v > 0 ? v : -v);
+}
 static void scr_global(void)
 {
+    static const char *const GL_LB[OA_NROW] = {"MIDI IN", "UPPER CHANNEL", "LOWER CHANNEL", "PEDAL CHANNEL", "MIDI CC", "TUNING",
+                                               "TRANSPOSE", "FACTORY RESET", "SUPPORT ORGANVAVE", "ABOUT"};
     char b[8];
+    uint32_t r;
+    if (oa_gl_row < oa_gl_top)                            /* the row chosen stays on the screen */
+        oa_gl_top = oa_gl_row;
+    else if (oa_gl_row >= oa_gl_top + OA_GL_VIS)
+        oa_gl_top = (uint8_t)(oa_gl_row - OA_GL_VIS + 1u);
     header("GLOBAL", "");
-    oa_gl_line(34, "MIDI IN", OA_SRC[fm_midi_src == 3u ? 2u : fm_midi_src & 1u], oa_gl_row == 0u);
-    if (fm_ch_up)
-        fmt_int(b, fm_ch_up);
-    else
-        str_cpy(b, "ALL", 4);
-    oa_gl_line(58, "UPPER CHANNEL", b, oa_gl_row == 1u);
-    if (fm_ch_lo)
-        fmt_int(b, fm_ch_lo);
-    else
-        str_cpy(b, "OFF", 4);
-    oa_gl_line(82, "LOWER CHANNEL", b, oa_gl_row == 2u);
-    if (fm_ch_pd)
-        fmt_int(b, fm_ch_pd);
-    else
-        str_cpy(b, "OFF", 4);
-    oa_gl_line(106, "PEDAL CHANNEL", b, oa_gl_row == 3u);
-    oa_gl_line(130, "MIDI CC", ">", oa_gl_row == 4u);
-    oa_gl_line(154, "ABOUT", ">", oa_gl_row == 5u);
-    oa_scrollbar(0u, OA_NROW, OA_NROW, 230, 30, 186);
+    for (r = oa_gl_top; r < oa_gl_top + OA_GL_VIS && r < OA_NROW; r++) {
+        const char *v = ">";
+        if (r == 0u)
+            v = OA_SRC[fm_midi_src == 3u ? 2u : fm_midi_src & 1u];
+        else if (r == 1u || r == 2u || r == 3u) {
+            uint8_t c = r == 1u ? fm_ch_up : r == 2u ? fm_ch_lo : fm_ch_pd;
+            if (c)
+                fmt_int(b, c);
+            else
+                str_cpy(b, r == 1u ? "ALL" : "OFF", 4);
+            v = b;
+        } else if (r == 5u) {
+            fmt_int(b, (int32_t)oa_tune);
+            v = b;
+        } else if (r == 6u) {
+            oa_gl_signed(b, glo_transpose);
+            v = b;
+        }
+        oa_gl_line((int32_t)(34u + 24u * (r - oa_gl_top)), GL_LB[r], v, oa_gl_row == r);
+    }
+    oa_scrollbar(oa_gl_top, OA_GL_VIS, OA_NROW, 230, 30, 186);
     footer("SELECT: ITEM   ALGO: VALUE   GLO: BACK");
+}
+
+/* FACTORY RESET's question (0.9.74): over GLOBAL; NO is the default, ALGORITHM turns it to YES, SAVE on YES resets */
+static void oa_fr_dialog(void)
+{
+    static const int32_t BX[2] = {34, 126};              /* NO, YES: the boxes */
+    static const char *const BL[2] = {"NO", "YES"};
+    uint32_t i;
+    cv_rect(10, 46, 220, 148, C_ORANGE);
+    cv_rect(12, 48, 216, 144, C_POP);
+    ctext(120, 56, &AF_M, "FACTORY RESET", C_RED, C_POP);
+    ctext(120, 92, &AF_S, "ALL PRESETS AND GLOBAL SETTINGS", C_CREAM, C_POP);
+    for (i = 0; i < 2u; i++) {
+        uint8_t sel = (i == 1u) == (oa_fr_yes != 0);
+        cv_rect(BX[i], 130, 80, 36, sel ? C_ORANGE : C_DIM);
+        if (!sel)
+            cv_rect(BX[i] + 2, 132, 76, 32, C_POP);
+        ctext(BX[i] + 40, 139, &AF_M, BL[i], sel ? C_POP : C_CREAM, sel ? C_ORANGE : C_POP);
+    }
+    ctext(120, 176, &AF_X, "ALGO: YES / NO   SAVE: OK", C_DIM, C_POP);
+}
+
+/* the largest font whose text fits in 228 px */
+static const aafont_t *oa_fit(const char *s)
+{
+    if (text_w(&AF_L, s) <= 228)
+        return &AF_L;
+    if (text_w(&AF_M, s) <= 228)
+        return &AF_M;
+    if (text_w(&AF_N, s) <= 228)
+        return &AF_N;
+    if (text_w(&AF_X, s) <= 228)
+        return &AF_X;
+    return &AF_S;
+}
+/* SUPPORT ORGANVAVE (0.9.74, FMini-1's): a black screen with the Ko-fi QR code (25 x 25 modules, bit 24 = column 0) */
+static const uint32_t OA_KOFI_QR[25] = {0x1FD507Fu, 0x104F941u, 0x175CE5Du, 0x175D75Du, 0x175355Du, 0x1046941u, 0x1FD557Fu, 0x0005700u, 0x1E5799Du, 0x0D85AB2u, 0x11DF907u, 0x1EAC249u, 0x194D6B7u, 0x050B410u, 0x0B7E830u, 0x178A527u, 0x03755FAu, 0x001C71Cu, 0x1FC8F5Fu, 0x1046F1Bu, 0x1748DF1u, 0x1754193u, 0x175C666u, 0x105BCB3u, 0x1FD2283u};
+static void scr_support(void)
+{
+    const int32_t qx = (240 - 83) / 2, qy = 100;          /* the code: 25 modules of 3 px and a quiet zone of 2 */
+    const char *title = "Enjoying this software?", *body = "Support its development";
+    const aafont_t *ft = oa_fit(title), *fb = oa_fit(body);
+    int32_t r, c;
+    cv_rect(0, 0, 240, 240, 0);
+    ctext(120, 14, ft, title, C_ORANGE, 0);
+    ctext(120, 52, fb, body, 0xFFFFu, 0);
+    ctext(120, 76, fb, "with a donation.", 0xFFFFu, 0);
+    cv_rect(qx, qy, 83, 83, 0xFFFFu);
+    for (r = 0; r < 25; r++) {
+        c = 0;
+        while (c < 25) {                                  /* one rectangle per run of dark modules */
+            int32_t st = c;
+            if (!((OA_KOFI_QR[r] >> (24 - c)) & 1u)) {
+                c++;
+                continue;
+            }
+            while (c < 25 && ((OA_KOFI_QR[r] >> (24 - c)) & 1u))
+                c++;
+            cv_rect(qx + 6 + st * 3, qy + 6 + r * 3, (c - st) * 3, 3, 0);
+        }
+    }
+    ctext(120, 190, oa_fit("ko-fi.com/ruppert"), "ko-fi.com/ruppert", 0xFFFFu, 0);
 }
 
 static void oa_sv_dialog(void)
@@ -1359,7 +1474,7 @@ static void scr_home(void)
     /* row 2: the rotor switch (SLOW, STOP, FAST: the lever's knob), the four knobs */
     cv_rect(HU(20), HU(464) + R2_DY, HU(537), 1, RGB565(0x55, 0x55, 0x55));
     cv_rect(HU(20), HU(466) + R2_DY, HU(537), HU(103) - 1, BLACK);   /* one row less: the band ends at 238, row 239 stays the background (v0.9.64) */
-    cv_rect(HU(40), HU(470) + R2_DY + LESLIE_DY, HU(208), HU(86), RGB565(0x10, 0x10, 0x10));   /* the Leslie's box: a darker grey (0.10.5) */
+    cv_rect(HU(40), HU(470) + R2_DY + LESLIE_DY, HU(208), HU(86), RGB565(0x10, 0x10, 0x10));   /* the Leslie's box: a darker grey (0.9.74) */
     cv_frame(HU(40), HU(470) + R2_DY + LESLIE_DY, HU(208), HU(86), RGB565(0x2a, 0x2a, 0x2a));
     sel = !org_patch[OP_ROT] ? 0 : org_patch[OP_ROT_SPEED] == 2u ? 2 : org_patch[OP_ROT_SPEED] == 1u ? 1 : 0;
     /* the selected position's word is white, the others medium grey */
@@ -1494,7 +1609,9 @@ static void oa_cc_dialog(void)
 
 static void oa_scene(void)
 {
-    if (oa_gl)                                            /* GLOBAL: its own screen (the MIDI CC pop-up goes over it) */
+    if (oa_gl == 5u)                                      /* SUPPORT ORGANVAVE: the QR code screen */
+        scr_support();
+    else if (oa_gl)                                       /* GLOBAL: its own screen (the MIDI CC pop-up goes over it) */
         scr_global();
     else if (oa_page == 1u)
         scr_drawbars();
@@ -1508,6 +1625,8 @@ static void oa_scene(void)
         scr_home();
     if (oa_gl == 2u)
         oa_cc_dialog();
+    else if (oa_gl == 4u)
+        oa_fr_dialog();
     else if (oa_sv)
         oa_sv_dialog();
     else if (oa_msg_on()) {
@@ -1724,6 +1843,21 @@ static void oa_dbp_key(uint32_t k)
 
 static void oa_buttons(uint32_t pressed)
 {
+    if (oa_gl == 5u && pressed) {                         /* SUPPORT: any key goes back to GLOBAL, its row */
+        oa_gl = 1;
+        oa_gl_row = 8;
+        return;
+    }
+    if (oa_gl == 4u && pressed) {                         /* FACTORY RESET's question: SAVE on YES resets; any other key goes back */
+        if (((pressed >> panel.btn[B_SAVE]) & 1u) && oa_fr_yes) {
+            oa_factory_reset();
+            oa_gl_close();                                /* (the message shows over the page) */
+            return;
+        }
+        oa_gl = 1;
+        oa_gl_row = 7;
+        return;
+    }
     if ((pressed >> panel.btn[B_ARP]) & 1u) {             /* ARP: DRAWBAR PRESET MODE, open or closed (0.9.32) */
         oa_close_all();
         oa_dbp_set(!oa_dbp);
@@ -2016,14 +2150,42 @@ static void oa_input(void)
                     oa_cfg_dirty = 1;
                 } else if (oa_gl_row == 4u)
                     oa_gl = 2;
+                else if (oa_gl_row == 5u) {               /* TUNING: 410 .. 470 Hz, 1 Hz a click */
+                    oa_tune = (uint32_t)clamp((int32_t)oa_tune + d, 410, 470);
+                    org_set_tuning(oa_tune);
+                    oa_cfg_dirty = 1;
+                    ui.force = 1;
+                } else if (oa_gl_row == 6u) {             /* TRANSPOSE: -12 .. +12 semitones on the keys */
+                    glo_transpose = clamp(glo_transpose + d, -12, 12);
+                    panic_req |= 1u;                      /* the notes held now sound elsewhere: none may hang */
+                    oa_cfg_dirty = 1;
+                    ui.force = 1;
+                } else if (oa_gl_row == 7u) {             /* FACTORY RESET: its question, NO first */
+                    oa_gl = 4;
+                    oa_fr_yes = 0;
+                    ui.force = 1;
+                } else if (oa_gl_row == 8u)
+                    oa_gl = 5;                            /* SUPPORT ORGANVAVE: the QR code screen */
                 else
-                    oa_gl = 3;
+                    oa_gl = 3;                            /* ABOUT */
             }
         } else if (oa_gl == 2u) {                          /* MIDI CC: SELECT the control, ALGORITHM the CC (a CC arriving is learned) */
             if ((s = panel_enc(EN_SELECT)) != 0)
                 oa_cc_row = oa_cc_step(oa_cc_row, s);
             if ((s = panel_enc(EN_ALGO)) != 0)
                 oa_cc_assign(oa_cc_row, oa_cc_next(oa_ccmap[oa_cc_row % OA_NCTL], s));
+        } else if (oa_gl == 4u) {                          /* FACTORY RESET's question: ALGORITHM YES / NO */
+            if ((s = panel_enc(EN_ALGO)) != 0) {
+                oa_fr_yes = s > 0;
+                ui.force = 1;
+            }
+            (void)panel_enc(EN_SELECT);
+        } else if (oa_gl == 5u) {                          /* SUPPORT: ALGORITHM goes back to GLOBAL */
+            (void)panel_enc(EN_SELECT);
+            if (panel_enc(EN_ALGO) != 0) {
+                oa_gl = 1;
+                oa_gl_row = 8;
+            }
         } else if (panel_enc(EN_SELECT) != 0 || panel_enc(EN_ALGO) != 0)   /* ABOUT: either encoder goes back */
             oa_gl = 1;
         return;
