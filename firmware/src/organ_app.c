@@ -179,6 +179,9 @@ static const uint8_t OA_DBP[12][9] = {
     {8, 0, 8, 0, 0, 0, 0, 0, 8}, {0, 0, 4, 6, 7, 5, 3, 0, 0}, {8, 8, 8, 5, 3, 1, 3, 5, 8}, {8, 8, 8, 8, 8, 8, 8, 8, 8},   /* G# A A# B */
 };
 static uint8_t oa_dbp, oa_dbp_was[9];                    /* the mode is open; the upper bars when it opened */
+static uint8_t oa_dbp_tab[12][9];                        /* the presets in use: OA_DBP, or the ones stored over them (settings rows 11..14, 0.9.72) */
+static uint8_t oa_dbp_sv, oa_dbp_slot;                   /* SAVE in the mode: 1 waiting for a key (C..B), 2 the key chosen: SAVE again writes */
+static const char *const OA_NN[12] = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"};
 static void oa_dbp_set(int on)
 {
     uint32_t i;
@@ -188,6 +191,8 @@ static void oa_dbp_set(int on)
         org_dbp_key = 0;
     }
     oa_dbp = (uint8_t)on;
+    if (!on)
+        oa_dbp_sv = 0;
     org_dbp_mode = (uint8_t)on;                           /* the key scan lets the keys held go and keeps them silent */
 }
 /* a quick message over everything, 0.5 s (0.9.35: the DRAWBAR PRESET MODE's switches) */
@@ -475,6 +480,14 @@ static void oa_cfg_load(void)
         fm_midi_src = 3;
         fm_midi_base(0);
     }
+    for (i = 0; i < 12u * 9u; i++)                       /* the drawbar presets: the factory ones, or those stored over them (0.9.72) */
+        oa_dbp_tab[i / 9u][i % 9u] = OA_DBP[i / 9u][i % 9u];
+    if (*oa_cfg_byte(11, 0) == 0xD8u && *oa_cfg_byte(11, 1) == 0x3Bu)
+        for (i = 0; i < 12u * 9u; i++) {
+            uint8_t v = *oa_cfg_byte(11u + (i + 2u) / 32u, (i + 2u) % 32u);
+            if (v <= 8u)
+                oa_dbp_tab[i / 9u][i % 9u] = v;
+        }
     fm_bend_mode = 0;
     fm_bt = 0;
 }
@@ -493,6 +506,10 @@ static void oa_cfg_save(void)
     *oa_cfg_byte(7, 6) = fm_ch_pd;
     for (i = 0; i < OA_NCTL; i++)
         *oa_cfg_byte(8u + i / 32u, i) = oa_ccmap[i];
+    *oa_cfg_byte(11, 0) = 0xD8;
+    *oa_cfg_byte(11, 1) = 0x3B;
+    for (i = 0; i < 12u * 9u; i++)
+        *oa_cfg_byte(11u + (i + 2u) / 32u, (i + 2u) % 32u) = oa_dbp_tab[i / 9u][i % 9u];
     settings_save();                                      /* (deferred while anything sounds) */
 }
 static void oa_gl_close(void)
@@ -1510,9 +1527,19 @@ static void oa_scene(void)
         cv_rect(9, y0, 222, hgt, RGB565(0x00, 0x00, 0x00));
         ctext(120, y0 + 6, &AF_M, "DRAWBAR PRESET MODE", C_AMBER, RGB565(0x00, 0x00, 0x00));
         oa_upper_bars(by - HU10(930));
-        ctext(120, ty, &AF_S, "Middle Octave = Drawbar Presets", C_CREAM, RGB565(0x00, 0x00, 0x00));
-        ctext(120, ty + AF_S.h, &AF_S, "(Black keys)", C_CREAM, RGB565(0x00, 0x00, 0x00));
-        ctext(120, ty + 2 * AF_S.h + 4, &AF_S, "Other Keys: Various switches", C_CREAM, RGB565(0x00, 0x00, 0x00));
+        const char *t1 = "Middle Octave: Drawbar Presets", *t2 = "Other Keys: Various switches", *t3 = "SAVE: Store current as preset";
+        if (oa_dbp_sv == 1u) {
+            t1 = "Press key (middle octave - C to B)";
+            t2 = "to store";
+            t3 = "";
+        } else if (oa_dbp_sv == 2u) {
+            t1 = "Press SAVE again to confirm";
+            t2 = OA_NN[oa_dbp_slot];
+            t3 = "";
+        }
+        ctext(120, ty, &AF_S, t1, C_CREAM, RGB565(0x00, 0x00, 0x00));
+        ctext(120, ty + AF_S.h, &AF_S, t2, C_CREAM, RGB565(0x00, 0x00, 0x00));
+        ctext(120, ty + 2 * AF_S.h + 4, &AF_S, t3, C_CREAM, RGB565(0x00, 0x00, 0x00));
     }
     if (oa_fl_on()) {                                     /* a quick message (0.5 s), over the DRAWBAR PRESET pop-up */
         int32_t w = text_w(&AF_M, oa_fl) + 28;
@@ -1544,7 +1571,7 @@ static uint32_t oa_signature(void)
     h = (h ^ t->p[P_REV] ^ (uint32_t)t->p[P_DLY] << 8 ^ (uint32_t)song.g[G_RTYPE] << 16 ^ (uint32_t)song.g[G_DTIME] << 20) * 16777619u;
     h = (h ^ (uint32_t)song.g[G_RSIZE] ^ (uint32_t)song.g[G_RDAMP] << 7 ^ (uint32_t)song.g[G_DRREV] << 14 ^
          (uint32_t)song.g[G_DFDBK] << 21) * 16777619u;
-    h = (h ^ (uint32_t)song.g[G_DCOLOR] ^ (uint32_t)song.g[G_DMIX] << 7 ^ (uint32_t)(cpu_pop != 0u) << 15 ^ (uint32_t)oa_dbp << 16) * 16777619u;
+    h = (h ^ (uint32_t)song.g[G_DCOLOR] ^ (uint32_t)song.g[G_DMIX] << 7 ^ (uint32_t)(cpu_pop != 0u) << 15 ^ (uint32_t)oa_dbp << 16 ^ (uint32_t)oa_dbp_sv << 18 ^ (uint32_t)oa_dbp_slot << 20) * 16777619u;
     h = (h ^ (oa_fl_on() ? oa_fl_until : 0u)) * 16777619u;   /* a quick message: drawn, then gone */
     return h;
 }
@@ -1629,9 +1656,16 @@ static void oa_pc_toggle(uint32_t op, const char *on, const char *off)
 static void oa_dbp_key(uint32_t k)
 {
     uint32_t i;
+    if (oa_dbp_sv) {                                      /* SAVE was pressed: a key of the middle octave picks the preset to store (0.9.72) */
+        if (k >= 7u && k <= 18u) {
+            oa_dbp_slot = (uint8_t)(k - 7u);
+            oa_dbp_sv = 2;
+        }
+        return;
+    }
     if (k >= 7u && k <= 19u) {
         for (i = 0; i < 9u; i++)
-            org_set(OP_UB + i, k < 19u ? OA_DBP[k - 7u][i] : oa_dbp_was[i]);
+            org_set(OP_UB + i, k < 19u ? oa_dbp_tab[k - 7u][i] : oa_dbp_was[i]);
         return;
     }
     switch (k) {
@@ -1693,7 +1727,7 @@ static void oa_buttons(uint32_t pressed)
         oa_dbp_set(!oa_dbp);
         return;
     }
-    if (oa_dbp && pressed)                                /* any other button leaves the mode, then does its own work */
+    if (oa_dbp && pressed && !((pressed >> panel.btn[B_SAVE]) & 1u))   /* any other button leaves the mode, then does its own work (SAVE: below) */
         oa_dbp_set(0);
     if ((pressed >> panel.btn[B_HOME]) & 1u) {            /* HOME: the first screen; the pop-ups close. HOME again on HOME: the pedal's and the lower's drawbars (0.10.4); again: HOME */
         oa_close_all();
@@ -1718,6 +1752,18 @@ static void oa_buttons(uint32_t pressed)
         return;
     }
     if ((pressed >> panel.btn[B_SAVE]) & 1u) {            /* SAVE: open the dialog; again: write */
+        if (oa_dbp) {                                     /* in the DRAWBAR PRESET MODE (0.9.72): SAVE, a key, SAVE again writes that preset */
+            if (oa_dbp_sv == 2u) {
+                for (uint32_t i = 0; i < 9u; i++)
+                    oa_dbp_tab[oa_dbp_slot][i] = (uint8_t)org_patch[OP_UB + i];
+                oa_cfg_dirty = 1;
+                oa_cfg_save();
+                oa_dbp_sv = 0;
+                oa_flash("STORED");
+            } else
+                oa_dbp_sv = oa_dbp_sv ? 0 : 1;
+            return;
+        }
         oa_gl_close();
         if (oa_sv)
             oa_sv_do();
@@ -2052,7 +2098,7 @@ static void oa_leds(void)
     led_put(nl, panel.btn[B_SCL], org_patch[OP_ROT] != 0 && org_patch[OP_ROT_SPEED] != 0);
     led_put(nl, panel.btn[B_ENV], org_patch[OP_PERC] != 0);
     led_put(nl, panel.btn[B_LFO], org_patch[OP_VIB] != 0u && vib_up());   /* the UP tab, as HOME draws it */
-    led_put(nl, panel.btn[B_SAVE], oa_sv);
+    led_put(nl, panel.btn[B_SAVE], oa_sv || oa_dbp_sv);
     led_put(nl, panel.btn[B_GLO], oa_gl != 0u);
     led_put(nl, panel.btn[B_ARP], oa_dbp != 0u);
     led_put(nl, panel.btn[B_OCTDN], song.octave < 0);

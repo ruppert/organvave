@@ -919,6 +919,36 @@ int main(int argc, char **argv)
         press(B_HOME);
     }
 
+    {   /* SAVE in the DRAWBAR PRESET MODE (0.9.72): SAVE, a middle-octave key, SAVE again stores the bars over that preset */
+        static const uint8_t D[9] = {2, 3, 4, 5, 6, 7, 8, 1, 0};
+        uint32_t j;
+        int32_t ok2;
+        press(B_ARP);
+        press(B_SAVE);
+        bad += check("SAVE in the mode: waits for a key", oa_dbp && oa_dbp_sv == 1u);
+        for (j = 0; j < 9u; j++)
+            org_set(OP_UB + j, D[j]);
+        oa_dbp_key(7u + 3u);                              /* D# (C is 7) */
+        bad += check("  .. a key of the middle octave picks the preset: D#, ready to confirm", oa_dbp_sv == 2u && oa_dbp_slot == 3u);
+        press(B_SAVE);
+        for (ok2 = 1, j = 0; j < 9u; j++)
+            ok2 &= oa_dbp_tab[3][j] == D[j];
+        bad += check("  .. SAVE again stores the bars over D#, and leaves the mode's pick", ok2 && oa_dbp_sv == 0u && oa_dbp);
+        press(B_ARP);
+        press(B_ARP);
+        for (j = 0; j < 9u; j++)
+            org_set(OP_UB + j, 0u);
+        oa_dbp_key(7u + 3u);                              /* plays the stored D# */
+        for (ok2 = 1, j = 0; j < 9u; j++)
+            ok2 &= org_patch[OP_UB + j] == D[j];
+        bad += check("  .. the stored preset plays when the mode is open again", ok2);
+        press(B_ARP);
+        for (j = 0; j < 9u; j++)
+            oa_dbp_tab[3][j] = OA_DBP[3][j];              /* back to the factory D# for the tests below */
+        oa_cfg_dirty = 1;
+        oa_cfg_save();
+    }
+
     {   /* HOME's DRIVE and REVERB knobs keep to their travel (0.9.37: the DRIVE knob was on the old 0..12 scale, REVERB over 100) */
         int32_t a0, a1, a2, r0, r1;
         org_set(OP_DRV, 1);
