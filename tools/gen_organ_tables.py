@@ -231,6 +231,12 @@ def main():
     L += rows("", "", scan, 8, "{}u")
     L.append("};")
     L.append("")
+    # the scanner's LFO (setBfree's vibrato.c offset tables: INCTBL_SIZE 2048, read without interpolation), Q15
+    L.append("/* the scanner's sine, 2048 points, Q15 (setBfree's INCTBL_SIZE: the vibrato reads it without interpolation) */")
+    L.append("static const int16_t ORG_SCAN_SIN[2048] = {")
+    L += rows("", "", [int(round(math.sin(2.0 * math.pi * i / 2048) * 32767)) for i in range(2048)], 16)
+    L.append("};")
+    L.append("")
     L.append("/* the key compression's gain for 0..127 keys down, Q15 */")
     L.append("static const uint16_t ORG_KEYCOMP[128] = {")
     L += rows("", "", [q15u(d["keycomp"][i]) for i in range(128)], 16)

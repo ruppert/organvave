@@ -470,8 +470,8 @@ int main(int argc, char **argv)
         }
     }
 
-    /* 6. the scanner's vibrato and chorus against setBfree's vibratoProc (the float loop of vibrato.c, here): a
-     *    1 kHz tone through VIB1..3 and CHO1..3 agrees with the integer port to -40 dB. */
+    /* 6. the scanner's vibrato and chorus against setBfree's vibratoProc (the float loop of vibrato.c, here, with its
+     *    2048-point offset table): a 1 kHz tone through VIB1..3 and CHO1..3 agrees with the integer port to -40 dB. */
     {
         static int32_t in[8192], out[8192];
         static float ref[8192];
@@ -488,7 +488,8 @@ int main(int argc, char **argv)
             for (nn = 0; nn < 8192; nn++) {
                 double x = in[nn], j, f, g, wet;
                 uint32_t h, k;
-                j = (double)pos + 1.0 + amp + amp * sin(2.0 * 3.14159265358979 * stat);
+                /* setBfree's offset table: 2048 points, read without interpolation */
+                j = (double)pos + 1.0 + amp + amp * sin(2.0 * 3.14159265358979 * floor(stat * 2048.0) / 2048.0);
                 h = (uint32_t)floor(j) % 1024u;
                 f = j - floor(j);
                 k = (h + 1u) % 1024u;
@@ -515,6 +516,50 @@ int main(int argc, char **argv)
                      mixed ? (v == 4 ? "CHO1" : v == 5 ? "CHO2" : "CHO3") : (v == 1 ? "VIB1" : v == 2 ? "VIB2" : "VIB3"),
                      10.0 * log10(err / (sig + 1e-9)));
             check(what, err < sig * 1e-4);                           /* -40 dB */
+        }
+    }
+
+    /* 7. the silent scanner: after a burst and 64 samples of silence (the tail rings out and the delay line is clean),
+     *    org_vib of silence gives 0 and leaves the delay line clean, and advances the phase and the read point as the
+     *    skip (org_vib_idle) does: the skip in org_render is the same as running the scanner on silence */
+    {
+        static int32_t burst[512], zero[128], out[128], out2[128];
+        static int32_t vb_save[ORG_VIB_N];
+        uint32_t v, nn;
+        for (nn = 0; nn < 512; nn++)
+            burst[nn] = (int32_t)lround(9000.0 * sin(2.0 * 3.14159265358979 * 440.0 * nn / 44100.0));
+        memset(zero, 0, sizeof zero);
+        for (v = 1; v <= 6; v++) {
+            uint32_t vpos0, vst0, clean = 1, sil = 1;
+            char what[120];
+            org_init();
+            org.vibm_cur = (uint8_t)v;
+            for (nn = 0; nn < 512; nn += CTL)
+                org_vib(burst + nn, out, CTL);
+            org_vib(zero, out, 64);                                   /* the tail rings out */
+            for (nn = 0; nn < ORG_VIB_N; nn++)
+                if (org.vb[nn])
+                    clean = 0;
+            memcpy(vb_save, org.vb, sizeof vb_save);
+            vpos0 = org.vpos;
+            vst0 = org.vst;
+            org_vib(zero, out2, 128);                                 /* the scanner on silence */
+            for (nn = 0; nn < 128; nn++)
+                if (out2[nn])
+                    sil = 0;
+            for (nn = 0; nn < ORG_VIB_N; nn++)
+                if (org.vb[nn])
+                    clean = 0;
+            {
+                uint32_t vpos1 = org.vpos, vst1 = org.vst;
+                memcpy(org.vb, vb_save, sizeof vb_save);              /* the skip from the same state */
+                org.vpos = vpos0;
+                org.vst = vst0;
+                org_vib_idle(128);
+                snprintf(what, sizeof what, "%s: silence after a burst and 64 samples: 0 out, the delay line clean, the phase as the skip",
+                         v == 1 ? "VIB1" : v == 2 ? "VIB2" : v == 3 ? "VIB3" : v == 4 ? "CHO1" : v == 5 ? "CHO2" : "CHO3");
+                check(what, clean && sil && org.vpos == vpos1 && org.vst == vst1);
+            }
         }
     }
 

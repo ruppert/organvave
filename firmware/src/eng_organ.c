@@ -17,8 +17,9 @@
  *     drawbar, as a first difference, with an envelope that falls 60 dB in 1 s (fast) or 4 s (slow) from the
  *     starting level (normal 11.0, soft 5.5132) and resets when no key is down. On: the whole mix steps to the
  *     swell x 0.60512 (normal; soft 1.0) and the 1' is muted, as setBfree does.
- *   - the scanner vibrato / chorus (setBfree's vibrato.c): a 1024-sample delay line read at 1 + amp + amp * sin
- *     samples, amp 3 / 6 / 9, the scanner at 7.25 Hz; the chorus mixes it with the dry at 0.7071. As setBfree
+ *   - the scanner vibrato / chorus (setBfree's vibrato.c, 0.11.0: its 2048-point sine read without interpolation, and
+ *     a silent scanner skips the delay line): a 1024-sample delay line read at 1 + amp + amp * sin samples, amp 3 / 6 / 9,
+ *     the scanner at 7.25 Hz; the chorus mixes it with the dry at 0.7071. As setBfree
  *     (0.10.2): one scanner, fed by the upper and / or the lower manual by their own switches (OP_VIB_UP, OP_VIB_LO);
  *     the pedals and the percussion stay dry. The rest of the organ is dry; a patch with OP_VIB_ROUTE 0 routes both.
  * Keys use setBfree's numbers: 0..60 the upper manual (C..C), 64..124 the lower, 128..159 the pedals; buses 0..8
@@ -53,6 +54,7 @@ static int32_t org_faint = 130;                 /* (tests set 0: every wheel int
 #define ORG_XT_CAP 10752u               /* the RAM crosstalk table's entries (setBfree's default needs 10687) */
 #define ORG_VIB_N 1024u                 /* the delay line: 1024 samples (setBfree's BUF_SIZE) */
 #define ORG_VIB_CLAMP 65535             /* the delay line's input: x >> 3, clamped */
+#define ORG_VIB_QUIET 32u               /* silent samples on the scanner before the delay line is skipped (its reach is 20) */
 
 enum { ORG_ADD = 1, ORG_MOD = 2, ORG_REM = 4 };   /* setBfree's rflags: OR_ADD / ORF_MODIFIED / OR_REM */
 
@@ -114,6 +116,7 @@ typedef struct {
     uint32_t pe;                        /* the percussion envelope, Q24 */
     int32_t pz;                         /* the percussion's previous contact sample (the first difference) */
     uint32_t vpos, vst;                 /* the vibrato's delay line position and scanner phase */
+    uint32_t vquiet;                    /* samples in a row with the scanner silent (the delay line is clean from ORG_VIB_QUIET) */
     int32_t vb[ORG_VIB_N];              /* the delay line, x >> 3 */
 } org_t;
 
@@ -167,6 +170,7 @@ static void org_init(void)
     org.vamp2[1] = 12;
     org.vamp2[2] = 18;
     org.vinc = ORG_VIB_INC;
+    org.vpos = ORG_VIB_N / 2u;                                       /* setBfree's outPos starts half way */
     org.pe_norm = ORG_PERC_NORM;
     org.pe_soft = ORG_PERC_SOFT;
     org.pdec_fast = ORG_PERC_FAST;
@@ -384,31 +388,46 @@ static __attribute__((noinline)) void org_fragment(void)
     org.kcd = (kct - org.kc) / (int32_t)ORG_FRAG;
 }
 
-/* the scanner's vibrato / chorus (setBfree's vibratoProc, in integer): the delay line holds x >> 3; a sample is
- * written at 1 + amp + amp * sin ahead of the read point, linear between the two cells, and read out when the
- * point reaches it. vibm 1..3 the vibrato (the wet alone), 4..6 the chorus (x + wet, at 0.7071). */
+/* the scanner's vibrato / chorus (setBfree's vibratoProc, in integer, 0.11.0). The delay line holds x >> 3; the write point is
+ * the read point + 1 + amp + amp * sin (Q16 samples: (2 + amp2) << 15 + amp2 * m, m Q15, amp2 the depth in half samples), the
+ * sine read from the 2048-point table with no interpolation (setBfree's INCTBL_SIZE). A sample is written to the cell it
+ * falls in and the next, linearly; the read clears the cell. vibm 1..3 the vibrato (the wet alone), 4..6 the chorus
+ * (x + wet, at 0.7071). The scanner's phase and the read point advance even when nothing is written. */
 static __attribute__((noinline)) void org_vib(const int32_t *x, int32_t *o, uint32_t n)
 {
-    uint32_t i, amp2 = org.vamp2[((uint32_t)org.vibm_cur - 1u) % 3u], vinc = org.vinc;      /* the depth in half samples */
-    uint32_t mixed = org.vibm_cur > 3u;
-    uint32_t pos = org.vpos, st = org.vst;
+    const uint32_t amp2 = org.vamp2[((uint32_t)org.vibm_cur - 1u) % 3u];
+    const uint32_t base = (2u + amp2) << 15, vinc = org.vinc;
+    const uint32_t mixed = org.vibm_cur > 3u;
+    int32_t *vb = org.vb;
+    uint32_t pp = org.vpos << 16, st = org.vst;                     /* the read point, Q16 (pos << 16) */
+    uint32_t i;
     for (i = 0; i < n; i++) {
-        int32_t xs = clamp(x[i] >> 3, -ORG_VIB_CLAMP, ORG_VIB_CLAMP);
-        int32_t m = sine_i(st);                                       /* the scanner, Q15 */
-        uint32_t j = ((pos << 16) + ((2u + amp2) << 15) + (uint32_t)(m * (int32_t)amp2)) & 0x03FFFFFFu;
-        uint32_t h = j >> 16, k = (h + 1u) & 1023u, f = (j & 0xFFFFu) >> 1;   /* the cell, the next, the fraction Q15 */
-        int32_t g = (xs * (int32_t)f) >> 15;
-        int32_t wet;
-        org.vb[h] += xs - g;
-        org.vb[k] += g;
-        wet = org.vb[pos] * 8;
-        org.vb[pos] = 0;
-        o[i] = mixed ? ((((x[i] + wet) >> 5) * 23170) >> 10) : wet;  /* (x + wet) * 0.7071, Q15 */
-        pos = (pos + 1u) & 1023u;
+        int32_t xs = x[i] >> 3, m, g, wet;
+        uint32_t j, h, k;
+        if ((uint32_t)(xs + ORG_VIB_CLAMP) > 2u * ORG_VIB_CLAMP)    /* the clamp only when it is needed */
+            xs = xs < 0 ? -ORG_VIB_CLAMP : ORG_VIB_CLAMP;
+        m = ORG_SCAN_SIN[st >> 21];                                 /* the scanner, Q15 (11 bits of the phase) */
+        j = (pp + base + (uint32_t)(m * (int32_t)amp2)) & 0x03FFFFFFu;   /* the write point, mod 1024 samples */
+        h = j >> 16;
+        k = (h + 1u) & 1023u;
+        g = (xs * (int32_t)((j & 0xFFFFu) >> 1)) >> 15;             /* the fraction (Q15) of the input for the next cell */
+        vb[h] += xs - g;
+        vb[k] += g;
+        wet = vb[pp >> 16] * 8;
+        vb[pp >> 16] = 0;
+        o[i] = mixed ? ((((x[i] + wet) >> 5) * 23170) >> 10) : wet;   /* (x + wet) * 0.7071, Q15 */
+        pp = (pp + 0x10000u) & 0x03FF0000u;
         st += vinc;
     }
-    org.vpos = pos;
+    org.vpos = pp >> 16;
     org.vst = st;
+}
+
+/* the scanner silent for n samples with the delay line clean: the phase and the read point advance, nothing is written */
+static inline void org_vib_idle(uint32_t n)
+{
+    org.vpos = (org.vpos + n) & (ORG_VIB_N - 1u);
+    org.vst += n * org.vinc;
 }
 
 static inline int32_t org_sine_n(uint32_t ph) { return SINE[ph >> 22]; }   /* the faint wheels' sine (ORG_FAINT) */
@@ -524,6 +543,7 @@ static __attribute__((noinline)) void org_render(int32_t *out, uint32_t n)
     const uint32_t *winc;
     int32_t swt;
     uint8_t vr = org.vrt_cur;                                         /* the scanner is in use: ys takes the manuals routed through it */
+    uint8_t sany = 0;                                                 /* a wheel is on the scanner in this block (else ys is 0) */
     if (org.sub == 0u)
         org_fragment();
     off = org.sub * CTL;
@@ -542,6 +562,7 @@ static __attribute__((noinline)) void org_render(int32_t *out, uint32_t n)
         uint32_t ph = w->ph, inc = winc[wn - 1u];
         int32_t g = w->gs;
         if (vr && (w->sgs | w->sgd)) {                                /* on the scanner: the sine once, y the dry share */
+            sany = 1;
             if (w->pgs | w->pgd)
                 org_wheel_scp(w, inc, off, n, y, ys, p);
             else
@@ -578,10 +599,15 @@ static __attribute__((noinline)) void org_render(int32_t *out, uint32_t n)
         w->ph = ph;
     }
     if (vr) {                                                         /* the scanner: its manuals' sound, replaced by its wet; the rest stays dry */
-        org_vib(ys, v, n);
-        for (i = 0; i < n; i++)
-            v[i] += y[i];                                             /* (y holds only the dry share since 0.9.28) */
-        vv = v;
+        if (sany || org.vquiet < ORG_VIB_QUIET) {
+            org_vib(ys, v, n);
+            for (i = 0; i < n; i++)
+                v[i] += y[i];                                         /* (y holds only the dry share since 0.9.28) */
+            vv = v;
+        } else {
+            org_vib_idle(n);                                          /* silent for a while: the wet is 0, so y is the output */
+        }
+        org.vquiet = sany ? 0u : (org.vquiet < ORG_VIB_QUIET ? org.vquiet + n : org.vquiet);
     }
     if (org.perc_cur) {                                               /* setBfree's first difference, then the envelope */
         int32_t pz = org.pz, pe = (int32_t)(org.pe >> 12);            /* pe Q12 */
