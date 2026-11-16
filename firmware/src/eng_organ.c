@@ -416,7 +416,7 @@ static __attribute__((noinline)) void org_vib(const int32_t *x, int32_t *o, uint
         wet = vb[pp >> 16] * 8;
         vb[pp >> 16] = 0;
         o[i] = mixed ? ((((x[i] + wet) >> 5) * 23170) >> 10) : wet;   /* (x + wet) * 0.7071, Q15 */
-        pp = (pp + 0x10000u) & 0x03FF0000u;
+        pp = (pp + (1u << 16)) & 0x03FF0000u;
         st += vinc;
     }
     org.vpos = pp >> 16;
