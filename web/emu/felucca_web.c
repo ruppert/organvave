@@ -284,6 +284,7 @@ static void web_frame(void)
     master_poll();
     felucca_dbg.ui_frames++;
     UI_INPUT();
+    org_adv_poll();                                       /* main.c: the click, crosstalk and tuning tables the patch asks for (the browser build had none) */
     settings_poll();
     autosave_poll();
     UI_LEDS();
