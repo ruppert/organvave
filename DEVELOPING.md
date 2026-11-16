@@ -175,7 +175,7 @@ The organ has no voices to shed. `shed_voice()` (audio.c) therefore calls `fx_cp
 - **Pages**: pages 2..7 are row lists (`oa_val`, `oa_adj`, `oa_rows` in organ_app.c): SELECT picks a row (highlighted), ALGORITHM changes it, K1..K4 act on rows 1..4. The drawbar page is UPPER or LOWER+PEDAL (EDIT toggles): the Hammond has 2 pedal drawbars (16' and 8'), shown at the left of the 9 lower ones.
 - **Editor**: `ORG_PUT` carries at most 48 bytes, so the editor sends the 57 patch bytes in two frames.
 
-## 11. ADVANCED EDIT (0.9.4)
+## 11. PRESET SETTINGS (ADVANCED EDIT until 0.9.77; 0.9.4)
 
 - **The page**: EDIT walks UPPER, LOWER + PEDAL, ADVANCED (page 8 of organ_app.c: 27 rows, `OA_AOP` maps a row to its patch byte, `oa_val_adv` / `oa_adj_adv`). FX never visits it.
 - **The bytes**: `ORG_PSIZE` 96; bytes 57..81 are `OP_TUNING` .. `OP_SC_V3`, table `ORG_ADV[]` = {op, N, D}: a byte b is the step (b + D) mod N (`org_ci`, `org_bi`; conditional subtractions, no division), so zero is setBfree's default and an older patch sounds as before. The meaning of each is in `web/EDITOR_PROTOCOL.md`. The autosave record keeps its old 64-byte patch and appends `patch_ext`; the shorter 0.9.3 record is still accepted (`AS_OLD_SIZE`).

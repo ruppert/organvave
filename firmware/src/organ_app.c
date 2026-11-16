@@ -955,8 +955,8 @@ static int32_t oa_step(int32_t v, int32_t s, int32_t mx)   /* one detent: 8 on t
  * and the knobs 1 to 4 go straight to the first four rows. A list longer than the screen scrolls with the pick. The rows of a page
  * are what oa_val shows and oa_adj1 changes (one detent). */
 #define OA_VIS 8u                                       /* rows on the screen (AF_M, 24 px apart: 34 .. 202, down to the foot rule) */
-static const uint8_t OA_NR[9] = {0, 0, 5, 12, 7, 4, 6, 5, 29};   /* (DRIVE 7 rows since 0.9.44: the tone stack) */
-static const char *const OA_LB[9][29] = {
+static const uint8_t OA_NR[9] = {0, 0, 5, 12, 7, 4, 6, 5, 30};   /* (DRIVE 7 rows since 0.9.44: the tone stack) */
+static const char *const OA_LB[9][30] = {
     {0},
     {0},
     {"PERCUSSION", "VOLUME", "DECAY", "HARMONIC", "VIBRATO"},
@@ -965,14 +965,16 @@ static const char *const OA_LB[9][29] = {
     {"SEND", "TYPE", "SIZE", "TONE"},
     {"SEND", "TYPE", "TIME", "FEEDBACK", "COLOUR", "MIX"},
     {"EQ", "LOW", "MID", "HIGH", "MID FREQ"},
-    {"SPLIT", "SPLIT POINT", "ATTACK CLICK", "RELEASE CLICK", "ATTACK MODEL", "CLICK LEN MIN", "CLICK LEN MAX", "RELEASE MODEL",
+    {"VOLUME", "SPLIT", "SPLIT POINT", "ATTACK CLICK", "RELEASE CLICK", "ATTACK MODEL", "CLICK LEN MIN", "CLICK LEN MAX", "RELEASE MODEL",
      "CROSSTALK", "COMPARTMENT", "TRANSFORMER", "TERMINAL STRIP", "WIRING", "XT FLOOR", "XT MIN",
      "PERC FAST", "PERC SLOW", "PERC NORMAL", "PERC SOFT", "PERC GAIN", "PERC BUS A", "PERC BUS B", "PERC TRIGGER",
      "SCAN RATE", "VIB1 DEPTH", "VIB2 DEPTH", "VIB3 DEPTH", "ATTACK GAIN", "RELEASE GAIN"},
 };
-/* ADVANCED EDIT: row -> the patch byte (eng_organ.c OP_*). The knobs 1-4 go to the first four rows */
-static const uint8_t OA_AOP[29] = {
-    OP_SPLIT, OP_SPLIT_PT, OP_ATK_LEVEL, OP_REL_LEVEL, OP_ATK_MODEL, OP_ATK_MIN, OP_ATK_MAX, OP_REL_MODEL,
+/* PRESET SETTINGS (ADVANCED EDIT until 0.9.77): row -> the patch byte (eng_organ.c OP_*). The knobs 1-4 go to the first four rows.
+ * OA_VOL is no patch byte: the first row is the preset's volume, the track's P_LEVEL (0..127, 0 OFF, 112 0 dB) */
+#define OA_VOL 0xFFu
+static const uint8_t OA_AOP[30] = {
+    OA_VOL, OP_SPLIT, OP_SPLIT_PT, OP_ATK_LEVEL, OP_REL_LEVEL, OP_ATK_MODEL, OP_ATK_MIN, OP_ATK_MAX, OP_REL_MODEL,
     OP_XTALK, OP_XT_COMP, OP_XT_TRANS, OP_XT_TSTRIP, OP_XT_WIRE, OP_XT_FLOOR, OP_XT_MIN,
     OP_PC_FAST, OP_PC_SLOW, OP_PC_NORM, OP_PC_SOFT, OP_PC_GAIN, OP_PC_BUSA, OP_PC_BUSB, OP_PC_TRIG,
     OP_SC_HZ, OP_SC_V1, OP_SC_V2, OP_SC_V3, OP_CLICK_GAIN, OP_REL_GAIN,
@@ -1050,6 +1052,31 @@ static void oa_val_adv(uint32_t r, oa_val_t *v)
 {
     uint32_t op = OA_AOP[r];
     int32_t i;
+    if (op == OA_VOL) {                                     /* the preset's volume: P_LEVEL, dB as the LVL of the organ's other presets */
+        int32_t lv = TSEL->p[P_LEVEL];
+        if (lv <= 0) {
+            oa_vt(v, "OFF");
+            return;
+        }
+        {   /* tenths of a dB, written out: "0.0 DB", "-6.5 DB" (fmt_fix gives ".0" under 1) */
+            int32_t tn = LEVEL_DB_X10[lv];
+            char *q = v->t;
+            if (tn < 0) {
+                *q++ = '-';
+                tn = -tn;
+            }
+            fmt_fix(q, tn / 10, 0u);
+            q += str_len(q);
+            *q++ = '.';
+            *q++ = (char)('0' + tn % 10);
+            *q = 0;
+            str_cpy(v->t + str_len(v->t), " DB", 4);
+        }
+        v->mn = 10;
+        v->mv = (int8_t)(lv * 10 / 127);
+        v->on = 1;
+        return;
+    }
     if (op == OP_XTALK) {
         oa_vsw(v, OP_XTALK, "OFF", "ON");
         return;
@@ -1240,6 +1267,10 @@ static void oa_eqs(uint32_t op, int32_t d)
 static void oa_adj_adv(uint32_t r, int32_t d)
 {
     uint32_t op = OA_AOP[r];
+    if (op == OA_VOL) {
+        TSEL->p[P_LEVEL] = (uint8_t)clamp(TSEL->p[P_LEVEL] + d, 0, 127);   /* one unit a detent (oa_step would jump 8) */
+        return;
+    }
     if (op == OP_XTALK)
         org_set(OP_XTALK, d > 0 ? 1u : 0u);
     else if (op == OP_SPLIT)
@@ -1345,7 +1376,7 @@ static void oa_rows(uint32_t pg, const char *state)
     if (sel >= top + OA_VIS)
         top = sel - OA_VIS + 1u;
     oa_top[pg] = (uint8_t)top;
-    header(pg == 8u ? "ADVANCED EDIT" : pg == 2u ? "PERC & VIB" : pg == 3u ? "ROTARY" : pg == 4u ? "DRIVE" : pg == 5u ? "REVERB" : pg == 6u ? "DELAY" : "EQ", state);
+    header(pg == 8u ? "PRESET SETTINGS" : pg == 2u ? "PERC & VIB" : pg == 3u ? "ROTARY" : pg == 4u ? "DRIVE" : pg == 5u ? "REVERB" : pg == 6u ? "DELAY" : "EQ", state);
     for (i = 0; i < OA_VIS && top + i < n; i++) {
         oa_val_t v;
         uint32_t r = top + i;
@@ -1692,7 +1723,7 @@ static void oa_ctl_name(char *out, uint32_t b)
         str_cpy(out + 6, OA_FOOT[b % 9u], 9);
         return;
     }
-    for (r = 0; r < 31u; r++)
+    for (r = 0; r < 30u; r++)
         if (OA_AOP[r] == b) {
             str_cpy(out, OA_LB[8][r], 16);
             return;
@@ -1816,7 +1847,7 @@ static uint32_t oa_signature(void)
          (uint32_t)oa_pp_on() << 13 ^ (uint32_t)up_gen << 16 ^ (uint32_t)oa_vp_on() << 17) * 16777619u;
     for (i = 0; i < 12u; i++)
         h = (h ^ (uint8_t)oa_sv_name[i]) * 16777619u;
-    h = (h ^ t->p[P_REV] ^ (uint32_t)t->p[P_DLY] << 8 ^ (uint32_t)song.g[G_RTYPE] << 16 ^ (uint32_t)song.g[G_DTIME] << 20) * 16777619u;
+    h = (h ^ t->p[P_REV] ^ (uint32_t)t->p[P_DLY] << 8 ^ (uint32_t)t->p[P_LEVEL] << 24 ^ (uint32_t)song.g[G_RTYPE] << 16 ^ (uint32_t)song.g[G_DTIME] << 20) * 16777619u;
     h = (h ^ (uint32_t)song.g[G_RSIZE] ^ (uint32_t)song.g[G_RDAMP] << 7 ^ (uint32_t)song.g[G_DRREV] << 14 ^
          (uint32_t)song.g[G_DFDBK] << 21) * 16777619u;
     h = (h ^ (uint32_t)song.g[G_DCOLOR] ^ (uint32_t)song.g[G_DMIX] << 7 ^ (uint32_t)(cpu_pop != 0u) << 15 ^ (uint32_t)oa_dbp << 16 ^ (uint32_t)oa_dbp_sv << 18 ^ (uint32_t)oa_dbp_slot << 20) * 16777619u;
