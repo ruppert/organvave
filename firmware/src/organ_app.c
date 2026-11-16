@@ -1052,26 +1052,9 @@ static void oa_val_adv(uint32_t r, oa_val_t *v)
 {
     uint32_t op = OA_AOP[r];
     int32_t i;
-    if (op == OA_VOL) {                                     /* the preset's volume: P_LEVEL, dB as the LVL of the organ's other presets */
+    if (op == OA_VOL) {                                     /* the preset's volume: P_LEVEL, 0 .. 127 */
         int32_t lv = TSEL->p[P_LEVEL];
-        if (lv <= 0) {
-            oa_vt(v, "OFF");
-            return;
-        }
-        {   /* tenths of a dB, written out: "0.0 DB", "-6.5 DB" (fmt_fix gives ".0" under 1) */
-            int32_t tn = LEVEL_DB_X10[lv];
-            char *q = v->t;
-            if (tn < 0) {
-                *q++ = '-';
-                tn = -tn;
-            }
-            fmt_fix(q, tn / 10, 0u);
-            q += str_len(q);
-            *q++ = '.';
-            *q++ = (char)('0' + tn % 10);
-            *q = 0;
-            str_cpy(v->t + str_len(v->t), " DB", 4);
-        }
+        fmt_fix(v->t, lv, 0u);
         v->mn = 10;
         v->mv = (int8_t)(lv * 10 / 127);
         v->on = 1;
@@ -1267,8 +1250,8 @@ static void oa_eqs(uint32_t op, int32_t d)
 static void oa_adj_adv(uint32_t r, int32_t d)
 {
     uint32_t op = OA_AOP[r];
-    if (op == OA_VOL) {
-        TSEL->p[P_LEVEL] = (uint8_t)clamp(TSEL->p[P_LEVEL] + d, 0, 127);   /* one unit a detent (oa_step would jump 8) */
+    if (op == OA_VOL) {                                     /* one unit a detent */
+        TSEL->p[P_LEVEL] = (uint8_t)clamp(TSEL->p[P_LEVEL] + d, 0, 127);
         return;
     }
     if (op == OP_XTALK)
