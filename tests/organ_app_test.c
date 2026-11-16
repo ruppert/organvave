@@ -204,6 +204,9 @@ int main(int argc, char **argv)
     oa_gl_row = 0;
     press(B_GLO);
     bad += check("GLO opens the list", oa_gl == 1);
+    turn(EN_ALGO, 1);                                     /* 0.9.77: GLOBAL's MIDI SETTINGS line opens its list (FMini-1's) */
+    bad += check("  .. MIDI SETTINGS opens its list", oa_gl == 6);
+    oa_ms_row = 0;
     turn(EN_ALGO, -1);
     bad += check("  .. MIDI IN: ALL to MIDI", fm_midi_src == 1);
     turn(EN_SELECT, 1);
@@ -253,6 +256,8 @@ int main(int argc, char **argv)
         turn(EN_SELECT, -1);
         oa_cc_assign(oa_cc_row, 31);
         press(B_GLO);
+        bad += check("  .. GLO goes back to MIDI SETTINGS", oa_gl == 6);
+        press(B_GLO);
         bad += check("  .. GLO goes back to the list", oa_gl == 1);
         press(B_GLO);
         bad += check("  .. and closes", oa_gl == 0);
@@ -281,7 +286,7 @@ int main(int argc, char **argv)
     }
     fm_midi_base(0);
     press(B_GLO);
-    oa_gl_row = 9;                                        /* ABOUT is the last row (0.9.74) */
+    oa_gl_row = 5;                                        /* ABOUT is the last row (0.9.77: six lines) */
     turn(EN_ALGO, 1);
     bad += check("  .. ABOUT", oa_gl == 3);
     turn(EN_ALGO, 1);
@@ -291,7 +296,7 @@ int main(int argc, char **argv)
 
     /* 0.9.74, FMini-1's GLOBAL: TUNING (410 .. 470 Hz; the wheels follow), TRANSPOSE (-12 .. +12 on the keys), kept in the settings */
     press(B_GLO);
-    oa_gl_row = 5;
+    oa_gl_row = 1;
     turn(EN_ALGO, 1);
     bad += check("TUNING: 441 Hz on ALGORITHM", oa_tune == 441u);
     bad += check("  .. the wheels follow: 441 / 440 of the factory table",
@@ -316,7 +321,7 @@ int main(int argc, char **argv)
     bad += check("  .. back to 0", glo_transpose == 0);
     shot_write("global_top", 0);
     turn(EN_SELECT, -1);
-    oa_gl_row = 5;
+    oa_gl_row = 1;
     oa_tune = 455u; org_set_tuning(455u); glo_transpose = 5;   /* kept in the settings: read back */
     oa_cfg_dirty = 1;
     oa_cfg_save();
@@ -329,6 +334,23 @@ int main(int argc, char **argv)
     oa_cfg_save();
     press(B_GLO);
     bad += check("GLO closes the list", oa_gl == 0);
+
+    /* 0.9.77, MIDI SETTINGS (FMini-1's MIDI folder) with the MIDI MONITOR (SELECT scrolls, ALGORITHM or any key goes back) */
+    press(B_GLO);
+    oa_gl_row = 0;
+    turn(EN_ALGO, 1);
+    oa_ms_row = 5;
+    turn(EN_ALGO, 1);
+    bad += check("MIDI MONITOR opens from MIDI SETTINGS", oa_gl == 7 && oa_mon_off == 0);
+    shot_write("midi_monitor", 1);
+    turn(EN_SELECT, 1);
+    bad += check("  .. SELECT scrolls only when there are messages to scroll", oa_mon_off == 0);
+    turn(EN_ALGO, 1);
+    bad += check("  .. ALGORITHM goes back to MIDI SETTINGS", oa_gl == 6);
+    shot_write("midi_settings", 1);
+    press(B_GLO);
+    press(B_GLO);
+    bad += check("  .. and GLO twice closes", oa_gl == 0);
 
     /* octave keys: -2..2 */
     for (i = 0; i < 4u; i++) press(B_OCTUP);
@@ -1031,13 +1053,13 @@ int main(int argc, char **argv)
 
     /* 0.9.74: SUPPORT ORGANVAVE (its QR screen: any key goes back) and FACTORY RESET (NO first; SAVE on YES resets all) */
     press(B_GLO);
-    oa_gl_row = 8;
+    oa_gl_row = 4;
     turn(EN_ALGO, 1);
     bad += check("SUPPORT ORGANVAVE: the QR screen", oa_gl == 5);
     shot_write("support", 1);
     press(B_OCTUP);
-    bad += check("  .. any key goes back to GLOBAL's row", oa_gl == 1 && oa_gl_row == 8);
-    oa_gl_row = 7;
+    bad += check("  .. any key goes back to GLOBAL's row", oa_gl == 1 && oa_gl_row == 4);
+    oa_gl_row = 3;
     oa_tune = 450u; org_set_tuning(450u); glo_transpose = 3;
     fm_ch_up = 5; oa_ccmap[0] = 21; oa_dbp_tab[0][0] = OA_DBP[0][0] == 1 ? 2 : 1;
     turn(EN_ALGO, 1);

@@ -451,10 +451,13 @@ static void oa_sv_letter(int32_t s)
  * (settings.c set_bytes): row 7 holds FMini-1's layout for the two MIDI bytes (so they carry over) and, since 0.9.5, the marker
  * 0xC5, the lower and pedal channels; rows 8..10 hold the CC of each patch byte (0 none) */
 #define OA_NCTL 84u                                       /* the patch bytes a CC may drive (OP_UB .. OP_SPLIT_PT; OP_DRV_FAT, unused, is skipped in the list) */
-#define OA_NROW 10u                                       /* (0.9.74: TUNING, TRANSPOSE, FACTORY RESET, SUPPORT ORGANVAVE from FMini-1; ABOUT last) */
+#define OA_NROW 6u                                       /* (0.9.74: TUNING, TRANSPOSE, FACTORY RESET, SUPPORT ORGANVAVE from FMini-1; ABOUT last) */
 #define OA_GL_VIS 8u                                      /* the rows on the screen (34 .. 202, the foot rule at 226); the list scrolls */
-static uint8_t oa_gl;                                     /* 0 closed, 1 the list, 2 MIDI CC, 3 ABOUT, 4 FACTORY RESET's question, 5 SUPPORT */
-static uint8_t oa_gl_row;                                 /* 0 MIDI IN, 1 UPPER, 2 LOWER, 3 PEDAL, 4 MIDI CC, 5 TUNING, 6 TRANSPOSE, 7 FACTORY RESET, 8 SUPPORT, 9 ABOUT */
+static uint8_t oa_gl;                                     /* 0 closed, 1 GLOBAL, 2 MIDI CC, 3 ABOUT, 4 FACTORY RESET's question, 5 SUPPORT, 6 MIDI SETTINGS, 7 MIDI MONITOR */
+static uint8_t oa_gl_row;                                 /* GLOBAL: 0 MIDI SETTINGS, 1 TUNING, 2 TRANSPOSE, 3 FACTORY RESET, 4 SUPPORT, 5 ABOUT */
+static uint8_t oa_ms_row;                                 /* MIDI SETTINGS (oa_gl 6): 0 MIDI IN, 1 UPPER, 2 LOWER, 3 PEDAL, 4 MIDI CC, 5 MIDI MONITOR */
+#define OA_MON_SHOW 8u                                    /* MIDI MONITOR: the lines on the screen (the monitor keeps 25: usb.c MON_N) */
+static uint32_t oa_mon_off;                               /* MIDI MONITOR: 0 = the newest at the bottom, n = n messages older */
 static uint8_t oa_gl_top;                                 /* GLOBAL: the first row on the screen */
 static uint8_t oa_fr_yes;                                 /* FACTORY RESET's question: 1 YES, 0 NO (the default) */
 static uint32_t oa_tune = 440;                            /* TUNING, 410 .. 470 Hz (settings row 7, bytes 8..10 with TRANSPOSE) */
@@ -657,10 +660,13 @@ static void oa_gl_signed(char *b, int32_t v)          /* +3, -5, 0 */
     b[0] = v > 0 ? '+' : '-';
     fmt_int(b + 1, v > 0 ? v : -v);
 }
+static uint8_t oa_gl_back(uint8_t g)                  /* GLO goes back one level: MIDI CC and MIDI MONITOR to MIDI SETTINGS, that to GLOBAL */
+{
+    return g == 2u || g == 7u ? 6u : 1u;
+}
 static void scr_global(void)
 {
-    static const char *const GL_LB[OA_NROW] = {"MIDI IN", "UPPER CHANNEL", "LOWER CHANNEL", "PEDAL CHANNEL", "MIDI CC", "TUNING",
-                                               "TRANSPOSE", "FACTORY RESET", "SUPPORT ORGANVAVE", "ABOUT"};
+    static const char *const GL_LB[OA_NROW] = {"MIDI SETTINGS", "TUNING", "TRANSPOSE", "FACTORY RESET", "SUPPORT ORGANVAVE", "ABOUT"};
     char b[8];
     uint32_t r;
     if (oa_gl_row < oa_gl_top)                            /* the row chosen stays on the screen */
@@ -670,19 +676,10 @@ static void scr_global(void)
     header("GLOBAL", "");
     for (r = oa_gl_top; r < oa_gl_top + OA_GL_VIS && r < OA_NROW; r++) {
         const char *v = ">";
-        if (r == 0u)
-            v = OA_SRC[fm_midi_src == 3u ? 2u : fm_midi_src & 1u];
-        else if (r == 1u || r == 2u || r == 3u) {
-            uint8_t c = r == 1u ? fm_ch_up : r == 2u ? fm_ch_lo : fm_ch_pd;
-            if (c)
-                fmt_int(b, c);
-            else
-                str_cpy(b, r == 1u ? "ALL" : "OFF", 4);
-            v = b;
-        } else if (r == 5u) {
+        if (r == 1u) {
             fmt_int(b, (int32_t)oa_tune);
             v = b;
-        } else if (r == 6u) {
+        } else if (r == 2u) {
             oa_gl_signed(b, glo_transpose);
             v = b;
         }
@@ -690,6 +687,131 @@ static void scr_global(void)
     }
     oa_scrollbar(oa_gl_top, OA_GL_VIS, OA_NROW, 230, 30, 190);
     footer("SELECT: ITEM   ALGO: VALUE   GLO: BACK");
+}
+
+/* MIDI SETTINGS (0.9.77, as FMini-1's: one GLOBAL line opens it): the MIDI IN, the three channels, MIDI CC and MIDI MONITOR */
+static void scr_midi(void)
+{
+    static const char *const MS_LB[6] = {"MIDI IN", "UPPER CHANNEL", "LOWER CHANNEL", "PEDAL CHANNEL", "MIDI CC", "MIDI MONITOR"};
+    char b[8];
+    uint32_t r;
+    header("MIDI SETTINGS", "");
+    for (r = 0; r < 6u; r++) {
+        const char *v = ">";
+        if (r == 0u)
+            v = OA_SRC[fm_midi_src == 3u ? 2u : fm_midi_src & 1u];
+        else if (r <= 3u) {
+            uint8_t c = r == 1u ? fm_ch_up : r == 2u ? fm_ch_lo : fm_ch_pd;
+            if (c)
+                fmt_int(b, c);
+            else
+                str_cpy(b, r == 1u ? "ALL" : "OFF", 4);
+            v = b;
+        }
+        oa_gl_line((int32_t)(34u + 24u * r), MS_LB[r], v, oa_ms_row == r);
+    }
+    footer("SELECT: ITEM   ALGO: VALUE   GLO: BACK");
+}
+
+/* MIDI MONITOR (0.9.77, FMini-1's): the last 25 messages in (USB and TRS), the newest at the bottom; SELECT scrolls */
+static uint32_t oa_mon_max(void)
+{
+    uint32_t t = midi_mon_total();
+    return t > OA_MON_SHOW ? t - OA_MON_SHOW : 0u;
+}
+static void oa_hex(char *d, uint32_t v)
+{
+    static const char HX[] = "0123456789ABCDEF";
+    d[0] = HX[(v >> 4) & 15u];
+    d[1] = HX[v & 15u];
+    d[2] = 0;
+}
+
+static void oa_mon_line(uint32_t pkt, uint32_t src, char *l, char *r)
+{
+    uint32_t st = (pkt >> 8) & 0xFFu, d1 = (pkt >> 16) & 0xFFu, d2 = (pkt >> 24) & 0xFFu, kind = st & 0xF0u;
+    uint32_t nb = st >= 0xF8u ? 0u : (kind == 0xC0u || kind == 0xD0u) ? 1u : 2u, ch = (st & 15u) + 1u;
+    char h[4];
+    l[0] = src == 2u ? 'T' : 'U';
+    l[1] = ' ';
+    l[2] = 0;
+    oa_hex(h, st);
+    str_cpy(l + str_len(l), h, 4);
+    if (nb >= 1u) {
+        str_cpy(l + str_len(l), " ", 2);
+        oa_hex(h, d1);
+        str_cpy(l + str_len(l), h, 4);
+    }
+    if (nb == 2u) {
+        str_cpy(l + str_len(l), " ", 2);
+        oa_hex(h, d2);
+        str_cpy(l + str_len(l), h, 4);
+    }
+    r[0] = 0;
+    if (st >= 0xF8u) {
+        str_cpy(r, st == 0xF8u ? "CLOCK" : st == 0xFAu ? "START" : st == 0xFBu ? "CONT" : st == 0xFCu ? "STOP" : "SYSTEM", 24);
+        return;
+    }
+    switch (kind) {
+    case 0x80u: case 0x90u:
+        str_cpy(r, kind == 0x80u || d2 == 0u ? "NOTE OFF " : "NOTE ON ", 24);
+        fmt_int(r + str_len(r), (int32_t)d1);
+        if (kind == 0x90u && d2) {
+            str_cpy(r + str_len(r), " V", 4);
+            fmt_int(r + str_len(r), (int32_t)d2);
+        }
+        break;
+    case 0xA0u:
+        str_cpy(r, "POLY ", 8);
+        fmt_int(r + str_len(r), (int32_t)d1);
+        break;
+    case 0xB0u:
+        str_cpy(r, "CC ", 8);
+        fmt_int(r + str_len(r), (int32_t)d1);
+        str_cpy(r + str_len(r), " = ", 6);
+        fmt_int(r + str_len(r), (int32_t)d2);
+        break;
+    case 0xC0u:
+        str_cpy(r, "PC ", 8);
+        fmt_int(r + str_len(r), (int32_t)d1);
+        break;
+    case 0xD0u:
+        str_cpy(r, "AFTER ", 8);
+        fmt_int(r + str_len(r), (int32_t)d1);
+        break;
+    default:                                          /* 0xE0: the bend, 14 bits */
+        str_cpy(r, "BEND ", 8);
+        fmt_int(r + str_len(r), (int32_t)(d1 | d2 << 7));
+        break;
+    }
+    str_cpy(r + str_len(r), " C", 4);
+    fmt_int(r + str_len(r), (int32_t)ch);
+}
+static void scr_mon(void)
+{
+    char l[16], r[24], hd[32] = "USB ", nb[12];
+    uint32_t total = midi_mon_total(), k;
+    header("MIDI MONITOR", "");
+    fmt_int(nb, (int32_t)midi_mon_rx());                  /* the diagnosis: USB packets taken, MIDI messages queued */
+    str_cpy(hd + str_len(hd), nb, 12);
+    str_cpy(hd + str_len(hd), "  TRS ", 10);
+    fmt_int(nb, (int32_t)midi_mon_trs());
+    str_cpy(hd + str_len(hd), nb, 12);
+    ctext(120, 36, &AF_S, hd, C_CREAM, C_PANEL);
+    if (!total)
+        ctext(120, 110, &AF_S, "WAITING FOR MIDI", C_CREAM, C_PANEL);
+    if (oa_mon_off > oa_mon_max())
+        oa_mon_off = oa_mon_max();
+    for (k = 0; k < OA_MON_SHOW && oa_mon_off + k < total; k++) {   /* row k = the message oa_mon_off + k back; the newest at the bottom */
+        uint32_t src, age = oa_mon_off + k, pkt = midi_mon_get(age, &src);
+        int32_t y = 186 - 15 * (int32_t)k;
+        oa_mon_line(pkt, src, l, r);
+        ltext(14, y, &AF_S, l, age == 0u ? C_ORANGE : C_CREAM, C_PANEL);
+        rtext(226, y, &AF_S, r, age == 0u ? C_ORANGE : C_CREAM, C_PANEL);
+    }
+    if (total > OA_MON_SHOW)
+        oa_scrollbar(total - OA_MON_SHOW - oa_mon_off, OA_MON_SHOW, total, 230, 56, 124);
+    footer("SELECT: SCROLL   ALGO/KEY: BACK");
 }
 
 /* FACTORY RESET's question (0.9.74): over GLOBAL; NO is the default, ALGORITHM turns it to YES, SAVE on YES resets */
@@ -1611,6 +1733,10 @@ static void oa_scene(void)
 {
     if (oa_gl == 5u)                                      /* SUPPORT ORGANVAVE: the QR code screen */
         scr_support();
+    else if (oa_gl == 6u || oa_gl == 2u)                  /* MIDI SETTINGS (the MIDI CC pop-up goes over it) */
+        scr_midi();
+    else if (oa_gl == 7u)
+        scr_mon();
     else if (oa_gl)                                       /* GLOBAL: its own screen (the MIDI CC pop-up goes over it) */
         scr_global();
     else if (oa_page == 1u)
@@ -1684,6 +1810,7 @@ static uint32_t oa_signature(void)
     h = (h ^ (uint32_t)oa_home_reg << 24) * 16777619u;          /* HOME's region: the mark moves on the redraw */
     h = (h ^ oa_page ^ (uint32_t)oa_man << 11 ^ (uint32_t)oa_sel << 2 ^ (uint32_t)oa_row[oa_page % 9u] << 18 ^ (uint32_t)oa_top[oa_page % 9u] << 22 ^ (uint32_t)t->preset << 6 ^ (uint32_t)t->user << 14) * 16777619u;
     h = (h ^ oa_gl ^ (uint32_t)oa_gl_row << 2 ^ (uint32_t)fm_midi_src << 4 ^ (uint32_t)fm_ch_up << 6 ^ (uint32_t)fm_ch_lo << 11 ^ (uint32_t)fm_ch_pd << 16) * 16777619u;
+    h = (h ^ (uint32_t)midi_mon_seq() ^ oa_mon_off << 20 ^ (uint32_t)oa_ms_row << 27) * 16777619u;   /* the monitor redraws as it fills; the MIDI row moves */
     h = (h ^ oa_cc_row ^ (uint32_t)oa_ccmap[oa_cc_row % OA_NCTL] << 8 ^ (uint32_t)oa_ccmap[oa_cc_step(oa_cc_row, 1)] << 15 ^ (uint32_t)oa_ccmap[oa_cc_step(oa_cc_row, -1)] << 20) * 16777619u;
     h = (h ^ oa_sv ^ (uint32_t)oa_sv_slot << 1 ^ (uint32_t)oa_sv_pos << 8 ^ (uint32_t)oa_msg_on() << 12 ^
          (uint32_t)oa_pp_on() << 13 ^ (uint32_t)up_gen << 16 ^ (uint32_t)oa_vp_on() << 17) * 16777619u;
@@ -1843,9 +1970,14 @@ static void oa_dbp_key(uint32_t k)
 
 static void oa_buttons(uint32_t pressed)
 {
+    if (oa_gl == 7u && pressed) {                         /* MIDI MONITOR: any key goes back to MIDI SETTINGS, and the messages go */
+        oa_gl = 6;
+        midi_mon_clear();
+        return;
+    }
     if (oa_gl == 5u && pressed) {                         /* SUPPORT: any key goes back to GLOBAL, its row */
         oa_gl = 1;
-        oa_gl_row = 8;
+        oa_gl_row = 4;
         return;
     }
     if (oa_gl == 4u && pressed) {                         /* FACTORY RESET's question: SAVE on YES resets; any other key goes back */
@@ -1855,7 +1987,7 @@ static void oa_buttons(uint32_t pressed)
             return;
         }
         oa_gl = 1;
-        oa_gl_row = 7;
+        oa_gl_row = 3;
         return;
     }
     if ((pressed >> panel.btn[B_ARP]) & 1u) {             /* ARP: DRAWBAR PRESET MODE, open or closed (0.9.32) */
@@ -1880,7 +2012,7 @@ static void oa_buttons(uint32_t pressed)
         if (!oa_gl)
             oa_gl = 1;
         else if (oa_gl > 1u) {
-            oa_gl = 1;
+            oa_gl = oa_gl_back(oa_gl);
             oa_cfg_save();
         }
         else
@@ -2133,41 +2265,69 @@ static void oa_input(void)
         for (k = 0; k < 4u; k++)
             (void)panel_enc(EN_K1 + k);
         (void)panel_enc(EN_PRESET);
-        if (oa_gl == 1u) {
+        if (oa_gl == 1u) {                                /* GLOBAL: SELECT the line, ALGORITHM changes it or opens it */
             if ((s = panel_enc(EN_SELECT)) != 0)
                 oa_gl_row = (uint8_t)clamp((int32_t)oa_gl_row + (s > 0 ? 1 : -1), 0, (int32_t)OA_NROW - 1);
             if ((s = panel_enc(EN_ALGO)) != 0) {
                 int32_t d = s > 0 ? 1 : -1;
-                if (oa_gl_row == 0u) {
-                    static const uint8_t SRC[3] = {0, 1, 3};
-                    fm_midi_src = SRC[clamp((fm_midi_src == 3u ? 2 : (int32_t)(fm_midi_src & 1u)) + d, 0, 2)];
-                    panic_req |= 1u;                      /* a note of the source left must not hang */
-                    oa_cfg_dirty = 1;
-                } else if (oa_gl_row <= 3u) {
-                    volatile uint8_t *ch = oa_gl_row == 1u ? &fm_ch_up : oa_gl_row == 2u ? &fm_ch_lo : &fm_ch_pd;
-                    *ch = (uint8_t)clamp((int32_t)*ch + d, 0, 16);
-                    panic_req |= 1u;
-                    oa_cfg_dirty = 1;
-                } else if (oa_gl_row == 4u)
-                    oa_gl = 2;
-                else if (oa_gl_row == 5u) {               /* TUNING: 410 .. 470 Hz, 1 Hz a click */
+                if (oa_gl_row == 0u)
+                    oa_gl = 6;                            /* MIDI SETTINGS */
+                else if (oa_gl_row == 1u) {               /* TUNING: 410 .. 470 Hz, 1 Hz a click */
                     oa_tune = (uint32_t)clamp((int32_t)oa_tune + d, 410, 470);
                     org_set_tuning(oa_tune);
                     oa_cfg_dirty = 1;
                     ui.force = 1;
-                } else if (oa_gl_row == 6u) {             /* TRANSPOSE: -12 .. +12 semitones on the keys */
+                } else if (oa_gl_row == 2u) {             /* TRANSPOSE: -12 .. +12 semitones on the keys */
                     glo_transpose = clamp(glo_transpose + d, -12, 12);
                     panic_req |= 1u;                      /* the notes held now sound elsewhere: none may hang */
                     oa_cfg_dirty = 1;
                     ui.force = 1;
-                } else if (oa_gl_row == 7u) {             /* FACTORY RESET: its question, NO first */
+                } else if (oa_gl_row == 2u) {             /* TRANSPOSE: -12 .. +12 semitones on the keys */
+                    glo_transpose = clamp(glo_transpose + d, -12, 12);
+                    panic_req |= 1u;                      /* the notes held now sound elsewhere: none may hang */
+                    oa_cfg_dirty = 1;
+                    ui.force = 1;
+                } else if (oa_gl_row == 3u) {             /* FACTORY RESET: its question, NO first */
                     oa_gl = 4;
                     oa_fr_yes = 0;
                     ui.force = 1;
-                } else if (oa_gl_row == 8u)
+                } else if (oa_gl_row == 4u)
                     oa_gl = 5;                            /* SUPPORT ORGANVAVE: the QR code screen */
                 else
                     oa_gl = 3;                            /* ABOUT */
+            }
+        } else if (oa_gl == 6u) {                         /* MIDI SETTINGS: SELECT the line, ALGORITHM changes it; MIDI CC and MIDI MONITOR open theirs */
+            if ((s = panel_enc(EN_SELECT)) != 0)
+                oa_ms_row = (uint8_t)clamp((int32_t)oa_ms_row + (s > 0 ? 1 : -1), 0, 5);
+            if ((s = panel_enc(EN_ALGO)) != 0) {
+                int32_t d = s > 0 ? 1 : -1;
+                if (oa_ms_row == 0u) {
+                    static const uint8_t SRC[3] = {0, 1, 3};
+                    fm_midi_src = SRC[clamp((fm_midi_src == 3u ? 2 : (int32_t)(fm_midi_src & 1u)) + d, 0, 2)];
+                    panic_req |= 1u;                      /* a note of the source left must not hang */
+                    oa_cfg_dirty = 1;
+                } else if (oa_ms_row <= 3u) {
+                    volatile uint8_t *ch = oa_ms_row == 1u ? &fm_ch_up : oa_ms_row == 2u ? &fm_ch_lo : &fm_ch_pd;
+                    *ch = (uint8_t)clamp((int32_t)*ch + d, 0, 16);
+                    panic_req |= 1u;
+                    oa_cfg_dirty = 1;
+                } else if (oa_ms_row == 4u)
+                    oa_gl = 2;                            /* MIDI CC */
+                else {
+                    oa_gl = 7;                            /* MIDI MONITOR */
+                    oa_mon_off = 0;
+                }
+            }
+        } else if (oa_gl == 7u) {                         /* MIDI MONITOR: SELECT scrolls, ALGORITHM goes back */
+            if ((s = panel_enc(EN_SELECT)) != 0) {
+                if (s > 0 && oa_mon_off < oa_mon_max())
+                    oa_mon_off++;                         /* clockwise: older */
+                else if (s < 0 && oa_mon_off > 0)
+                    oa_mon_off--;
+            }
+            if (panel_enc(EN_ALGO) != 0) {
+                oa_gl = 6;
+                midi_mon_clear();
             }
         } else if (oa_gl == 2u) {                          /* MIDI CC: SELECT the control, ALGORITHM the CC (a CC arriving is learned) */
             if ((s = panel_enc(EN_SELECT)) != 0)
@@ -2184,7 +2344,7 @@ static void oa_input(void)
             (void)panel_enc(EN_SELECT);
             if (panel_enc(EN_ALGO) != 0) {
                 oa_gl = 1;
-                oa_gl_row = 8;
+                oa_gl_row = 4;
             }
         } else if (panel_enc(EN_SELECT) != 0 || panel_enc(EN_ALGO) != 0)   /* ABOUT: either encoder goes back */
             oa_gl = 1;
