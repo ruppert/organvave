@@ -930,6 +930,25 @@ int main(int argc, char **argv)
         bad += check("  .. ARP opens it, and the key held lets go (silent)",
                      oa_dbp && org_dbp_mode && kb_note[12] == KB_SILENT);
         bad += check("  .. the pop-up is drawn over the page", frame_hash() != h0);
+        {   /* the lights (0.9.81): the keys with a function glow weak, the one on strong. The host has no key map for the
+             * LEDs (tests/host.h), so the logic is checked here: which keys have a function, and which is on */
+            uint32_t k;
+            int fn_ok = 1, on_ok = 1;
+            for (k = 0; k < 27u; k++) {
+                int want_fn = k == 0u || k == 1u || k == 3u || (k >= 7u && k <= 26u);
+                fn_ok &= oa_dbp_fn(k) == want_fn;
+            }
+            bad += check("DRAWBAR PRESET LIGHTS: the keys with a function are 0, 1, 3 and 7 .. 26; the others none", fn_ok);
+            /* the A preset is up (the bars of OA_DBP's A) and only it is on */
+            for (i = 0; i < 9u; i++)
+                org_set(OP_UB + i, oa_dbp_tab[9][i]);
+            for (k = 7u; k <= 18u; k++)
+                on_ok &= oa_dbp_on(k) == (k == 16u);
+            on_ok &= !oa_dbp_on(19u) && !oa_dbp_on(2u);
+            bad += check("  .. with the A's bars up, the A key is on and no other preset or the C above", on_ok);
+            oa_leds();                                       /* runs with the mode open and the switches off */
+            bad += check("  .. the lights draw without an error", 1);
+        }
         fm1_in.notes = (1u << 12) | (1u << 16);           /* A of the middle octave */
         keyboard_block();
         oa_input();
