@@ -2417,6 +2417,36 @@ static void oa_input(void)
         }
 }
 
+/* DRAWBAR PRESET MODE (0.9.81): the keys that do something glow weak (the lowest F, F#, G#; the middle octave C .. C; the
+ * highest C# .. G); the one that is on glows strong: the preset whose bars the upper manual has, the switch that is on. */
+static int oa_dbp_fn(uint32_t k)
+{
+    return k == 0u || k == 1u || k == 3u || (k >= 7u && k <= 26u);
+}
+static int oa_dbp_on(uint32_t k)
+{
+    uint32_t i;
+    if (k >= 7u && k <= 18u) {
+        for (i = 0; i < 9u; i++)
+            if (org_patch[OP_UB + i] != oa_dbp_tab[k - 7u][i])
+                return 0;
+        return 1;
+    }
+    switch (k) {
+    case 0:  return org_patch[OP_ROT] != 0 && org_patch[OP_ROT_SPEED] == 2u;
+    case 1:  return vib_up();
+    case 3:  return vib_lo();
+    case 20: return org_patch[OP_DRV] && dr_type_of(org_patch[OP_DRV_TYPE]) == 0u && org_patch[OP_DRV_GAIN] == 25u;
+    case 21: return org_patch[OP_PERC] != 0;
+    case 22: return org_patch[OP_DRV] && dr_type_of(org_patch[OP_DRV_TYPE]) == 0u && org_patch[OP_DRV_GAIN] == 80u;
+    case 23: return org_patch[OP_PERC_SOFT] != 0;
+    case 24: return org_patch[OP_PERC_FAST] != 0;
+    case 25: return TSEL->p[P_REV] != 0;
+    case 26: return org_patch[OP_PERC_SEL] != 0;
+    default: return 0;
+    }
+}
+
 static void oa_leds(void)
 {
     uint8_t nl[FM1_NCOL] = {0}, nd[FM1_NCOL] = {0}, nb[FM1_NCOL] = {0}, nm[FM1_NCOL] = {0};
@@ -2430,6 +2460,10 @@ static void oa_leds(void)
     }
     for (k = 0; k < NB; k++)
         led_put(nd, panel.btn[k], 1);                       /* every button's glow */
+    if (oa_dbp)
+        for (k = 0; k < 27u; k++)
+            if (oa_dbp_fn(k))
+                led_put(nd, 14u + k, 1);                    /* the keys with a function: weak */
     led_put(nl, panel.btn[B_HOME], oa_page == 0u);
     led_put(nl, panel.btn[B_EDIT], oa_page == 8u);
     led_put(nl, panel.btn[B_FX], oa_page >= 2u && oa_page <= 7u);
@@ -2444,6 +2478,10 @@ static void oa_leds(void)
     c = fm1_in.notes;                                       /* the keys held */
     for (k = 0; k < 27u; k++)
         led_put(nl, 14u + k, (int)((c >> k) & 1u));
+    if (oa_dbp)
+        for (k = 0; k < 27u; k++)
+            if (oa_dbp_on(k))
+                led_put(nl, 14u + k, 1);                    /* the one that is on: strong */
     for (k = 0; k < FM1_NCOL; k++) {
         fm1_led_dim[k] = nd[k];
         fm1_led_breath[k] = nb[k];
