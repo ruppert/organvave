@@ -41,7 +41,9 @@ BUILDING.md has the SDK clone). If a download is refused by the network allowlis
 ## Rules that are easy to break
 
 - The firmware is integer-only and one compilation unit (`firmware/src/felucca.c` includes the rest; **the order matters**).
-  No floating point, no 64-bit multiplies in a per-sample loop (int64 only per block). Floating point lives in `tools/`.
+  Single-precision `float` is allowed (the FM-1's FPU; built with `-mfprev1 -ffp-contract=off`), where setBfree computes in float
+  (the organ's audio path on `new-float`). No double, no libm calls at run time, no 64-bit multiplies in a per-sample loop
+  (int64 only per block). Host-side float lives in `tools/`. DEVELOPING.md "Float and integer" has the rule.
 - `firmware/engines/` is a git submodule (MIT, another repository): never edit it. Value formats the engine headers do not
   have go in `firmware/src/core.h`.
 - Engine numbers (`ENGINES[]` in `engines.c`) are stored in projects, presets and the editor protocol: append, never reorder.
