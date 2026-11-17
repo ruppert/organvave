@@ -40,8 +40,10 @@ BUILDING.md has the SDK clone). If a download is refused by the network allowlis
 
 ## Rules that are easy to break
 
-- The firmware is integer-only and one compilation unit (`firmware/src/felucca.c` includes the rest; **the order matters**).
-  No floating point, no 64-bit multiplies in a per-sample loop (int64 only per block). Floating point lives in `tools/`.
+- The firmware is one compilation unit (`firmware/src/felucca.c` includes the rest; **the order matters**). Since 0.9.82 it may
+  use **single-precision float** on the FM-1's FPU (`-mfprev1 -ffp-contract=off` in `tools/build.py`): no `double`, no libm
+  at runtime, tables computed in `tools/`. The rest of the organ is still integer; the scanner is float. No 64-bit multiplies
+  in a per-sample loop (int64 only per block). Double-precision math lives in `tools/`.
 - `firmware/engines/` is a git submodule (MIT, another repository): never edit it. Value formats the engine headers do not
   have go in `firmware/src/core.h`.
 - Engine numbers (`ENGINES[]` in `engines.c`) are stored in projects, presets and the editor protocol: append, never reorder.

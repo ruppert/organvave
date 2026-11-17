@@ -196,7 +196,7 @@ standard libraries, Pd's standard objects or Csound's opcodes.
   (each sample spread over two cells of a 1024-sample line); here the line is 64 samples and the interpolation is at the read
   (8-bit fraction, no clamp), and the scanner's sine (setBfree's 2048-point table) is read at the block's ends with a straight
   line between. Chorus = the same mixed with the dry signal at 0.707. Against setBfree's float loop at the same rate the
-  difference is -36 dB (VIB3) to -54 dB (CHO1) on a 1 kHz tone. A silent scanner (32 samples with no input) is skipped, exactly.
+  difference is -36 dB (VIB3) to -54 dB (CHO1) on a 1 kHz tone. A silent scanner (a whole lap of 64 samples with no input, so every cell is 0) is skipped, exactly. The scanner is single precision since 0.9.82 (target: 35 loop instructions, 29 in integer).
   (Not the original's 16-stage LC line.)
 - **Drive** (0.9.24, rewritten from scratch; two types since 0.9.30; `src/eng_drive.c`, the tables from `tools/gen_drive_tables.py`):
   the setBfree port of 0.3.0 is gone. Each type is a short integer chain (input high-pass, pre-gain, waveshaper table, a 10 Hz DC

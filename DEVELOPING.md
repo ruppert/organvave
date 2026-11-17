@@ -47,8 +47,9 @@ browser build include the same files (`tests/host.h`, `tests/editor_host.h`, `we
 is what runs on the chip, compiled by a different compiler. `./build.sh` generates `build/gen/*.h` (sine, envelopes, fonts,
 icons): host tests need them, so run `./build.sh` first.
 
-**Integer only.** No floating point and no 64-bit multiply in a per-sample loop (int64 only per block). The organ's tables carry
-the setBfree numbers already converted; `tools/` does the floating point.
+**Float and integer.** The FM-1 has a single-precision FPU: the firmware may use `float` (built with `-mfprev1 -ffp-contract=off`,
+since 0.9.82; the scanner is float), never `double`, and no libm at runtime. The rest of the organ is integer, with the setBfree
+numbers converted in `tools/`. No 64-bit multiply in a per-sample loop (int64 only per block).
 
 **Audio.** `audio.c` (the I2S interrupt) calls `mix_block` (`fx.c`) per block: events, then each track (`mix_part`, which calls
 `track_render`), the sends into the buses, the master (a peak limiter at `LIM_T` 18000, then the soft clip), and the USB audio tap.

@@ -11,7 +11,7 @@ org_msg 48
 org_wheel_pc 72
 org_wheel_sc 76
 org_wheel_scp 91
-org_vib 29
+org_vib 35
 eq_block 629
 fm1_alnk0_irq 6612
 fm1_timer5_irq 24078

@@ -53,7 +53,7 @@
 static int32_t org_faint = 130;                 /* (tests set 0: every wheel interpolated) */
 #define ORG_XT_CAP 10752u               /* the RAM crosstalk table's entries (setBfree's default needs 10687) */
 #define ORG_VIB_N 64u                   /* the delay line: the read goes 1 + 24 samples back at the most, and one more */
-#define ORG_VIB_QUIET 32u               /* silent samples on the scanner before it is skipped (the read reaches 26 back) */
+#define ORG_VIB_QUIET ORG_VIB_N         /* silent samples on the scanner before it is skipped: a whole lap, so every cell is 0 */
 
 enum { ORG_ADD = 1, ORG_MOD = 2, ORG_REM = 4 };   /* setBfree's rflags: OR_ADD / ORF_MODIFIED / OR_REM */
 
@@ -116,7 +116,7 @@ typedef struct {
     int32_t pz;                         /* the percussion's previous contact sample (the first difference) */
     uint32_t vpos, vst;                 /* the vibrato's delay line position and scanner phase */
     uint32_t vquiet;                    /* samples in a row with the scanner silent (the cells it reads are 0 from ORG_VIB_QUIET) */
-    int32_t vb[ORG_VIB_N];              /* the delay line: the scanner's input */
+    float vb[ORG_VIB_N];                /* the delay line: the scanner's input (single precision, 0.9.82) */
 } org_t;
 
 static org_t org;
@@ -393,31 +393,30 @@ static __attribute__((noinline)) void org_fragment(void)
  * block is under 1 / 100 of a turn. The fraction is 8 bits and multiplies half the difference of two cells, which fits
  * 32 bits with no clamp while the input is under 2^23 (every key of both manuals down, every bar out: 2^22.8). vibm 1..3 the vibrato (the wet alone), 4..6 the chorus (x + wet,
  * at 0.7071). */
-static inline uint32_t org_vib_d(uint32_t st, uint32_t amp2)
-{
-    return ((2u + amp2) << 15) + (uint32_t)((int32_t)ORG_SCAN_SIN[st >> 21] * (int32_t)amp2);    /* 1.0 at the least */
-}
 static __attribute__((noinline)) void org_vib(const int32_t *x, int32_t *o, uint32_t n)
 {
     const uint32_t amp2 = org.vamp2[((uint32_t)org.vibm_cur - 1u) % 3u];
+    const float amp = 0.5f * (float)amp2;                           /* the depth, samples */
+    const float base = 1.0f + amp;
     const uint32_t mixed = org.vibm_cur > 3u;
-    const uint32_t st1 = org.vst + n * org.vinc;
-    int32_t *vb = org.vb;
-    uint32_t pos = org.vpos, i;
-    uint32_t d = org_vib_d(org.vst, amp2);
-    const uint32_t dd = (uint32_t)(((int32_t)org_vib_d(st1, amp2) - (int32_t)d) / (int32_t)n);
+    float *vb = org.vb;
+    uint32_t pos = org.vpos, st = org.vst, i;
     for (i = 0; i < n; i++) {
-        uint32_t r = pos - (d >> 16);
-        int32_t a, wet;
-        vb[pos & (ORG_VIB_N - 1u)] = x[i];
-        a = vb[r & (ORG_VIB_N - 1u)];
-        wet = a + ((((vb[(r - 1u) & (ORG_VIB_N - 1u)] - a) >> 1) * (int32_t)((d >> 8) & 0xFFu)) >> 7);
-        o[i] = mixed ? ((((x[i] + wet) >> 1) * 181) >> 7) : wet;     /* (x + wet) * 0.7071 (181 / 256; fits to 2^24.5) */
+        const float m = ORG_SCAN_SINF[st >> 21];                    /* the scanner, the sine of the phase */
+        const float d = base + amp * m;                             /* the delay, 1 + amp + amp * sin, samples */
+        const int32_t di = (int32_t)d;                              /* d >= 1 */
+        const float f = d - (float)di;
+        const uint32_t r = pos - (uint32_t)di;
+        const float xf = (float)x[i];
+        const float a = vb[r & (ORG_VIB_N - 1u)];
+        const float wet = a + ((vb[(r - 1u) & (ORG_VIB_N - 1u)] - a) * f);   /* linear, between the two cells */
+        vb[pos & (ORG_VIB_N - 1u)] = xf;
+        o[i] = (int32_t)(mixed ? ((xf + wet) * 0.70710678f) : wet);     /* the chorus: (x + wet) * 0.7071; truncated (1 LSB) */
         pos++;
-        d += dd;
+        st += org.vinc;
     }
     org.vpos = pos & (ORG_VIB_N - 1u);
-    org.vst = st1;
+    org.vst = st;
 }
 
 /* the scanner silent for n samples after ORG_VIB_QUIET silent ones: every cell the read reaches is 0 and stays so (nothing
