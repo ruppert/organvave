@@ -721,7 +721,7 @@ int main(int argc, char **argv)
                 oa_val(8u, 23u, &v);
                 bad += check("  .. PERC TRIGGER 1'", !strcmp(v.t, "1'"));
                 oa_val(8u, 24u, &v);
-                bad += check("  .. SCAN RATE 7.25 HZ", !strcmp(v.t, "7.25 HZ"));
+                bad += check("  .. SCAN RATE 7.00 HZ", !strcmp(v.t, "7.00 HZ"));
                 oa_val(8u, 13u, &v);
                 bad += check("  .. WIRING -40 DB", !strcmp(v.t, "-40 DB"));
                 oa_val(8u, 14u, &v);

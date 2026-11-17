@@ -368,10 +368,10 @@ static void params(void)
     check("PERC NORMAL -6 dB and GAIN 22: the envelope starts at 22 x 0.501", fabs((double)org.pe_norm / 16777216.0 - 22.0 * pow(10.0, -0.3)) < 0.01);
     check("PERC SOFT at its default keeps setBfree's start (5.5132) only with the default gain", org.pe_soft != ORG_PERC_SOFT);
     check("PERC BUS A 5, TRIG none", org.pbusa == 5u && org.ptrig == -1);
-    check("SCANNER 11.25 Hz and VIB2 depth 1.0", fabs((double)org.vinc / (double)ORG_VIB_INC - 11.25 / 7.25) < 1e-5 && org.vamp2[1] == 2u);
+    check("SCANNER 11.25 Hz and VIB2 depth 1.0", fabs((double)org.vinc / (double)ORG_VIB_INC - 11.25 / 7.0) < 1e-5 && org.vamp2[1] == 2u);
     org_rst();
     org_block(0);
-    check("a patch of zeros: setBfree's defaults (perc 11.0 / 5.5132, 1 s / 4 s, buses 3 / 4, mutes 1', scanner 7.25 Hz, depths 3 / 6 / 9)",
+    check("a patch of zeros: setBfree's defaults (perc 11.0 / 5.5132, 1 s / 4 s, buses 3 / 4, mutes 1', depths 3 / 6 / 9; the scanner 7 Hz)",
           org.pe_norm == ORG_PERC_NORM && org.pe_soft == ORG_PERC_SOFT && org.pdec_fast == ORG_PERC_FAST && org.pdec_slow == ORG_PERC_SLOW &&
           org.pbusa == 3u && org.pbusb == 4u && org.ptrig == 8 && org.vinc == ORG_VIB_INC && org.vamp2[0] == 6u && org.vamp2[1] == 12u &&
           org.vamp2[2] == 18u);

@@ -1083,7 +1083,7 @@ longer, and the shorter 0.9.3 one is still accepted.
 | 74 | PC_GAIN | 45, 22 | the percussion gain, i / 2 (`perc.gain`, default 11.0) |
 | 75, 76 | PC_BUSA, PC_BUSB | 9, 3 / 9, 4 | the drawbar bus the second and the third harmonic take (`perc.bus.a`, `perc.bus.b`), 0 = 16' .. 8 = 1' |
 | 77 | PC_TRIG | 10, 9 | the drawbar muted while the percussion is on: step 0 none, i > 0 the drawbar i - 1 (default the 1', `perc.trigger`) |
-| 78 | SC_HZ | 73, 13 | the scanner's rate, 4 + i / 4 Hz (`scanner.hz`, default 7.25) |
+| 78 | SC_HZ | 73, 12 | the scanner's rate, 4 + i / 4 Hz (`scanner.hz`). **0.9.80**: the default step moved from 13 (7.25 Hz, setBfree's) to 12 (7 Hz). A patch with the byte at 0 turns at 7 Hz now; a stored patch with another rate (a byte that is not 0) reads a quarter of a hertz lower than it was set (the byte is the step minus the default). There is no migration: the rate is seldom changed, set it again |
 | 79, 80, 81 | SC_V1, SC_V2, SC_V3 | 25, 6 / 25, 12 / 25, 18 | the vibrato / chorus depths, i / 2 samples (`scanner.modulation.v1..v3`) |
 | 84 | CLICK_GAIN | 41, 20 | **0.9.6**: the attack click's gain, i / 20 (0 .. 200 %, 100 % the default): the samples of the attack burst (CLICK model only). Above 100 % the burst gets a bump of 4 e (1 - e) times (gain - 1) (the attack louder); below, the burst is scaled and faded back over 8 samples (0 silences it) |
 | 85 | REL_GAIN | 41, 20 | **0.9.6**: the same for the release burst (CLICK release model): above 100 % the bump goes down (the release's gate is 1 - e, so its tail is louder); below 100 % the gate opens. Byte 84 held the gain of both clicks in 0.9.6's first build (not on an FM-1), so a patch with it set reads as the attack's gain only |

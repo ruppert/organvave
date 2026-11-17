@@ -840,7 +840,7 @@ static const uint32_t ORG_PG[13] = {
     3747054u, 3339565u, 2976390u, 2652711u, 2364231u, 2107123u,
 };
 
-/* the scanner's phase step for 4.0 .. 22.0 Hz in 0.25 Hz steps (ORG_VIB_INC * f / 7.25) */
+/* the scanner's phase step for 4.0 .. 22.0 Hz in 0.25 Hz steps (2^32 f / 44100; step 12, 7 Hz, is ORG_VIB_INC) */
 static const uint32_t ORG_SCAN_INC[73] = {
     389585u, 413934u, 438283u, 462632u, 486981u, 511330u, 535679u, 560028u,
     584377u, 608726u, 633075u, 657424u, 681773u, 706122u, 730471u, 754820u,

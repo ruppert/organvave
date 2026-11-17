@@ -17,9 +17,9 @@
  *     drawbar, as a first difference, with an envelope that falls 60 dB in 1 s (fast) or 4 s (slow) from the
  *     starting level (normal 11.0, soft 5.5132) and resets when no key is down. On: the whole mix steps to the
  *     swell x 0.60512 (normal; soft 1.0) and the 1' is muted, as setBfree does.
- *   - the scanner vibrato / chorus (setBfree's vibrato.c, 0.11.0: its 2048-point sine read without interpolation, and
- *     a silent scanner skips the delay line): a 1024-sample delay line read at 1 + amp + amp * sin samples, amp 3 / 6 / 9,
- *     the scanner at 7.25 Hz; the chorus mixes it with the dry at 0.7071. As setBfree
+ *   - the scanner vibrato / chorus (after setBfree's vibrato.c, simplified for the CPU in 0.9.80: the interpolation at the
+ *     read, the scanner's sine once a block, and a silent scanner is skipped): a delay line read 1 + amp + amp * sin samples
+ *     back, amp 3 / 6 / 9, the scanner at 7 Hz (setBfree's 7.25); the chorus mixes it with the dry at 0.7071. As setBfree
  *     (0.10.2): one scanner, fed by the upper and / or the lower manual by their own switches (OP_VIB_UP, OP_VIB_LO);
  *     the pedals and the percussion stay dry. The rest of the organ is dry; a patch with OP_VIB_ROUTE 0 routes both.
  * Keys use setBfree's numbers: 0..60 the upper manual (C..C), 64..124 the lower, 128..159 the pedals; buses 0..8
@@ -46,15 +46,14 @@
 #define ORG_PERC_FAST 65208u            /* the decay per block (32 samples), Q16: 60 dB in 1 s (10^(-96/44100)) */
 #define ORG_PERC_SLOW 65454u            /* the same, 60 dB in 4 s (10^(-24/44100)) */
 #define ORG_PERC_GAIN 19829u            /* the mix's gain while the percussion is on, normal: 0.60512, Q15 */
-#define ORG_VIB_INC 706122u             /* the scanner's phase step: 7.25 Hz at 44.1 kHz, 2^32 * 7.25 / 44100 */
+#define ORG_VIB_INC 681773u             /* the scanner's phase step: 7 Hz at 44.1 kHz, 2^32 * 7 / 44100 (7.25 until 0.9.79) */
 /* 0.9.36: a wheel held at a gain under -30 dB of a full wheel (Q12; in practice the crosstalk's leakage) takes the sine without its
  * interpolation (org_sine_n): its error, about -55 dB of the wheel, is under -85 dB of a full one, and the sine costs half */
 #define ORG_FAINT org_faint
 static int32_t org_faint = 130;                 /* (tests set 0: every wheel interpolated) */
 #define ORG_XT_CAP 10752u               /* the RAM crosstalk table's entries (setBfree's default needs 10687) */
-#define ORG_VIB_N 1024u                 /* the delay line: 1024 samples (setBfree's BUF_SIZE) */
-#define ORG_VIB_CLAMP 65535             /* the delay line's input: x >> 3, clamped */
-#define ORG_VIB_QUIET 32u               /* silent samples on the scanner before the delay line is skipped (its reach is 20) */
+#define ORG_VIB_N 64u                   /* the delay line: the read goes 1 + 24 samples back at the most, and one more */
+#define ORG_VIB_QUIET 32u               /* silent samples on the scanner before it is skipped (the read reaches 26 back) */
 
 enum { ORG_ADD = 1, ORG_MOD = 2, ORG_REM = 4 };   /* setBfree's rflags: OR_ADD / ORF_MODIFIED / OR_REM */
 
@@ -116,8 +115,8 @@ typedef struct {
     uint32_t pe;                        /* the percussion envelope, Q24 */
     int32_t pz;                         /* the percussion's previous contact sample (the first difference) */
     uint32_t vpos, vst;                 /* the vibrato's delay line position and scanner phase */
-    uint32_t vquiet;                    /* samples in a row with the scanner silent (the delay line is clean from ORG_VIB_QUIET) */
-    int32_t vb[ORG_VIB_N];              /* the delay line, x >> 3 */
+    uint32_t vquiet;                    /* samples in a row with the scanner silent (the cells it reads are 0 from ORG_VIB_QUIET) */
+    int32_t vb[ORG_VIB_N];              /* the delay line: the scanner's input */
 } org_t;
 
 static org_t org;
@@ -170,7 +169,6 @@ static void org_init(void)
     org.vamp2[1] = 12;
     org.vamp2[2] = 18;
     org.vinc = ORG_VIB_INC;
-    org.vpos = ORG_VIB_N / 2u;                                       /* setBfree's outPos starts half way */
     org.pe_norm = ORG_PERC_NORM;
     org.pe_soft = ORG_PERC_SOFT;
     org.pdec_fast = ORG_PERC_FAST;
@@ -388,45 +386,44 @@ static __attribute__((noinline)) void org_fragment(void)
     org.kcd = (kct - org.kc) / (int32_t)ORG_FRAG;
 }
 
-/* the scanner's vibrato / chorus (setBfree's vibratoProc, in integer, 0.11.0). The delay line holds x >> 3; the write point is
- * the read point + 1 + amp + amp * sin (Q16 samples: (2 + amp2) << 15 + amp2 * m, m Q15, amp2 the depth in half samples), the
- * sine read from the 2048-point table with no interpolation (setBfree's INCTBL_SIZE). A sample is written to the cell it
- * falls in and the next, linearly; the read clears the cell. vibm 1..3 the vibrato (the wet alone), 4..6 the chorus
- * (x + wet, at 0.7071). The scanner's phase and the read point advance even when nothing is written. */
+/* the scanner's vibrato / chorus (0.9.80; after setBfree's vibratoProc, simplified for the CPU). A delay line of the
+ * scanner's input, read 1 + amp + amp * sin samples back (amp 3 / 6 / 9 by default, amp2 the depth in half samples) with a
+ * linear interpolation, where setBfree spreads each sample over two cells at the write. The delay (Q16 samples) is the
+ * 2048-point sine at the start and at the end of the block with a straight line between them: at the scanner's few Hz a
+ * block is under 1 / 100 of a turn. The fraction is 8 bits and multiplies half the difference of two cells, which fits
+ * 32 bits with no clamp while the input is under 2^23 (every key of both manuals down, every bar out: 2^22.8). vibm 1..3 the vibrato (the wet alone), 4..6 the chorus (x + wet,
+ * at 0.7071). */
+static inline uint32_t org_vib_d(uint32_t st, uint32_t amp2)
+{
+    return ((2u + amp2) << 15) + (uint32_t)((int32_t)ORG_SCAN_SIN[st >> 21] * (int32_t)amp2);    /* 1.0 at the least */
+}
 static __attribute__((noinline)) void org_vib(const int32_t *x, int32_t *o, uint32_t n)
 {
     const uint32_t amp2 = org.vamp2[((uint32_t)org.vibm_cur - 1u) % 3u];
-    const uint32_t base = (2u + amp2) << 15, vinc = org.vinc;
     const uint32_t mixed = org.vibm_cur > 3u;
+    const uint32_t st1 = org.vst + n * org.vinc;
     int32_t *vb = org.vb;
-    uint32_t pp = org.vpos << 16, st = org.vst;                     /* the read point, Q16 (pos << 16) */
-    uint32_t i;
+    uint32_t pos = org.vpos, i;
+    uint32_t d = org_vib_d(org.vst, amp2);
+    const uint32_t dd = (uint32_t)(((int32_t)org_vib_d(st1, amp2) - (int32_t)d) / (int32_t)n);
     for (i = 0; i < n; i++) {
-        int32_t xs = x[i] >> 3, m, g, wet;
-        uint32_t j, h, k;
-        if ((uint32_t)(xs + ORG_VIB_CLAMP) > 2u * ORG_VIB_CLAMP)    /* the clamp only when it is needed */
-            xs = xs < 0 ? -ORG_VIB_CLAMP : ORG_VIB_CLAMP;
-        m = ORG_SCAN_SIN[st >> 21];                                 /* the scanner, Q15 (11 bits of the phase) */
-        j = (pp + base + (uint32_t)(m * (int32_t)amp2)) & 0x03FFFFFFu;   /* the write point, mod 1024 samples */
-        h = j >> 16;
-        k = (h + 1u) & 1023u;
-        g = (xs * (int32_t)((j & 0xFFFFu) >> 1)) >> 15;             /* the fraction (Q15) of the input for the next cell */
-        vb[h] += xs - g;
-        vb[k] += g;
-        wet = vb[pp >> 16] * 8;
-        vb[pp >> 16] = 0;
-        o[i] = mixed ? ((((x[i] + wet) >> 5) * 23170) >> 10) : wet;   /* (x + wet) * 0.7071, Q15 */
-        pp = (pp + (1u << 16)) & 0x03FF0000u;
-        st += vinc;
+        uint32_t r = pos - (d >> 16);
+        int32_t a, wet;
+        vb[pos & (ORG_VIB_N - 1u)] = x[i];
+        a = vb[r & (ORG_VIB_N - 1u)];
+        wet = a + ((((vb[(r - 1u) & (ORG_VIB_N - 1u)] - a) >> 1) * (int32_t)((d >> 8) & 0xFFu)) >> 7);
+        o[i] = mixed ? ((((x[i] + wet) >> 1) * 181) >> 7) : wet;     /* (x + wet) * 0.7071 (181 / 256; fits to 2^24.5) */
+        pos++;
+        d += dd;
     }
-    org.vpos = pp >> 16;
-    org.vst = st;
+    org.vpos = pos & (ORG_VIB_N - 1u);
+    org.vst = st1;
 }
 
-/* the scanner silent for n samples with the delay line clean: the phase and the read point advance, nothing is written */
+/* the scanner silent for n samples after ORG_VIB_QUIET silent ones: every cell the read reaches is 0 and stays so (nothing
+ * is written, the write point stays), the wet is 0; only the scanner turns */
 static inline void org_vib_idle(uint32_t n)
 {
-    org.vpos = (org.vpos + n) & (ORG_VIB_N - 1u);
     org.vst += n * org.vinc;
 }
 
@@ -699,7 +696,7 @@ enum {
     OP_PC_BUSA = 75,            /* osc.perc.bus.a: the drawbar the 4' tone is taken from, 0 (16') .. 8 (1'); 3 (4') the default */
     OP_PC_BUSB = 76,            /* osc.perc.bus.b: the 2 2/3' tone's, 4 the default */
     OP_PC_TRIG = 77,            /* osc.perc.bus.trig: the drawbar muted while the percussion is on: none or 0 .. 8; 8 (1') the default */
-    OP_SC_HZ = 78,              /* scanner.hz: the vibrato scanner, 4.0 .. 22.0 Hz in 0.25 Hz steps, 7.25 Hz the default */
+    OP_SC_HZ = 78,              /* scanner.hz: the vibrato scanner, 4.0 .. 22.0 Hz in 0.25 Hz steps, 7 Hz the default (7.25 until 0.9.79) */
     OP_SC_V1 = 79,              /* scanner.modulation.v1: VIB1 / CHO1 depth, 0 .. 12 in 0.5 steps, 3.0 the default */
     OP_SC_V2 = 80,              /* scanner.modulation.v2: 6.0 the default */
     OP_SC_V3 = 81,              /* scanner.modulation.v3: 9.0 the default */
@@ -725,7 +722,7 @@ static const org_adv_t ORG_ADV[] = {
     {OP_REL_MODEL, 4, 0}, {OP_REL_LEVEL, 41, 20}, {OP_XT_COMP, 52, 31}, {OP_XT_TRANS, 52, 0}, {OP_XT_TSTRIP, 52, 31},
     {OP_XT_WIRE, 52, 31}, {OP_XT_FLOOR, 52, 3}, {OP_XT_MIN, 52, 0}, {OP_PC_FAST, 100, 9}, {OP_PC_SLOW, 100, 39},
     {OP_PC_NORM, 13, 0}, {OP_PC_SOFT, 13, 6}, {OP_PC_GAIN, 45, 22}, {OP_PC_BUSA, 9, 3}, {OP_PC_BUSB, 9, 4},
-    {OP_PC_TRIG, 10, 9}, {OP_SC_HZ, 73, 13}, {OP_SC_V1, 25, 6}, {OP_SC_V2, 25, 12}, {OP_SC_V3, 25, 18},
+    {OP_PC_TRIG, 10, 9}, {OP_SC_HZ, 73, 12}, {OP_SC_V1, 25, 6}, {OP_SC_V2, 25, 12}, {OP_SC_V3, 25, 18},
     {OP_SPLIT, 2, 0}, {OP_SPLIT_PT, 61, 19}, {OP_CLICK_GAIN, 41, 20}, {OP_REL_GAIN, 41, 20},
 };
 #define ORG_NADV (sizeof ORG_ADV / sizeof ORG_ADV[0])

@@ -191,10 +191,13 @@ standard libraries, Pd's standard objects or Csound's opcodes.
 - **Percussion**: from the 4' or 2 2/3' bus contact whatever the drawbar, 1' muted while on, single trigger, 1 s / 4 s to
   -60 dB, soft -6 dB, normal lowers the swell (0.605); HIPASS_PERCUSSION and KEYCOMPRESSION as setBfree builds them.
 - **Drawbar law**: **(owner)** linear, as setBfree (8 -> 4 = -6 dB).
-- **Scanner vibrato / chorus** (`vibrato.c`, re-imported in 0.11.0 for the CPU): write-side interpolated variable delay, 7.25 Hz,
-  depths 3 / 6 / 9 samples, the scanner's sine read from setBfree's 2048-point table with no interpolation; chorus = the same
-  mixed with the dry signal at 0.707. A silent scanner (32 samples with no input, the delay line clean) skips the delay line
-  and only advances its phase, exactly. (Not the original's 16-stage LC line.)
+- **Scanner vibrato / chorus** (after `vibrato.c`, simplified in 0.9.80 for the CPU): a variable delay of 1 + amp + amp sin
+  samples, depths 3 / 6 / 9 samples, 7 Hz (setBfree's 7.25 until 0.9.79; SCAN RATE sets it). setBfree interpolates at the write
+  (each sample spread over two cells of a 1024-sample line); here the line is 64 samples and the interpolation is at the read
+  (8-bit fraction, no clamp), and the scanner's sine (setBfree's 2048-point table) is read at the block's ends with a straight
+  line between. Chorus = the same mixed with the dry signal at 0.707. Against setBfree's float loop at the same rate the
+  difference is -36 dB (VIB3) to -54 dB (CHO1) on a 1 kHz tone. A silent scanner (32 samples with no input) is skipped, exactly.
+  (Not the original's 16-stage LC line.)
 - **Drive** (0.9.24, rewritten from scratch; two types since 0.9.30; `src/eng_drive.c`, the tables from `tools/gen_drive_tables.py`):
   the setBfree port of 0.3.0 is gone. Each type is a short integer chain (input high-pass, pre-gain, waveshaper table, a 10 Hz DC
   blocker, tone, output trim): **TUBE DRIVE** (made here: a warm, slightly asymmetric soft clip) and **DISTORTION** (a JCM900-style

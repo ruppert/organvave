@@ -224,8 +224,8 @@ def main():
     L += rows("", "", [int(round((1 << 23) * 10 ** (-j / 20.0))) for j in range(13)], 7, "{}u")
     L.append("};")
     L.append("")
-    L.append("/* the scanner's phase step for 4.0 .. 22.0 Hz in 0.25 Hz steps (ORG_VIB_INC * f / 7.25) */")
-    scan = [int(round(706122.0 * (4.0 + 0.25 * j) / 7.25)) for j in range(73)]      # (706122: the firmware's 7.25 Hz, eng_organ.c ORG_VIB_INC)
+    L.append("/* the scanner's phase step for 4.0 .. 22.0 Hz in 0.25 Hz steps (2^32 f / 44100; step 12, 7 Hz, is ORG_VIB_INC) */")
+    scan = [int(round(706122.0 * (4.0 + 0.25 * j) / 7.25)) for j in range(73)]      # (706122: 2^32 * 7.25 / 44100, the table's first reference)
     assert scan[13] == 706122
     L.append("static const uint32_t ORG_SCAN_INC[73] = {")
     L += rows("", "", scan, 8, "{}u")
