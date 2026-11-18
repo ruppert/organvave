@@ -23,19 +23,18 @@
 #include <stdint.h>
 #include "eng_rotary_tables.h"
 
-/* ROT_RAM (the firmware): the angle tables are copied to SRAM at boot (rot_load_tables), the XIP flash is slower and shared
- * with the code; the host test reads the constants */
+/* ROT_RAM (the firmware): the displacement tables (16 KB) are copied to SRAM at boot (rot_load_tables). The FIRs (20 KB)
+ * stay in flash: the POOL region has no room for both (0.11.0), and the FIR is read per tap at the angle's nearest 16384th
+ * (held per block in CLASSIC 2 .. 5). The host test reads the constants */
 #ifdef ROT_RAM
 static int32_t rot_disp_ram[4][ROT_NA] __attribute__((section(".pool")));
-static int16_t rot_fir_ram[2][ROT_NA][5] __attribute__((section(".pool")));
 #define RT_DISP rot_disp_ram
-#define RT_FIR rot_fir_ram
 #else
 #define RT_DISP ROT_DISP
-#define RT_FIR ROT_FIR
 #endif
+#define RT_FIR ROT_FIR
 
-#define ROT_LINE 1024u                 /* the delay lines: 1024 samples */
+#define ROT_LINE 512u                  /* the delay lines: 512 samples (the default geometry needs at most about 360) */
 #define ROT_MASK (ROT_LINE - 1u)
 #define ROT_D 12                       /* the taps' delays (ROT_DISP, ROT_SPACE) are Q12 samples */
 #define ROT_CTL 32u                    /* the speed ramp's block (setBfree's bufferLengthSamples) */
@@ -416,12 +415,6 @@ static void rot_load_tables(void)
     for (i = 0; i < 4; i++)
         for (j = 0; j < ROT_NA; j++)
             rot_disp_ram[i][j] = ROT_DISP[i][j];
-    for (i = 0; i < 2; i++)
-        for (j = 0; j < ROT_NA; j++) {
-            uint32_t c;
-            for (c = 0; c < 5; c++)
-                rot_fir_ram[i][j][c] = ROT_FIR[i][j][c];
-        }
 #endif
 }
 
