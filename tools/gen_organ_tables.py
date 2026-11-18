@@ -18,7 +18,7 @@ The tables (FS 44100, the firmware's and the reference's rate):
   ORG_KCX, ORG_KCX_OFF the same with the crosstalk off (compartment, terminal strip and wiring at 0)
                      an entry: wheel (1..91) << 25 | bus (0..26) << 20 | level (Q18, under 4.0)
   ORG_ATK[8][128], ORG_REL[8][128]  the attack (the contact click) and release envelopes, signed Q14 (16384 = 1.0)
-  ORG_KEYCOMP[128]   the key compression's gain per keys down, Q15
+  ORG_KEYCOMPF[128] the key compression's gain per keys down, single precision (0.11.0)
   ORG_SWELL_TC       the swell's one-pole smoothing per sample, Q16
 """
 import math
@@ -231,14 +231,14 @@ def main():
     L += rows("", "", scan, 8, "{}u")
     L.append("};")
     L.append("")
-    L.append("/* the key compression's gain for 0..127 keys down, Q15 */")
-    L.append("static const uint16_t ORG_KEYCOMP[128] = {")
-    L += rows("", "", [q15u(d["keycomp"][i]) for i in range(128)], 16)
-    L.append("};")
-    L.append("")
     L.append("#define ORG_SWELL_TC %du                /* the swell's smoothing per sample, Q16 (setBfree's %.9f) */" %
              (int(round(d["gaintc"] * 65536)), d["gaintc"]))
     L.append("")
+    L.append("")
+    L.append("/* ORG_KEYCOMPF[128]: the key compression's gain per keys down, single precision (setBfree's keyCompTable, 0.11.0) */")
+    L.append("static const float ORG_KEYCOMPF[128] = {")
+    L.append("    " + ",\n    ".join(", ".join("%.9ef" % d["keycomp"][i] for i in range(j, min(j + 4, 128))) for j in range(0, 128, 4)))
+    L.append("};")
     L.append("")
     L.append("/* ORG_SINEF[1025]: sin(2 pi k / 1024) in single precision, the wheels' sine (0.11.0: the float path; setBfree's wavetables"
              " are float) */")

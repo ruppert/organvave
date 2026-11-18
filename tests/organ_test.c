@@ -473,11 +473,11 @@ int main(int argc, char **argv)
     /* 6. the scanner's vibrato and chorus against setBfree's vibratoProc (the float loop of vibrato.c, here): a
      *    1 kHz tone through VIB1..3 and CHO1..3 agrees with the integer port to -40 dB. */
     {
-        static int32_t in[8192], out[8192];
+        static float in[8192], out[8192];                /* (0.11.0: the scanner is single precision) */
         static float ref[8192];
         uint32_t v, n;
         for (n = 0; n < 8192; n++)
-            in[n] = (int32_t)lround(8000.0 * sin(2.0 * 3.14159265358979 * 1000.0 * n / 44100.0));
+            in[n] = (float)(8000.0 * sin(2.0 * 3.14159265358979 * 1000.0 * n / 44100.0));
         for (v = 1; v <= 6; v++) {
             char what[120];
             uint32_t amp = 3u * ((v - 1u) % 3u + 1u), mixed = v > 3u, i, nn;
@@ -511,7 +511,7 @@ int main(int argc, char **argv)
                 err += d * d;
                 sig += (double)ref[nn] * ref[nn];
             }
-            snprintf(what, sizeof what, "%s: the integer port against setBfree's float loop: %.1f dB",
+            snprintf(what, sizeof what, "%s: the port against setBfree's float loop: %.1f dB",
                      mixed ? (v == 4 ? "CHO1" : v == 5 ? "CHO2" : "CHO3") : (v == 1 ? "VIB1" : v == 2 ? "VIB2" : "VIB3"),
                      10.0 * log10(err / (sig + 1e-9)));
             check(what, err < sig * 1e-4);                           /* -40 dB */

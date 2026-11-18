@@ -96,6 +96,13 @@ the AC79's). The static budget (tests/target_budget.py) counts these three funct
 them (the compiler's branches read as loops), and the budget lines were set to those values on purpose; the device CPU meter is the
 check. The budget tool now counts the instructions objdump cannot decode (the FPU's), which it used to drop.
 
+**0.11.0, the key compression and the scanner in single precision.** The key compression's table (`ORG_KEYCOMPF`, generated from
+setBfree's own `keyCompTable` in tonegen_dump.txt) and its level (ramped over the 128 samples of a block, as setBfree's
+KEYCOMPCHASE) are float; the swell and the key compression meet the output in float. The scanner (org_vib) keeps its algorithm
+(the 7.25 Hz scanner, depths 3 / 6 / 9 samples, the write-side delay line) and runs in float: its delay line, the fractional write
+point and the chorus mix. Against setBfree's float loop (the test's reference) it agrees to -73 .. -89 dB (was -51 .. -61 dB in
+integer). The nine compare.py cases are within 0.001 dB.
+
 **0.9.38, the crack of a high chord (owner: preset 001, the percussion off, a C major triad high up).** Two stages bent it. The
 Leslie's input took the mix / 4 and clipped at 1.0, four full wheels: a high triad (its notes share wheels, which add in phase) went
 past it in thousands of samples (C6: 14.6 % of added distortion against an all-linear chain). It now takes the mix / 16 and gives

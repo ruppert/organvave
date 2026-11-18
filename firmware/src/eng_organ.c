@@ -52,7 +52,7 @@
 static int32_t org_faint = 0;                   /* 0.11.0: every wheel interpolated (setBfree's; was 130, the faint wheels unrounded for the CPU) */
 #define ORG_XT_CAP 10752u               /* the RAM crosstalk table's entries (setBfree's default needs 10687) */
 #define ORG_VIB_N 1024u                 /* the delay line: 1024 samples (setBfree's BUF_SIZE) */
-#define ORG_VIB_CLAMP 65535             /* the delay line's input: x >> 3, clamped */
+#define ORG_VIB_CLAMP 65535.0f          /* the delay line's input: x / 8, clamped */
 
 enum { ORG_ADD = 1, ORG_MOD = 2, ORG_REM = 4 };   /* setBfree's rflags: OR_ADD / ORF_MODIFIED / OR_REM */
 
@@ -108,13 +108,13 @@ typedef struct {
     uint16_t pbus_cur;                  /* the percussion's buses as the fragment saw them */
     uint8_t q[ORG_QLEN], nq;            /* key messages: bit 0 on, bits 1..2 the table (0 none, 1 default crosstalk, 2 RAM crosstalk; the key's own) */
     uint8_t qk[ORG_QLEN];
-    int32_t kc, kcd;                    /* key compression level and its step per sample, Q23 */
+    float kcf, kcdf;                    /* key compression level and its step per sample (setBfree's keyCompLevel, float, 0.11.0) */
     int32_t sw;                         /* the swell's current gain, Q24 */
     int32_t pdg;                        /* the mix's gain for the percussion, Q15 (ORG_PERC_GAIN normal, else 32768) */
     uint32_t pe;                        /* the percussion envelope, Q24 */
     int32_t pz;                         /* the percussion's previous contact sample (the first difference) */
     uint32_t vpos, vst;                 /* the vibrato's delay line position and scanner phase */
-    int32_t vb[ORG_VIB_N];              /* the delay line, x >> 3 */
+    float vb[ORG_VIB_N];                /* the delay line, x / 8 (single precision, 0.11.0) */
 } org_t;
 
 static org_t org;
@@ -177,7 +177,7 @@ static void org_init(void)
     org.pbus_cur = 3u | (4u << 4) | (9u << 8);
     org.swell = 32768;
     org.mg = 32768;                                         /* the output volume: full (OP_EXPR 0) */
-    org.kc = (int32_t)ORG_KEYCOMP[0] << 8;
+    org.kcf = ORG_KEYCOMPF[0];
     org.sw = 32768 << 9;
     org.pdg = 32768;
     org.pe = ORG_PERC_NORM;
@@ -256,7 +256,7 @@ static __attribute__((noinline)) void org_fragment(void)
 {
     uint32_t i, d, chg = 0, nrem = 0;
     uint8_t rem[ORG_NWHEEL];
-    int32_t kct;
+    float kctf;
     uint8_t pc = org.perc ? 1u : 0u, psel = org.psel ? 1u : 0u, vm = org.vibm <= 6u ? org.vibm : 0u;
     if (org.adown == 0u)                                             /* setBfree: no key down, the envelope starts over */
         org.pe = org.psoft ? org.pe_soft : org.pe_norm;
@@ -380,37 +380,13 @@ static __attribute__((noinline)) void org_fragment(void)
             }
         }
     }
-    kct = (int32_t)ORG_KEYCOMP[org.ndown < 128u ? org.ndown : 127u] << 8;
-    org.kcd = (kct - org.kc) / (int32_t)ORG_FRAG;
+    kctf = ORG_KEYCOMPF[org.ndown < 128u ? org.ndown : 127u];
+    org.kcdf = (kctf - org.kcf) * (1.0f / (float)ORG_FRAG);            /* setBfree: (keyComp - level) / BUFFER_SIZE_SAMPLES */
 }
 
 /* the scanner's vibrato / chorus (setBfree's vibratoProc, in integer): the delay line holds x >> 3; a sample is
  * written at 1 + amp + amp * sin ahead of the read point, linear between the two cells, and read out when the
  * point reaches it. vibm 1..3 the vibrato (the wet alone), 4..6 the chorus (x + wet, at 0.7071). */
-static __attribute__((noinline)) void org_vib(const int32_t *x, int32_t *o, uint32_t n)
-{
-    uint32_t i, amp2 = org.vamp2[((uint32_t)org.vibm_cur - 1u) % 3u], vinc = org.vinc;      /* the depth in half samples */
-    uint32_t mixed = org.vibm_cur > 3u;
-    uint32_t pos = org.vpos, st = org.vst;
-    for (i = 0; i < n; i++) {
-        int32_t xs = clamp(x[i] >> 3, -ORG_VIB_CLAMP, ORG_VIB_CLAMP);
-        int32_t m = sine_i(st);                                       /* the scanner, Q15 */
-        uint32_t j = ((pos << 16) + ((2u + amp2) << 15) + (uint32_t)(m * (int32_t)amp2)) & 0x03FFFFFFu;
-        uint32_t h = j >> 16, k = (h + 1u) & 1023u, f = (j & 0xFFFFu) >> 1;   /* the cell, the next, the fraction Q15 */
-        int32_t g = (xs * (int32_t)f) >> 15;
-        int32_t wet;
-        org.vb[h] += xs - g;
-        org.vb[k] += g;
-        wet = org.vb[pos] * 8;
-        org.vb[pos] = 0;
-        o[i] = mixed ? ((((x[i] + wet) >> 5) * 23170) >> 10) : wet;  /* (x + wet) * 0.7071, Q15 */
-        pos = (pos + 1u) & 1023u;
-        st += vinc;
-    }
-    org.vpos = pos;
-    org.vst = st;
-}
-
 /* 0.11.0 (owner: setBfree's float path): the wheels sum in single precision, in Q15 units (a gain Q12 x 8 is Q15 per unit of
  * sine). The sine is setBfree's: a table of 1024 points with linear interpolation (ORG_SINEF, generated). Converted to the
  * integer path at the end of the fragment's block (f2i). The faint shortcut (ORG_FAINT) is the nearest point, as before. */
@@ -422,6 +398,35 @@ static inline float sine_f(uint32_t ph)
 }
 static inline float sine_n(uint32_t ph) { return ORG_SINEF[ph >> 22]; }
 static inline int32_t f2i(float v) { return v >= 0.0f ? (int32_t)(v + 0.5f) : -(int32_t)(0.5f - v); }
+
+static __attribute__((noinline)) void org_vib(const float *x, float *o, uint32_t n)
+{
+    uint32_t i, amp2 = org.vamp2[((uint32_t)org.vibm_cur - 1u) % 3u];   /* the depth in half samples */
+    float ampf = (float)amp2 * 0.5f;
+    uint32_t vinc = org.vinc;                                     /* the scanner's phase step */
+    uint32_t mixed = org.vibm_cur > 3u;
+    uint32_t pos = org.vpos, st = org.vst;
+    for (i = 0; i < n; i++) {
+        float xs = x[i] * 0.125f, p, f, g, wet;
+        uint32_t h, k;
+        if (xs > ORG_VIB_CLAMP) xs = ORG_VIB_CLAMP;
+        else if (xs < -ORG_VIB_CLAMP) xs = -ORG_VIB_CLAMP;
+        p = (float)pos + 1.0f + ampf * (1.0f + sine_f(st));           /* the write point, in cells (setBfree's vibratoProc) */
+        h = (uint32_t)p & 1023u;
+        f = p - (float)(uint32_t)p;                                   /* the fraction between the two cells */
+        k = (h + 1u) & 1023u;
+        g = xs * f;
+        org.vb[h] += xs - g;
+        org.vb[k] += g;
+        wet = org.vb[pos] * 8.0f;                                     /* back to x */
+        org.vb[pos] = 0.0f;
+        o[i] = mixed ? (x[i] + wet) * 0.70710678f : wet;              /* (x + wet) * 0.7071 */
+        pos = (pos + 1u) & 1023u;
+        st += vinc;
+    }
+    org.vpos = pos;
+    org.vst = st;
+}
 
 /* a wheel on the percussion's bus: its sine once per sample, into the organ (y) and the contact (p) with their own gains
  * (the same ramps as the organ's), and the phase advanced. Not inlined (tests/target_budget.py counts it) */
@@ -528,9 +533,9 @@ static __attribute__((noinline)) void org_wheel_scp(org_wheel_t *w, uint32_t inc
 /* add n (= CTL) samples to out[] (not inlined: tests/target_budget.py counts it) */
 static __attribute__((noinline)) void org_render(int32_t *out, uint32_t n)
 {
-    int32_t y[CTL], p[CTL], q[CTL], v[CTL], ys[CTL];
-    float yf[CTL], pf[CTL], ysf[CTL];                                 /* the wheels' sums, single precision, Q15 units (0.11.0) */
-    const int32_t *vv = y;
+    int32_t p[CTL], q[CTL];
+    float yf[CTL], pf[CTL], ysf[CTL], vf[CTL];                        /* the wheels' sums, single precision, Q15 units (0.11.0) */
+    const float *vv = yf;
     uint32_t i, k, off;
     const uint32_t *winc;
     int32_t swt;
@@ -588,18 +593,13 @@ static __attribute__((noinline)) void org_render(int32_t *out, uint32_t n)
         }
         w->ph = ph;
     }
-    for (i = 0; i < n; i++) {                                         /* to the integer path: Q15 */
-        y[i] = f2i(yf[i]);
+    for (i = 0; i < n; i++)                                           /* the percussion's contact: the integer path (its difference) */
         p[i] = f2i(pf[i]);
-    }
-    if (vr)
-        for (i = 0; i < n; i++)
-            ys[i] = f2i(ysf[i]);
     if (vr) {                                                         /* the scanner: its manuals' sound, replaced by its wet; the rest stays dry */
-        org_vib(ys, v, n);
+        org_vib(ysf, vf, n);
         for (i = 0; i < n; i++)
-            v[i] += y[i];                                             /* (y holds only the dry share since 0.9.28) */
-        vv = v;
+            vf[i] += yf[i];                                           /* (yf holds only the dry share since 0.9.28) */
+        vv = vf;
     }
     if (org.perc_cur) {                                               /* setBfree's first difference, then the envelope */
         int32_t pz = org.pz, pe = (int32_t)(org.pe >> 12);            /* pe Q12 */
@@ -617,11 +617,9 @@ static __attribute__((noinline)) void org_render(int32_t *out, uint32_t n)
     }
     swt = (int32_t)(((((uint32_t)org.swell * (uint32_t)org.pdg) >> 15) * org.mg >> 15) << 9);   /* the output volume (EXPR) in the swell's target */
     for (i = 0; i < n; i++) {
-        int32_t m;
         org.sw += mulq16(swt - org.sw, ORG_SWELL_TC);
-        org.kc += org.kcd;
-        m = ((org.sw >> 9) * (org.kc >> 8)) >> 14;                  /* Q15 * Q15 -> Q16 */
-        out[i] += mulq16(vv[i] + q[i], (uint32_t)m);
+        org.kcf += org.kcdf;
+        out[i] += f2i((vv[i] + (float)q[i]) * ((float)org.sw * (1.0f / 16777216.0f)) * org.kcf);   /* the swell (Q24) x the key compression */
     }
 }
 
