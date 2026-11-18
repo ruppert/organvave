@@ -2,6 +2,7 @@
  * The FX buses (fx.c, FMini-1's): the reverb types (stereo, decay, level, stability), the delay and chorus types.
  *   build/host/fx_test [WAVDIR]       (WAVDIR: demo renders) */
 #include "host.h"
+#include "../firmware/src/bench.c"
 #include "../firmware/src/organ_app.c"
 #include <stdio.h>
 

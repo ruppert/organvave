@@ -451,10 +451,10 @@ static void oa_sv_letter(int32_t s)
  * (settings.c set_bytes): row 7 holds FMini-1's layout for the two MIDI bytes (so they carry over) and, since 0.9.5, the marker
  * 0xC5, the lower and pedal channels; rows 8..10 hold the CC of each patch byte (0 none) */
 #define OA_NCTL 84u                                       /* the patch bytes a CC may drive (OP_UB .. OP_SPLIT_PT; OP_DRV_FAT, unused, is skipped in the list) */
-#define OA_NROW 6u                                       /* (0.9.74: TUNING, TRANSPOSE, FACTORY RESET, SUPPORT ORGANVAVE from FMini-1; ABOUT last) */
+#define OA_NROW 7u                                       /* (0.9.74: TUNING, TRANSPOSE, FACTORY RESET, SUPPORT ORGANVAVE from FMini-1; BENCHMARK 0.11.0; ABOUT last) */
 #define OA_GL_VIS 8u                                      /* the rows on the screen (34 .. 202, the foot rule at 226); the list scrolls */
-static uint8_t oa_gl;                                     /* 0 closed, 1 GLOBAL, 2 MIDI CC, 3 ABOUT, 4 FACTORY RESET's question, 5 SUPPORT, 6 MIDI SETTINGS, 7 MIDI MONITOR */
-static uint8_t oa_gl_row;                                 /* GLOBAL: 0 MIDI SETTINGS, 1 TUNING, 2 TRANSPOSE, 3 FACTORY RESET, 4 SUPPORT, 5 ABOUT */
+static uint8_t oa_gl;                                     /* 0 closed, 1 GLOBAL, 2 MIDI CC, 3 ABOUT, 4 FACTORY RESET's question, 5 SUPPORT, 6 MIDI SETTINGS, 7 MIDI MONITOR, 8 BENCHMARK */
+static uint8_t oa_gl_row;                                 /* GLOBAL: 0 MIDI SETTINGS, 1 TUNING, 2 TRANSPOSE, 3 FACTORY RESET, 4 SUPPORT, 5 BENCHMARK, 6 ABOUT */
 static uint8_t oa_ms_row;                                 /* MIDI SETTINGS (oa_gl 6): 0 MIDI IN, 1 UPPER, 2 LOWER, 3 PEDAL, 4 MIDI CC, 5 MIDI MONITOR */
 #define OA_MON_SHOW 8u                                    /* MIDI MONITOR: the lines on the screen (the monitor keeps 25: usb.c MON_N) */
 static uint32_t oa_mon_off;                               /* MIDI MONITOR: 0 = the newest at the bottom, n = n messages older */
@@ -666,7 +666,7 @@ static uint8_t oa_gl_back(uint8_t g)                  /* GLO goes back one level
 }
 static void scr_global(void)
 {
-    static const char *const GL_LB[OA_NROW] = {"MIDI SETTINGS", "TUNING", "TRANSPOSE", "FACTORY RESET", "SUPPORT ORGANVAVE", "ABOUT"};
+    static const char *const GL_LB[OA_NROW] = {"MIDI SETTINGS", "TUNING", "TRANSPOSE", "FACTORY RESET", "SUPPORT ORGANVAVE", "BENCHMARK", "ABOUT"};
     char b[8];
     uint32_t r;
     if (oa_gl_row < oa_gl_top)                            /* the row chosen stays on the screen */
@@ -687,6 +687,45 @@ static void scr_global(void)
     }
     oa_scrollbar(oa_gl_top, OA_GL_VIS, OA_NROW, 230, 30, 190);
     footer("SELECT: ITEM   ALGO: VALUE   GLO: BACK");
+}
+
+/* BENCHMARK (0.11.0): the seven kernels (bench.c) as the share of one second of audio's real time; each float row also
+ * shows its ratio to the integer row above it (x0.82: float takes 82 % of the integer time). Blank until a run finishes. */
+static void bench_cell(char *b, uint32_t k)
+{
+    uint32_t n = 0, r;
+    bench_fmt(b, bench_tenths(bench_ticks[k]));
+    while (b[n])
+        n++;
+    b[n++] = '%';
+    if (k & 1u) {                                         /* the float rows: 1, 3, 5 against 0, 2, 4 */
+        r = bench_ratio(bench_ticks[k], bench_ticks[k - 1u]);
+        b[n++] = ' ';
+        b[n++] = ' ';
+        b[n++] = 'x';
+        b[n++] = (char)('0' + (r / 100u) % 10u);
+        b[n++] = '.';
+        b[n++] = (char)('0' + (r / 10u) % 10u);
+        b[n++] = (char)('0' + r % 10u);
+    }
+    b[n] = 0;
+}
+static void scr_bench(void)
+{
+    static const char *const BN_LB[BENCH_KERNELS] = {"WHEELS INT", "WHEELS FLOAT", "FIR INT", "FIR FLOAT", "TUBE INT", "ORIGINAL FLOAT", "ORGAN FLOAT"};
+    char b[24];
+    uint32_t k;
+    header("BENCHMARK", "");
+    for (k = 0; k < BENCH_KERNELS; k++) {
+        const char *v = "-";
+        if (bench_have) {
+            bench_cell(b, k);
+            v = b;
+        }
+        oa_gl_line((int32_t)(34u + 24u * k), BN_LB[k], v, 0);
+    }
+    oa_gl_line((int32_t)(34u + 24u * BENCH_KERNELS), "1 S OF AUDIO = 100%", "", 0);
+    footer(bench_have ? "ALGO: RUN AGAIN   GLO: BACK" : "ALGO: RUN   GLO: BACK");
 }
 
 /* MIDI SETTINGS (0.9.77, as FMini-1's: one GLOBAL line opens it): the MIDI IN, the three channels, MIDI CC and MIDI MONITOR */
@@ -1754,6 +1793,8 @@ static void oa_scene(void)
         scr_midi();
     else if (oa_gl == 7u)
         scr_mon();
+    else if (oa_gl == 8u)                                 /* BENCHMARK: the kernels' times (bench.c) */
+        scr_bench();
     else if (oa_gl)                                       /* GLOBAL: its own screen (the MIDI CC pop-up goes over it) */
         scr_global();
     else if (oa_page == 1u)
@@ -2310,9 +2351,14 @@ static void oa_input(void)
                     ui.force = 1;
                 } else if (oa_gl_row == 4u)
                     oa_gl = 5;                            /* SUPPORT ORGANVAVE: the QR code screen */
+                else if (oa_gl_row == 5u)
+                    oa_gl = 8;                            /* BENCHMARK: its screen; ALGORITHM turns start a run */
                 else
                     oa_gl = 3;                            /* ABOUT */
             }
+        } else if (oa_gl == 8u) {                         /* BENCHMARK: ALGORITHM (either way) runs it; GLO goes back to GLOBAL */
+            if (panel_enc(EN_ALGO) != 0)
+                bench_req = 1;
         } else if (oa_gl == 6u) {                         /* MIDI SETTINGS: SELECT the line, ALGORITHM changes it; MIDI CC and MIDI MONITOR open theirs */
             if ((s = panel_enc(EN_SELECT)) != 0)
                 oa_ms_row = (uint8_t)clamp((int32_t)oa_ms_row + (s > 0 ? 1 : -1), 0, 5);

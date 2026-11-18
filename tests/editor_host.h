@@ -30,6 +30,7 @@ static void host_editor_wdt(void)               /* time passes in a blocking loo
     if (host_progress && transport_req == 2u) { seq_stop(); transport_req = 0; }
 }
 #include "../firmware/src/editor.c"
+#include "../firmware/src/bench.c"
 #include "../firmware/src/organ_app.c"
 
 #ifndef CHECK_TAG

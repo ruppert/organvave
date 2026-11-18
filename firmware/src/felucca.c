@@ -78,5 +78,6 @@
 #include "editor.c"              /* web editor SysEx (needs the OTA SysEx plumbing) */
 #endif
 #include "master.c"              /* the MASTER pot (#137: read before the audio starts) */
+#include "bench.c"               /* GLOBAL > BENCHMARK (0.11.0): the runner; its kernels in bench_kernels.h */
 #include "organ_app.c"           /* the organ's interface (the screens after the console's panel) */
 #include "main.c"

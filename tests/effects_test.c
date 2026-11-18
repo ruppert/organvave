@@ -9,6 +9,7 @@
  * 4. silence: with everything on and no key, silence out.
  * 5. after the keys the output is quiet again, and MASTER 0 is silent. */
 #include "host.h"
+#include "../firmware/src/bench.c"
 #include "../firmware/src/organ_app.c"
 #include <stdio.h>
 

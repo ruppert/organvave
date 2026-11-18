@@ -260,6 +260,7 @@ static void fm1_main(void)
         felucca_dbg.stage = 1;
         UI_INPUT();
         org_adv_poll();                               /* ADVANCED EDIT: the click, crosstalk and tuning tables the patch asks for */
+        bench_poll();                                 /* GLOBAL > BENCHMARK: a requested run, muted (bench.c); nothing else otherwise */
         settings_poll();                              /* queued settings save: only while quiet */
         autosave_poll();                              /* the instrument, quiet and idle: settings.c */
         felucca_dbg.stage = 2;

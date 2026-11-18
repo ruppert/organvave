@@ -95,11 +95,35 @@ static void shed_voice(void)
     }
 }
 
+#include "bench_state.h"                       /* 0.11.0: bench_mute, bench_isr_ticks (the BENCHMARK's mute of this ISR) */
+
+/* BENCHMARK: a half of silence, the ISR's time kept apart; nothing renders. Its own function, so the render's budget
+ * (tests/target_budget.txt, fm1_alnk0_irq) does not count the zeroing loop */
+static __attribute__((noinline)) void bench_mute_irq(void)
+{
+    uint32_t tb = fm1_ticks();
+    uint8_t pb = fm1_audio_pending();
+    fm1_audio_ack_aux(pb);
+    if (pb & FM1_AUDIO_HALF) {
+        int32_t *ob = &abuf[fm1_audio_free_half() * HALF_WORDS];
+        uint32_t i;
+        for (i = 0; i < HALF_WORDS; i++)
+            ob[i] = 0;
+        fm1_audio_ack_half();
+    }
+    bench_isr_ticks += fm1_ticks() - tb;
+}
+
 void fm1_alnk0_irq(void)                       /* via isr_alnk0 (hal/fm1_isr.S) */
 {
     uint8_t p;
     uint32_t t0;
     felucca_dbg.in_audio = 1;                   /* first: TIMER5 nests from here on (main.c) */
+    if (bench_mute) {
+        bench_mute_irq();
+        felucca_dbg.in_audio = 0;
+        return;
+    }
     p = fm1_audio_pending();
     t0 = fm1_ticks();
     t5_nested_ticks = 0;

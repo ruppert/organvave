@@ -157,6 +157,38 @@ counts, not cycles: only the device's CPU meter confirms them. If CLASSIC is too
 and the drive on, the economy variant (same sidebands, about 19 dB more residual) is the first fallback; the second core
 (removed in the slimming, in git history: X0X / Jangada) could carry the rotary if both fall short.
 
+**0.11.0, BENCHMARK (GLOBAL > BENCHMARK, owner: integer or the FPU, how much better or worse).** A screen that times the
+audio path's arithmetic on the device itself. Seven kernels, each the work of one second of audio (44,096 samples in blocks
+of 32, the CTL of the audio path), each run twice with the faster kept: the wheels in integers (`sine_i`, Q9 gains) and in
+single precision (`sine_f`, the float gains), the 33-tap FIR in Q10 and in float, the DRIVE in its TUBE type (integer
+chain, byte 2) and in ORIGINAL (float, byte 8), and the organ's own render (`org_render`, float) with ten keys held. The
+result is each kernel's share of the real time of one second, in tenths of a percent (100.0 % = a second of work per
+second), and each float row's ratio to its integer partner: x0.82 means the float arithmetic took 82 % of the integer time.
+The organ row has no integer partner: the organ is float since 0.11.0.
+
+How to run it: GLOBAL, scroll to BENCHMARK, SELECT on the line, ALGORITHM turns it (either way). The screen shows
+"BENCHMARK n/7" for each kernel while it runs (a few seconds to about a minute: the organ is the longest), then the
+numbers; ALGORITHM runs it again, GLO goes back to GLOBAL. The audio is silent while it runs (`bench_mute`, audio.c: the
+ISR writes zeros to the half it frees and keeps its own time apart in `bench_isr_ticks`, which the benchmark takes out of
+its windows). Between the blocks the watchdog is fed. The benchmark's ten keys are released after its own kernel; keys
+the player holds during the run are silent (the audio is muted) and sound again only if they are still down afterwards.
+
+What is measured and what is not: each window is the kernel's ticks of TIMER4 (24 MHz) less the ISR's ticks inside it.
+It includes the loops and the calls of the kernel, not the audio path's mix, the FX, the control-rate work (`org_block`)
+or the interrupts of TIMER5 (the key and LED scan) that can fall inside a window: those are not muted, so their share
+lands in the numbers. The kernels are the
+arithmetic of the audio path, not the path itself: the same block lengths, the same tables, the same per-sample work, but
+the inputs are fixed (the wheels' phases run on; the FIR and the DRIVE see the same 32 samples of a sine every block). The numbers come only from running the
+benchmark on the FM-1; the host test (`tests/bench_test.c`) checks that the two arithmetics compute the same thing (the
+wheels within 60 LSB, the sum of 60 truncations at the integer kernel's interpolation; the FIR within 1 LSB) and that the
+clock's arithmetic is right with a fake counter, not that the device is fast. The bench is outside the audio path: its
+code is in `bench.c` and `bench_kernels.h`, and has no entry in `tests/target_budget.txt`. The kernels call the organ and
+the DRIVE through a pointer (the DRIVE) or with the block length as a constant (the organ), so that the compiler keeps
+the audio path's code as it was: the organ rows of `tests/target_budget.txt` match their values, to the cost. The DRIVE's
+static cost (`dr_orig`) reads 1507 against the 1702 recorded in 0.11.0: the bench's extra caller changed how the compiler
+treats `dr_orig`, the audio path's drive is not the same code byte for byte, so its real cost on the device is not
+established by the budget. The budget file is not regenerated for it (CLAUDE.md: only on purpose).
+
 ## Rotary speaker: two models, selectable **(owner)**
 
 The ROTARY pop-up has a MODEL field: **CLASSIC** (the owner's option 2: setBfree's `whirl.c`, reduced) and its variants CLASSIC 2 to 5 (0.9.23; LIGHT was removed). **(owner)** MODEL is part of every preset: loading a preset sets it, like

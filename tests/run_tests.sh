@@ -76,6 +76,8 @@ $HC -O2 -o "$OUT/drive_test" tests/drive_test.c -lm
 run "the drive: its six types (0.9.41) on their THD laws, level, bounds, silence, DC, block independence, TIGHT TUBE's bass" "$OUT/drive_test"
 $HC -O2 -o "$OUT/drive_orig_test" tests/drive_orig_test.c -lm
 run "the drive's ORIGINAL (byte 8, 0.11.0): setBfree's overdrive in float against its own loop in double (4 LSB), the level, bounds, silence, block independence, DC, the switch" "$OUT/drive_orig_test"
+$HC -O2 -o "$OUT/bench_test" tests/bench_test.c -lm
+run "the BENCHMARK kernels (0.11.0): the integer and the float wheels and FIR agree, the clock across a wrap, the percentages, ratios and formatting" "$OUT/bench_test"
 $HC -O2 -o "$OUT/effects_test" tests/effects_test.c -lm
 $HC -O1 -o "$OUT/midi_organ_test" tests/midi_organ_test.c -lm
 run "the effects section end to end: the drive's patch bytes through mix_block (the drive; the fades; silence; MASTER 0)" "$OUT/effects_test"

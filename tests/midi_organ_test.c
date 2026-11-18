@@ -9,6 +9,7 @@
  * 5. the drawbars (CC 70..78, inverted) of the channel's manual and the rotor speed (CC 1, CC 64), applied by the main loop.
  * 6. CC 123 releases the channel's manual only. */
 #include "host.h"
+#include "../firmware/src/bench.c"
 #include "../firmware/src/organ_app.c"
 #include <stdio.h>
 

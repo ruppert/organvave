@@ -7,6 +7,7 @@
  * 4. bounded: loud noise through everything at +12 stays inside the clamp, and no output at the end of a silence (the
  * states settle). 5. both channels alike. */
 #include "host.h"
+#include "../firmware/src/bench.c"
 #include "../firmware/src/organ_app.c"
 #include <stdio.h>
 

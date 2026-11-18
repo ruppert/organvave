@@ -286,11 +286,19 @@ int main(int argc, char **argv)
     }
     fm_midi_base(0);
     press(B_GLO);
-    oa_gl_row = 5;                                        /* ABOUT is the last row (0.9.77: six lines) */
+    oa_gl_row = 6;                                        /* ABOUT is the last row (0.11.0: seven lines, BENCHMARK before it) */
     turn(EN_ALGO, 1);
     bad += check("  .. ABOUT", oa_gl == 3);
     turn(EN_ALGO, 1);
     bad += check("  .. an encoder goes back to the list", oa_gl == 1);
+    oa_gl_row = 5;                                        /* BENCHMARK (0.11.0): its screen; an ALGORITHM turn asks bench.c for a run */
+    turn(EN_ALGO, 1);
+    bad += check("  .. BENCHMARK opens its screen, no run yet", oa_gl == 8 && bench_req == 0);
+    turn(EN_ALGO, 1);
+    bad += check("  .. an ALGORITHM turn asks for a run", bench_req == 1);
+    bench_req = 0;                                        /* (the run itself is the main loop's: not here) */
+    press(B_GLO);
+    bad += check("  .. GLO goes back to the list, its row kept", oa_gl == 1 && oa_gl_row == 5);
     press(B_GLO);
     bad += check("GLO again: closed", oa_gl == 0);
 
