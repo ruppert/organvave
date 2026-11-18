@@ -3,14 +3,16 @@
 # Rewritten by BUDGET_UPDATE=1.
 # 0.11.0: org_wheel_pc/sc/scp and org_vib are single precision (the FM-1 FPU). The static count overestimates them: the compiler
 # branches around the per-sample sine, and each backward branch reads as a loop. The real cost is the device CPU meter.
+# 0.11.0 (float levels): org_msg runs per key event and org_fragment per 128-sample block, not per sample; their float loops
+# are counted in full here (no per-sample cost). org_render and org_wheel_sc lost their integer work (the float port).
 dr_chain 77
 dr_chain2 121
 dr_eq_run 345
-org_render 1083
-org_fragment 281
-org_msg 48
+org_render 395
+org_fragment 333
+org_msg 219
 org_wheel_pc 5070
-org_wheel_sc 5125
+org_wheel_sc 4447
 org_wheel_scp 7441
 org_vib 3439
 eq_block 629

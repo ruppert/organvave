@@ -103,6 +103,16 @@ KEYCOMPCHASE) are float; the swell and the key compression meet the output in fl
 point and the chorus mix. Against setBfree's float loop (the test's reference) it agrees to -73 .. -89 dB (was -51 .. -61 dB in
 integer). The nine compare.py cases are within 0.001 dB.
 
+**0.11.0, the bus levels, the gains and the crosstalk table in single precision.** The contribution levels (`ORG_KCF`,
+`ORG_KCXF`, generated from the same packed tables: Q18 as floats, same order) and the RAM crosstalk table's levels
+(`org_xt_tabf`, written beside each packed entry) are float; a wheel's bus levels, its drawbar sums (Q12 units, the drawbar
+law's 1/8 folded into the 1/512) and its gains are float; the wheel loops read them without the `(float)` casts. A key release
+subtracts what it added; when the last key of a wheel lets go, its levels are cleared to exact zero, so no float residue stays.
+The packed integer table still decides which entries exist and their wheel and bus. The nine compare.py cases stay within
+0.000 dB of setBfree's levels; SNR is unchanged (43 to 81 dB; the worst is setBfree's own wavetable against the DDS).
+The budget lines of `org_msg` and `org_fragment` are counted in full: they run per key and per 128-sample block, not per
+sample. The image grows about 46 KB in flash (the two float level tables); the RAM pool is 343384 B of 368640 B.
+
 **0.9.38, the crack of a high chord (owner: preset 001, the percussion off, a C major triad high up).** Two stages bent it. The
 Leslie's input took the mix / 4 and clipped at 1.0, four full wheels: a high triad (its notes share wheels, which add in phase) went
 past it in thousands of samples (C6: 14.6 % of added distortion against an all-linear chain). It now takes the mix / 16 and gives

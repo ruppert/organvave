@@ -180,6 +180,10 @@ def main():
         L.append("static const uint32_t %s[%d] = {" % (tag, len(ent)))
         L += rows("", "", ent, 6, "{}u")         # decimal: a hex word in 0x02xxxxxx reads as the XIP window to tools/build.py
         L.append("};")
+        # 0.11.0: the same levels in single precision (Q18 units, exact): the per-sample sums are float (eng_organ.c)
+        L.append("static const float %sF[%d] = {" % (tag, len(ent)))
+        L += rows("", "", [(e & 0xFFFFF) for e in ent], 6, "{}.0f")
+        L.append("};")
     for tag, key in (("ORG_ATK", "attack"), ("ORG_REL", "release")):
         L.append("")
         L.append("/* %s envelopes, signed Q14 (16384 = 1.0), one per active-list slot & 7 */" % key)

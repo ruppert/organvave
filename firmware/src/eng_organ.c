@@ -57,12 +57,12 @@ static int32_t org_faint = 0;                   /* 0.11.0: every wheel interpola
 enum { ORG_ADD = 1, ORG_MOD = 2, ORG_REM = 4 };   /* setBfree's rflags: OR_ADD / ORF_MODIFIED / OR_REM */
 
 typedef struct {
-    int32_t lvl[ORG_NBUS];              /* the bus levels (aot busLevel), Q18 */
-    int32_t sum;                        /* the swell mix with the drawbars (aot sumSwell), Q12 */
-    int32_t pn;                         /* the percussion's contact gain: the perc bus's level, Q12, 0 while off */
-    int32_t gs, gd;                     /* this fragment: the start gain and the step the envelope scales, Q12 */
-    int32_t pgs, pgd;                   /* the same for the percussion's contact gain */
-    int32_t ssum, sgs, sgd;             /* the part of sum that goes to the scanner (the manuals routed through it), and its start / step */
+    float lvl[ORG_NBUS];                /* the bus levels (aot busLevel), Q18 units as floats (0.11.0: single precision) */
+    float sum;                          /* the swell mix with the drawbars (aot sumSwell), Q12 units as a float */
+    float pn;                           /* the percussion's contact gain: the perc bus's level, Q12 units, 0 while off */
+    float gs, gd;                       /* this fragment: the start gain and the step the envelope scales, Q12 units */
+    float pgs, pgd;                     /* the same for the percussion's contact gain */
+    float ssum, sgs, sgd;               /* the part of sum that goes to the scanner (the manuals routed through it), and its start / step */
     const int16_t *env;                 /* this fragment's envelope (attack or release), or 0 */
     uint32_t ph;
     int16_t refc;                       /* contributions holding it (aot refCount) */
@@ -120,6 +120,7 @@ typedef struct {
 static org_t org;
 /* ADVANCED EDIT's RAM: the crosstalk table (the layout of ORG_KC: ORG_XT_OFF[k] .. [k + 1]), the click envelopes, the scaled increments */
 static uint32_t org_xt_tab[ORG_XT_CAP] __attribute__((section(".pool")));
+static float org_xt_tabf[ORG_XT_CAP] __attribute__((section(".pool")));   /* the same entries' levels as floats (Q18), 0.11.0 */
 static uint16_t org_xt_off[97] __attribute__((section(".pool")));
 static int16_t org_atk_ram[8][128] __attribute__((section(".pool")));
 static int16_t org_rel_ram[8][128] __attribute__((section(".pool")));
@@ -212,23 +213,25 @@ static void org_key(uint32_t k, uint32_t on)
 }
 
 /* the key's contributions: *n table entries and the bus offset (the lower manual: + 9) */
-static const uint32_t *org_contrib(uint32_t k, uint32_t xt, uint32_t *n, uint32_t *boff)
+static const uint32_t *org_contrib(uint32_t k, uint32_t xt, uint32_t *n, uint32_t *boff, const float **lf)
 {
     const uint16_t *off = xt == 2u ? org_xt_off : xt ? ORG_KC_OFF : ORG_KCX_OFF;
     const uint32_t *tab = xt == 2u ? org_xt_tab : xt ? ORG_KC : ORG_KCX;
     uint32_t tk = k < 128u ? k & 63u : k - 64u;               /* the lower manual reads the upper's entries */
     *boff = (k >= 64u && k < 128u) ? 9u : 0u;
     *n = off[tk + 1u] - off[tk];
+    *lf = (xt == 2u ? org_xt_tabf : xt ? ORG_KCF : ORG_KCXF) + off[tk];   /* the same entries' levels, Q18 as floats (0.11.0) */
     return tab + off[tk];
 }
 
 static __attribute__((noinline)) void org_msg(uint32_t k, uint32_t on, uint32_t xt)
 {
     uint32_t n, boff, i;
-    const uint32_t *c = org_contrib(k, xt, &n, &boff);
+    const float *lf;
+    const uint32_t *c = org_contrib(k, xt, &n, &boff, &lf);
     for (i = 0; i < n; i++) {
         uint32_t e = c[i], wn = e >> 25, b = ((e >> 20) & 31u) + boff;
-        int32_t lv = (int32_t)(e & 0xFFFFFu);
+        float lv = lf[i];
         org_wheel_t *w = &org.w[wn];
         if (on) {
             if (w->refc == 0) {
@@ -245,6 +248,8 @@ static __attribute__((noinline)) void org_msg(uint32_t k, uint32_t on, uint32_t 
         } else {
             w->lvl[b] -= lv;
             w->refc--;
+            if (w->refc == 0)                                             /* no key holds it: its levels are exactly 0 (no float residue) */
+                memset(w->lvl, 0, sizeof w->lvl);
             w->rflags = w->refc == 0 ? ORG_REM : (uint8_t)(w->rflags | ORG_MOD);
         }
     }
@@ -330,25 +335,25 @@ static __attribute__((noinline)) void org_fragment(void)
             w->sgs = w->ssum;
             w->sgd = -w->ssum;
         } else {
-            int32_t old = w->rflags & ORG_ADD ? 0 : w->sum;
-            int32_t oldp = w->rflags & ORG_ADD ? 0 : w->pn;
-            int32_t olds = w->rflags & ORG_ADD ? 0 : w->ssum;
+            float old = w->rflags & ORG_ADD ? 0.0f : w->sum;
+            float oldp = w->rflags & ORG_ADD ? 0.0f : w->pn;
+            float olds = w->rflags & ORG_ADD ? 0.0f : w->ssum;
             if ((w->rflags & ORG_MOD) || chg || (w->rflags & ORG_ADD)) {
-                int32_t s = 0, sc = 0, pn;
+                float s = 0.0f, sc = 0.0f, pn;
                 for (d = 0; d < ORG_NBUS; d++) {
-                    int32_t bb = org.bars_cur[d];
+                    float bb = (float)org.bars_cur[d];
                     if (org.perc_cur && (int32_t)d == org.ptrig)
-                        bb = 0;                                       /* the 1' (setBfree's trigger bus) is muted while the percussion is on */
-                    s += w->lvl[d] * bb;                              /* Q18 * 0..8: under 2^31 for any 3 manuals */
+                        bb = 0.0f;                                    /* the 1' (setBfree's trigger bus) is muted while the percussion is on */
+                    s += w->lvl[d] * bb;                              /* Q18 * 0..8 (a float: no overflow) */
                     if ((d < 9u && org.vup_cur) || (d >= 9u && d < 18u && org.vlo_cur))
                         sc += w->lvl[d] * bb;                         /* the upper (0..8) or the lower (9..17) manual, if routed through the scanner */
                 }
-                s = (s + (1 << 8)) >> 9;                              /* / 8 (the drawbar law), Q18 -> Q12 */
-                w->sum = s < 0 ? 0 : s > ORG_GMAX ? ORG_GMAX : s;
-                sc = (sc + (1 << 8)) >> 9;
-                w->ssum = sc < 0 ? 0 : sc > w->sum ? w->sum : sc;     /* the same law: with both manuals routed, ssum == sum */
-                pn = org.perc_cur ? w->lvl[org.psel_cur ? org.pbusb : org.pbusa] >> 6 : 0;   /* the perc bus, whatever its drawbar */
-                w->pn = pn < 0 ? 0 : pn > ORG_GMAX ? ORG_GMAX : pn;
+                s *= (1.0f / 512.0f);                                 /* / 8 (the drawbar law), Q18 -> Q12 */
+                w->sum = s < 0.0f ? 0.0f : s > (float)ORG_GMAX ? (float)ORG_GMAX : s;
+                sc *= (1.0f / 512.0f);
+                w->ssum = sc < 0.0f ? 0.0f : sc > w->sum ? w->sum : sc;   /* the same law: with both manuals routed, ssum == sum */
+                pn = org.perc_cur ? w->lvl[org.psel_cur ? org.pbusb : org.pbusa] * (1.0f / 64.0f) : 0.0f;   /* the perc bus, whatever its drawbar; Q18 -> Q12 */
+                w->pn = pn < 0.0f ? 0.0f : pn > (float)ORG_GMAX ? (float)ORG_GMAX : pn;
             }
             w->gs = old;
             w->pgs = oldp;
@@ -433,10 +438,10 @@ static __attribute__((noinline)) void org_vib(const float *x, float *o, uint32_t
 static __attribute__((noinline)) void org_wheel_pc(org_wheel_t *w, uint32_t inc, uint32_t off, uint32_t n, float *y, float *p)
 {
     uint32_t ph = w->ph, i;
-    float g = (float)w->gs * 8.0f, pg = (float)w->pgs * 8.0f;
+    float g = w->gs * 8.0f, pg = w->pgs * 8.0f;
     if (w->env) {
         const int16_t *e = w->env + off;
-        float gd = (float)w->gd * (1.0f / 2048.0f), pgd = (float)w->pgd * (1.0f / 2048.0f);
+        float gd = w->gd * (1.0f / 2048.0f), pgd = w->pgd * (1.0f / 2048.0f);
         for (i = 0; i < n; i++) {
             float s = sine_f(ph), ee = (float)e[i];
             y[i] += s * (g + ee * gd);
@@ -467,10 +472,10 @@ static __attribute__((noinline)) void org_wheel_pc(org_wheel_t *w, uint32_t inc,
 static __attribute__((noinline)) void org_wheel_sc(org_wheel_t *w, uint32_t inc, uint32_t off, uint32_t n, float *y, float *ys)
 {
     uint32_t ph = w->ph, i;
-    float g = (float)(w->gs - w->sgs) * 8.0f, sg = (float)w->sgs * 8.0f;
+    float g = (w->gs - w->sgs) * 8.0f, sg = w->sgs * 8.0f;
     if (w->env) {
         const int16_t *e = w->env + off;
-        float gd = (float)(w->gd - w->sgd) * (1.0f / 2048.0f), sgd = (float)w->sgd * (1.0f / 2048.0f);
+        float gd = (w->gd - w->sgd) * (1.0f / 2048.0f), sgd = w->sgd * (1.0f / 2048.0f);
         for (i = 0; i < n; i++) {
             float s = sine_f(ph), ee = (float)e[i];
             y[i] += s * (g + ee * gd);
@@ -498,11 +503,11 @@ static __attribute__((noinline)) void org_wheel_scp(org_wheel_t *w, uint32_t inc
                                                    float *p)
 {
     uint32_t ph = w->ph, i;
-    float g = (float)(w->gs - w->sgs) * 8.0f, sg = (float)w->sgs * 8.0f, pg = (float)w->pgs * 8.0f;
+    float g = (w->gs - w->sgs) * 8.0f, sg = w->sgs * 8.0f, pg = w->pgs * 8.0f;
     if (w->env) {
         const int16_t *e = w->env + off;
-        float gd = (float)(w->gd - w->sgd) * (1.0f / 2048.0f), sgd = (float)w->sgd * (1.0f / 2048.0f);
-        float pgd = (float)w->pgd * (1.0f / 2048.0f);
+        float gd = (w->gd - w->sgd) * (1.0f / 2048.0f), sgd = w->sgd * (1.0f / 2048.0f);
+        float pgd = w->pgd * (1.0f / 2048.0f);
         for (i = 0; i < n; i++) {
             float s = sine_f(ph), ee = (float)e[i];
             y[i] += s * (g + ee * gd);
@@ -556,34 +561,34 @@ static __attribute__((noinline)) void org_render(int32_t *out, uint32_t n)
         uint32_t wn = org.ins[k];
         org_wheel_t *w = &org.w[wn];
         uint32_t ph = w->ph, inc = winc[wn - 1u];
-        int32_t g = w->gs;
-        if (vr && (w->sgs | w->sgd)) {                                /* on the scanner: the sine once, y the dry share */
-            if (w->pgs | w->pgd)
+        float g = w->gs;
+        if (vr && (w->sgs != 0.0f || w->sgd != 0.0f)) {                                /* on the scanner: the sine once, y the dry share */
+            if (w->pgs != 0.0f || w->pgd != 0.0f)
                 org_wheel_scp(w, inc, off, n, yf, ysf, pf);
             else
                 org_wheel_sc(w, inc, off, n, yf, ysf);
             continue;
         }
-        if (w->pgs | w->pgd) {                                        /* on the percussion's bus: the sine once, both sums */
+        if (w->pgs != 0.0f || w->pgd != 0.0f) {                       /* on the percussion's bus: the sine once, both sums */
             org_wheel_pc(w, inc, off, n, yf, pf);
             continue;
         }
         if (w->env) {
             const int16_t *e = w->env + off;
-            float gd = (float)w->gd * (1.0f / 2048.0f), gq = (float)g * 8.0f;
+            float gd = w->gd * (1.0f / 2048.0f), gq = g * 8.0f;
             float *yp = yf;
             for (i = n; i; i--) {
                 *yp++ += sine_f(ph) * (gq + (float)*e++ * gd);
                 ph += inc;
             }
         } else if (g >= ORG_FAINT) {
-            float gq = (float)g * 8.0f, *yp = yf;
+            float gq = g * 8.0f, *yp = yf;
             for (i = n; i; i--) {
                 *yp++ += sine_f(ph) * gq;
                 ph += inc;
             }
-        } else if (g) {                                               /* a faint wheel (the crosstalk's leakage): no interpolation */
-            float gq = (float)g * 8.0f, *yp = yf;
+        } else if (g != 0.0f) {                                       /* a faint wheel (the crosstalk's leakage): no interpolation */
+            float gq = g * 8.0f, *yp = yf;
             for (i = n; i; i--) {
                 *yp++ += sine_n(ph) * gq;
                 ph += inc;
@@ -1044,6 +1049,7 @@ static uint32_t org_xt_build(const uint8_t *p)
                         over = 1;
                         continue;
                     }
+                    org_xt_tabf[n] = (float)v;
                     org_xt_tab[n++] = ((uint32_t)w << 25) | ((base + b) << 20) | (uint32_t)v;
                 }
         }
