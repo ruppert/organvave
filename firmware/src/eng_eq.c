@@ -56,6 +56,11 @@ static void eq_init(eq_t *e)
 /* a biquad step: x raw, the states x1 x2 raw and y1 y2 with three fractional bits (the feedback of a filter this low needs them:
  * with the output rounded to whole numbers a 120 Hz shelf at +12 dB stays at a constant of a few hundred, a cycle of a few tens;
  * with them 8 times less). The Q3 values stay under 2.4 million, which the Q14 multiply takes with the largest coefficient. */
+/* Q14 coefficient times a sample, in two parts (the products stay in 32 bits) */
+static inline int32_t mul14(int32_t a, int32_t c)
+{
+    return (((a * (c >> 7)) + 64) >> 7) + (((a * (c & 127)) + 8192) >> 14);
+}
 static inline int32_t eq_bq(int32_t *s, const int32_t *c, int32_t x)
 {
     int32_t y = mul14(x << 3, c[0]) + mul14(s[0] << 3, c[1]) + mul14(s[1] << 3, c[2]) - mul14(s[2], c[3]) - mul14(s[3], c[4]);

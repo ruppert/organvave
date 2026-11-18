@@ -72,13 +72,11 @@ $HC -O2 -o "$OUT/organ_adv_test" tests/organ_adv_test.c -lm
 run "ADVANCED EDIT: the builders against setBfree (the default tables, crosstalk settings, click envelopes), the RAM table's key accounting, tuning, percussion and scanner bytes" "$OUT/organ_adv_test"
 $HC -O2 -o "$OUT/organ_route_test" tests/organ_route_test.c -lm
 run "the scanner routing (0.10.2): the upper and the lower manual through the one scanner by their own switch, the pedals dry, exact against the scanner off" "$OUT/organ_route_test"
-$HC -O2 -o "$OUT/rotary_test" tests/rotary_test.c -lm
-run "the rotary CLASSIC against setBfree's: the sidebands, stopped rotors, the speed ramp reaching its targets, bounds at full scale and at the filters' resonances, silence" "$OUT/rotary_test"
 $HC -O2 -o "$OUT/drive_test" tests/drive_test.c -lm
 run "the drive: its six types (0.9.41) on their THD laws, level, bounds, silence, DC, block independence, TIGHT TUBE's bass" "$OUT/drive_test"
 $HC -O2 -o "$OUT/effects_test" tests/effects_test.c -lm
 $HC -O1 -o "$OUT/midi_organ_test" tests/midi_organ_test.c -lm
-run "the effects section end to end: the patch bytes through mix_block (the rotary: speeds, STOP, CLASSIC 2; the drive; the fades; silence)" "$OUT/effects_test"
+run "the effects section end to end: the drive's patch bytes through mix_block (the drive; the fades; silence; MASTER 0)" "$OUT/effects_test"
 $HC -O1 -o "$OUT/eq_test" tests/eq_test.c -lm
 run "the equaliser: the codings, flat, LOW / MID / HIGH against their design at the ends, the steps, bounds and the settle" "$OUT/eq_test"
 run "the organ over MIDI: the manuals by channel (GLO's MIDI channel), the swell, the drawbar CCs, the rotor speed" "$OUT/midi_organ_test"

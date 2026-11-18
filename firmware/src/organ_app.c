@@ -1020,18 +1020,21 @@ static void oa_vsw(oa_val_t *v, uint32_t op, const char *off, const char *on)
     oa_vt(v, org_patch[op] ? on : off);
     v->on = org_patch[op] != 0;
 }
-/* the horn / drum speeds and ramps of the ROTARY page: the base values (fx.c ROT_SPF / ROT_RTF: 1.12^(i-4) and 1.4^(i-4)) */
+/* the ROTARY page's speed and ramp readouts (since 0.11.0 its controls are dummies: nothing is rendered from them). The scales:
+ * 1.12^(i-4) and 1.4^(i-4), Q8 */
+static const uint16_t OA_SPF[9] = {163, 182, 204, 229, 256, 287, 321, 360, 403};
+static const uint16_t OA_RTF[9] = {67, 93, 131, 183, 256, 358, 502, 702, 983};
 static void oa_vspeed(oa_val_t *v, uint32_t op, uint32_t base_mhz)      /* rpm */
 {
     uint32_t i = org_c9(org_patch[op] <= 8u ? org_patch[op] : 0u);
-    oa_vnum(v, (int32_t)((base_mhz * ROT_SPF[i] >> 8) * 3u / 50u), 0, " RPM");
+    oa_vnum(v, (int32_t)((base_mhz * OA_SPF[i] >> 8) * 3u / 50u), 0, " RPM");
     v->mn = 9;
     v->mv = (int8_t)(i + 1u);
     v->on = 1;
 }
 static void oa_vramp(oa_val_t *v, uint32_t op, uint32_t base_us, int32_t dec)
 {
-    uint32_t i = org_c9(org_patch[op] <= 8u ? org_patch[op] : 0u), us = (base_us >> 4) * ROT_RTF[i] >> 4;
+    uint32_t i = org_c9(org_patch[op] <= 8u ? org_patch[op] : 0u), us = (base_us >> 4) * OA_RTF[i] >> 4;
     oa_vnum(v, (int32_t)(dec ? (us + 5000u) / 10000u : (us + 50000u) / 100000u), dec ? 2 : 1, " S");
     v->mn = 9;
     v->mv = (int8_t)(i + 1u);

@@ -8,11 +8,13 @@ editor are gone, and so are the sequencer, the arpeggiator and Felucca's other e
 
 **Status of `new-float` (0.11.0, the owner's decision).** This branch rebuilds the organ's sound as close to setBFree as the
 FM-1 allows: the whole organ path follows setBfree's own float code (its `tonegen.c`, `vibrato.c` and `b_overdrive`), in
-single-precision float, with the rest of the chain (reverb, delay, EQ, the existing drive) kept as it is. Removed on this branch:
-the rotary (Leslie CLASSIC), the percussion, the organ's limiter and compressors (the master ends in a hard clip), and the
-PRESET SETTINGS rows except VOLUME, SPLIT and SPLIT POINT. Nothing is migrated from 0.10.x: patches, user presets and the
-factory bank are rebuilt. Where a section below describes the integer port on `main`, it says so; the target is the setBfree
-port described here and in ORGAN.md.
+single-precision float, with the rest of the chain (reverb, delay, EQ, the existing drive) kept as it is. The rotary (Leslie
+CLASSIC) has no sound on this branch: its DSP is removed (`eng_rotary.c` and its tables), and its controls (the HOME box, the
+ROTARY page, SCL, the lowest F of DRAWBAR PRESET MODE) are dummies that store their bytes and change nothing (owner). Still to
+remove: the percussion, the organ's limiter and compressors (the master ends in a hard clip), and the PRESET SETTINGS rows
+except VOLUME, SPLIT and SPLIT POINT. Nothing is migrated from 0.10.x: patches, user presets and the factory bank are rebuilt.
+Where a section below describes the integer port on `main`, it says so; the target is the setBfree port described here and in
+ORGAN.md.
 
 ## 1. What runs on the chip
 
@@ -93,7 +95,7 @@ waveforms with 43 dB SNR over 0.25 s (the wheels are pure sines here; setBfree's
 - **A stored value's meaning** never changes silently. The patch bytes, the autosave and the user presets are stored: a new
   meaning needs a new version (`AS_MAGIC`, `UP_VER`, the patch's `ORG_PSIZE`), a note in `web/EDITOR_PROTOCOL.md`, and a rule for
   older records. `ENGINES[]` entries are appended, never reordered.
-- **On `new-float`**: the rotary and the percussion are not ported (removed, owner). The organ's pieces are ports of setBfree's
+- **On `new-float`**: the rotary's DSP is removed and its controls are dummies (owner); the percussion is not ported (removed, owner). The organ's pieces are ports of setBfree's
   own files in float: `tonegen.c` (wheels, keys, buses, tapering, crosstalk, click, key compression), `vibrato.c` (scanner CV) and
   `b_overdrive/overdrive.c` (the Preamp/Overdrive module, with its oversampling and the tube tables from `overmaker`). The
   reduced rotary of `main` (1024 angles) is not part of this branch.
@@ -186,7 +188,7 @@ The organ has no voices to shed. `shed_voice()` (audio.c) therefore calls `fx_cp
 - **Drive**: GAIN, TYPE, TONE, OUTPUT (patch bytes 41, 48, 49, 50). TYPE 0 is DISTORTION (`dr_run`, an approximation made in 0.9.2, untouched). It is **not** setBfree's preamp: setBfree's
 Preamp/Overdrive is `b_overdrive/overdrive.c` (a float module, 4x oversampled, with a clean bypass as its default), which
 `new-float` ports as the `original` type. TYPE 1 is TUBE (`dr_tube` in eng_drive.c: an asymmetric soft cubic with a DC tracker, as loud as DISTORTION at the default gain). `dr_run_ex` runs either curve and then `dr_post` (a tilt around 1 kHz and an output gain, 2 dB a step). The old CHARACTER byte (42) is ignored.
-- **Rotary** (on `main` only; removed on `new-float`): bytes 51..56 scale the horn and drum speeds (1.12^n a step) and the ramp times (1.4^n a step). The coding is "zero is the default": `org_c9` / `org_b9` (eng_organ.c). The ramp steps are the table `ROT_KT` (fx.c), because `rot_k` divides in 64 bits and the interrupt cannot link `__udivdi3`; effects_test.c checks every entry against `rot_k`.
+- **Rotary** (the DSP is on `main` only; on `new-float` the bytes below are stored and ignored, owner's dummy controls): bytes 51..56 scale the horn and drum speeds (1.12^n a step) and the ramp times (1.4^n a step). The coding is "zero is the default": `org_c9` / `org_b9` (eng_organ.c). The ramp steps are the table `ROT_KT` (fx.c), because `rot_k` divides in 64 bits and the interrupt cannot link `__udivdi3`; effects_test.c checks every entry against `rot_k`.
 - **Rotary input**: the reverb's return holds a faint constant, which the turning rotors would make a tone: `mix_block` runs a 7 Hz high-pass (`rot_dc`) in front of the cabinet and feeds zeros once the input has been quiet for 1.1 s. The host tests (regress.c, audio_test.c) now initialise the effects like main.c's `felucca_init`; before, the rotors never turned in them.
 - **Pages**: pages 2..7 are row lists (`oa_val`, `oa_adj`, `oa_rows` in organ_app.c): SELECT picks a row (highlighted), ALGORITHM changes it, K1..K4 act on rows 1..4. The drawbar page is UPPER or LOWER+PEDAL (EDIT toggles): the Hammond has 2 pedal drawbars (16' and 8'), shown at the left of the 9 lower ones.
 - **Editor**: `ORG_PUT` carries at most 48 bytes, so the editor sends the 57 patch bytes in two frames.

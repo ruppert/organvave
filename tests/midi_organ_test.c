@@ -54,7 +54,7 @@ static void boot(void)
     uint32_t i;
     host_tracks_init();
     org_init();
-    rot_w = dr_w = 0;
+    dr_w = 0;
     fxo_seen = 0xFF;
     memset(&fx, 0, sizeof fx);
     rev_clear();

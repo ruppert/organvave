@@ -46,9 +46,8 @@ static void fresh(void)
     host_tracks_init();
     org_init();                                        /* (the tone generator from power-on: runs compare) */
     org_pgen_seen = 0xFF;
-    rot_load_tables();                                 /* (the effects as at power-on too: the rotors turn, so a run starts at the same phase) */
-    rot_init(&rot_st); dr_init(&dr_st); eq_init(&eq_st);
-    rot_dc = 0; rot_idle = 0; fxo_seen = 0xFF;
+    dr_init(&dr_st); eq_init(&eq_st);
+    fxo_seen = 0xFF;
     for (p = 0; p < NPART; p++) host_preset(&trk[p], ENGI_ORGAN, 0);
     memset(&felucca_dbg, 0, sizeof felucca_dbg);
     audio_cpu_rem = audio_halves = audio_max_us = 0;
@@ -194,7 +193,7 @@ static void boot_fresh(void)
     trk[0].p[P_VOICE] = V_POLY;
     trk[0].p[P_DIST] = trk[0].p[P_CHOR] = trk[0].p[P_DLY] = trk[0].p[P_REV] = 0;
     org_set(OP_ROT, 0); org_set(OP_DRV, 0);            /* (the rms comparisons depend on the rotor's phase: no effects; */
-    rot_w = dr_w = 0; rot_idle = 0;                    /* and the fades start from nothing, as at power-on) */
+    dr_w = 0;                                          /* and the fades start from nothing, as at power-on) */
 }
 static double boot_run(int32_t pot, int boot, uint32_t *splash_peak, uint32_t *first_master, uint32_t *busy)
 {

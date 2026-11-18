@@ -23,10 +23,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-static inline int32_t mul14(int32_t a, int32_t c)               /* (eng_rotary.c's: the tone stack's biquads, eng_eq.c, need it) */
-{
-    return (((a * (c >> 7)) + 64) >> 7) + (((a * (c & 127)) + 8192) >> 14);
-}
 #include "../firmware/src/eng_drive.c"
 
 static int bad;

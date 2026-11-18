@@ -1,15 +1,13 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Guilherme Ruppert (OrganVave-1) */
-/* The organ's effects section end to end on the host: the patch bytes (OP_ROT .. OP_DRV_OUT, OP_ROT_DRAMP) through mix_block, with the
- * whole firmware (organ_app.c) and a chord held on the organ.
- * 1. the bytes: clamped by org_pmax; a patch of zeros leaves the mix as it was (no rotary, no drive).
- * 2. the rotary: FAST turns the horn (the left channel's level moves by more than 3 dB over a second, the channels differ);
- *    STOP holds still (the level varies under 1 dB); MODEL CLASSIC 2 runs (MIC 6 is printed: the mics' angle narrows the image).
- * 3. the fades: switching the rotary or the drive on or off with the chord held makes no step (largest sample-to-sample
- *    jump within 3 times the dry mix's).
- * 4. the drive: a single key at one drawbar gets its odd harmonics (the third more than 6 dB higher re the fundamental).
- * 5. silence: with everything on and no key, silence out.
- * 6. after the keys the output is quiet again (no limit cycle in the cabinet's filters), and MASTER 0 is silent. */
+/* The organ's effects section end to end on the host: the drive's patch bytes (OP_DRV .. OP_DRV_OUT) through mix_block, with the
+ * whole firmware (organ_app.c) and a chord held on the organ. Since 0.11.0 the Leslie is gone (its controls are dummies): its
+ * checks went with it. The master limiter's checks come back with the port's limiter removal (0.11.0).
+ * 1. the bytes: clamped by org_pmax; a patch of zeros leaves the mix as it was (no drive).
+ * 2. the fades: switching the drive on with the chord held makes no step (largest sample-to-sample jump within 4 times the dry mix's).
+ * 3. the drive: a single key at one drawbar gets its third harmonic (more than 6 dB higher re the fundamental).
+ * 4. silence: with everything on and no key, silence out.
+ * 5. after the keys the output is quiet again, and MASTER 0 is silent. */
 #include "host.h"
 #include "../firmware/src/organ_app.c"
 #include <stdio.h>
@@ -48,16 +46,13 @@ static void boot(void)
     memset(&fx, 0, sizeof fx);           /* (the last section's reverb tail) */
     rev_clear();
     org_init();
-    rot_load_tables();
-    rot_init(&rot_st);
     dr_init(&dr_st);
     eq_init(&eq_st);
     master_lim_reset();                  /* (the master as at power-on, 0.9.39: its look-ahead and hold keep a tail of the last case) */
     dc_l = dc_r = dce_l = dce_r = 0;
     eq_w = 0; eq_idle = 0; eq_on = 0;
-    rot_w = dr_w = 0;
-    rot_idle = 0;
-    rot_on = dr_on = 0;
+    dr_w = 0;
+    dr_on = 0;
     fxo_seen = 0xFF;
     pos = 0;
     host_preset(&trk[0], ENGI_ORGAN, 0);
@@ -67,7 +62,6 @@ static void boot(void)
     memset(P, 0, sizeof P);
     P[OP_UB + 2] = 8;                    /* 8' */
     P[OP_UB + 3] = 6;                    /* 4' */
-    P[OP_ROT_BAL] = 4;
     P[OP_DRV_GAIN] = 60;
     patch_set(P);
 }
@@ -132,82 +126,20 @@ int main(void)
     double d0, s;
     /* 1. the bytes */
     boot();
-    org_set(OP_ROT_SPEED, 9);
-    org_set(OP_ROT_MIC, 9);
     org_set(OP_DRV_GAIN, 250);
     org_set(OP_DRV_TYPE, 99);
     org_set(OP_DRV_TONE, 99);
     org_set(OP_DRV_TREB, 99);
-    org_set(OP_ROT_HSLOW, 99);
-    org_set(OP_ROT_BAL, 99);
-    org_set(OP_ROT, 5);
-    check("the bytes are clamped (SPEED 2, MIC 6, GAIN 100, TYPE 7 (0.9.41), TONE 0 and TREBLE 10 (0.9.44), HSLOW 8, BAL 8, ROT 1)",
-          org_patch[OP_ROT_SPEED] == 2 && org_patch[OP_ROT_MIC] == 6 && org_patch[OP_DRV_GAIN] == 100 &&
-              org_patch[OP_DRV_TYPE] == 7 && org_patch[OP_DRV_TONE] == 0 && org_patch[OP_DRV_TREB] == 10 && org_patch[OP_ROT_HSLOW] == 8 && org_patch[OP_ROT_BAL] == 8 && org_patch[OP_ROT] == 1);
+    check("the bytes are clamped (GAIN 100, TYPE 7 (0.9.41), TONE 0 and TREBLE 10 (0.9.44))",
+          org_patch[OP_DRV_GAIN] == 100 && org_patch[OP_DRV_TYPE] == 7 && org_patch[OP_DRV_TONE] == 0 && org_patch[OP_DRV_TREB] == 10);
     /* a patch of zeros in the effects bytes leaves the mix dry */
     boot();
     chord_on();
     blocks(44100);
-    check("with the effects bytes at 0 nothing is in the mix but the organ (rot_on, dr_on, both weights 0)",
-          !rot_on && !dr_on && !rot_w && !dr_w && rms_win(oL, 22050, 22050) > 500);
+    check("with the effects bytes at 0 nothing is in the mix but the organ (dr_on, dr_w 0)",
+          !dr_on && !dr_w && rms_win(oL, 22050, 22050) > 500);
 
-    /* 2. the rotary */
-    boot();
-    chord_on();
-    blocks(44100);
-    P[OP_ROT] = 1; P[OP_ROT_SPEED] = 2;
-    patch_set(P);
-    blocks(44100 * 5);
-    s = swing(oL, 44100 * 4, 44100 * 6);
-    {
-        double e = 0, l = 0;
-        for (i = 44100 * 4; i < 44100 * 6; i++) { double d = (double)oL[i] - oR[i]; e += d * d; l += (double)oL[i] * oL[i]; }
-        printf("effects: rotary FAST: left level swing %.1f dB, L-R / L %.1f dB\n", s, db(sqrt(e / l)));
-        check("the rotary FAST: the level moves (more than 3 dB over 2 s in 50 ms windows)", s > 3.0);
-        check("the rotary FAST: the channels differ (L - R above -20 dB re L)", db(sqrt(e / l)) > -20.0);
-    }
-    P[OP_ROT_SPEED] = 0;
-    patch_set(P);
-    blocks(44100 * 16);                   /* the drum coasts: setBfree has no brake, the speed decays e^-t/1.37 s to 0.05 rpm: about 12 s */
-    s = swing(oL, pos - 44100, pos);
-    printf("effects: rotary STOP: left level swing %.2f dB\n", s);
-    /* (under 1.5 dB since 0.9.38: the master's limiter no longer follows every peak, so the chord's own beats show, about 1 dB) */
-    check("the rotary STOP: the level holds (under 1.5 dB in the last second)", s < 1.5);
-    P[OP_ROT_MIC] = 6; P[OP_ROT_SPEED] = 2;
-    patch_set(P);
-    blocks(44100 * 3);
-    {
-        double e = 0, l = 0;
-        for (i = pos - 44100; i < pos; i++) { double d = (double)oL[i] - oR[i]; e += d * d; l += (double)oL[i] * oL[i]; }
-        d0 = db(sqrt(e / l));
-        printf("effects: rotary MIC 6 (mono): L-R / L %.1f dB\n", d0);
-    }
-    P[OP_ROT_MIC] = 0; P[OP_ROT_MODEL] = 1;
-    patch_set(P);
-    blocks(44100 * 2);
-    check("the rotary CLASSIC 2 runs (the model in use is 1, the output is alive and bounded)",
-          rot_model_req == 1 && rms_win(oL, pos - 22050, 22050) > 300 && maxjump(oL, pos - 22050, pos) < 40000);
-
-    /* 3. the fades */
-    boot();
-    chord_on();
-    blocks(44100);
-    d0 = maxjump(oL, 22050, 44100);
-    P[OP_ROT] = 1; P[OP_ROT_SPEED] = 2;
-    patch_set(P);
-    blocks(44100 / 2);
-    printf("effects: largest step dry %.0f, rotary coming in %.0f\n", d0, (double)maxjump(oL, 44100, pos));
-    check("the rotary coming in: no step (largest jump within 3 times the dry mix's)", maxjump(oL, 44100, pos) < 3.0 * d0 + 50);
-    blocks(44100 * 2);
-    {
-        uint32_t a = pos;
-        double d1 = maxjump(oL, a - 22050, a);
-        P[OP_ROT] = 0;
-        patch_set(P);
-        blocks(44100 / 2);
-        printf("effects: largest step with the rotary %.0f, going out %.0f\n", d1, (double)maxjump(oL, a, pos));
-        check("the rotary going out: no step (within 3 times the largest jump with it on)", maxjump(oL, a, pos) < 3.0 * d1 + 50);
-    }
+    /* 2. the fades */
     boot();
     chord_on();
     blocks(44100);
@@ -221,7 +153,7 @@ int main(void)
         check("the drive coming in: no step (within 4 times the dry mix's; it adds harmonics, so more is allowed)", dj < 4.0 * d0 + 50);
     }
 
-    /* 4. the drive: a single key, one drawbar: the third harmonic. DISTORTION: a single drawbar's note is far under the level
+    /* 3. the drive: a single key, one drawbar: the third harmonic. DISTORTION: a single drawbar's note is far under the level
      * TUBE DRIVE's law is set at (0.9.30: its knob follows its distortion at the organ's level), so it hardly distorts it */
     boot();
     memset(P, 0, sizeof P);
@@ -246,16 +178,15 @@ int main(void)
         check("the drive: the third harmonic rises by more than 6 dB re the fundamental", db(b3 / b1) - db(a3 / a1) > 6.0);
     }
 
-    /* 5. silence */
+    /* 4. silence */
     {
-        static const struct { uint8_t rot, model, drv; const char *n; } C[4] = {
-            {0, 0, 1, "drive"}, {1, 0, 0, "rotary CLASSIC"}, {1, 1, 0, "rotary CLASSIC 2"}, {1, 1, 1, "all"}};
+        static const struct { uint8_t drv; const char *n; } C[2] = {{1, "drive"}, {0, "dry"}};
         uint32_t c;
         int32_t worst = 0;
-        for (c = 0; c < 4; c++) {
+        for (c = 0; c < 2; c++) {
             int32_t pk = 0;
             boot();
-            P[OP_ROT] = C[c].rot; P[OP_ROT_SPEED] = 2; P[OP_DRV] = C[c].drv; P[OP_ROT_MODEL] = C[c].model;
+            P[OP_DRV] = C[c].drv;
             patch_set(P);
             blocks(44100);
             for (i = 22050; i < pos; i++) {
@@ -268,70 +199,14 @@ int main(void)
         }
         check("every effect on, no key: silence out (|y| < 4)", worst < 4);
     }
-    /* 5b. 0.9.38 (owner: "preset 001, the percussion off, a C major triad high up: the sound cracks"): the cabinet's input keeps
-     * 12 dB more headroom (it clipped at 4 full wheels), and the master's knee is linear to 0.8 of full scale, never past it */
+    /* 5. after the keys: the drive goes quiet (no limit cycle: at most 1 LSB), and MASTER 0 is silent */
     {
-        int32_t x, prev = 0, worst = 0, lin = 1, mono = 1, top = 1;
-        uint32_t b;
-        for (x = 0; x <= 200000; x += 37) {
-            int32_t y = master_knee(x);
-            lin &= x > LIM_KNEE || y == x;
-            mono &= y >= prev;
-            top &= y < LIM_CEIL && master_knee(-x) == -y;
-            prev = y;
-        }
-        check("master: the knee is linear up to 0.8 of full scale, rises, stays under 0.9, and is odd", lin && mono && top);
-        boot();
-        host_preset(&trk[0], ENGI_ORGAN, 0);         /* 001: JAZZ B3 */
-        org_set(OP_PERC, 0);
-        song.master_q12 = 2048;
-        blocks(CTL * 40);
-        input_on(&trk[0], 84, 100); input_on(&trk[0], 88, 100); input_on(&trk[0], 91, 100);   /* C6 E6 G6 */
-        for (b = 0; b < 44100u * 2u / CTL; b++) {
-            blocks(CTL);
-            for (i = 0; i < CTL; i++) {
-                int32_t v = (((mix_l[i] + mix_r[i]) >> 1) + wet[i]) >> 4, a2 = v < 0 ? -v : v;   /* the cabinet's input (fx.c) */
-                worst = a2 > worst ? a2 : worst;
-            }
-        }
-        input_off(&trk[0], 84); input_off(&trk[0], 88); input_off(&trk[0], 91);
-        printf("effects: preset 001, the percussion off, C6 triad: the cabinet's input peaks at %.2f of its 1.0\n", worst / 32768.0);
-        check("  .. preset 001's high C major triad stays inside the cabinet's input (it clipped before 0.9.38)", worst < 32767);
-        {   /* 0.9.39 (owner: "still cracking, with the Leslie and more without it"): the look-ahead limiter keeps the output under the
-             * knee (0.8 of full scale), the Leslie on and off, so nothing is clipped */
-            uint32_t rot, over[2] = {0, 0};
-            int32_t pk2[2] = {0, 0};
-            for (rot = 0; rot < 2u; rot++) {
-                boot();
-                host_preset(&trk[0], ENGI_ORGAN, 0);
-                org_set(OP_PERC, 0);
-                org_set(OP_ROT, rot);
-                song.master_q12 = 2048;
-                blocks(CTL * 40);
-                input_on(&trk[0], 84, 100); input_on(&trk[0], 88, 100); input_on(&trk[0], 91, 100);
-                blocks(44100 * 2);
-                for (i = pos - 44100 * 2 + 4410; i < pos; i++) {
-                    int32_t a2 = oL[i] < 0 ? -oL[i] : oL[i], b2 = oR[i] < 0 ? -oR[i] : oR[i];
-                    a2 = a2 > b2 ? a2 : b2;
-                    pk2[rot] = a2 > pk2[rot] ? a2 : pk2[rot];
-                    over[rot] += a2 > LIM_KNEE;
-                }
-                input_off(&trk[0], 84); input_off(&trk[0], 88); input_off(&trk[0], 91);
-            }
-            printf("effects: preset 001's C6 triad, MASTER at the middle: output peak %.2f (Leslie off) / %.2f (on) of full scale, over the knee %u / %u\n",
-                   pk2[0] / 32768.0, pk2[1] / 32768.0, over[0], over[1]);
-            check("  .. and its output stays under the master's knee, the Leslie off and on (nothing clipped, 0.9.39)", !over[0] && !over[1]);
-        }
-        song.master_q12 = 4096;
-    }
-    /* 6. after the keys: the cabinet and the drive go quiet (no limit cycle: at most 1 LSB), and MASTER 0 is silent */
-    {
-        static const struct { uint8_t model, drv; const char *n; } C[3] = {{0, 0, "CLASSIC"}, {1, 0, "CLASSIC 2"}, {0, 1, "CLASSIC and the drive"}};
+        static const struct { uint8_t drv; const char *n; } C[2] = {{0, "dry"}, {1, "the drive"}};
         uint32_t c;
-        for (c = 0; c < 3; c++) {
+        for (c = 0; c < 2; c++) {
             int32_t pk = 0;
             boot();
-            P[OP_ROT] = 1; P[OP_ROT_SPEED] = 2; P[OP_ROT_MODEL] = C[c].model; P[OP_DRV] = C[c].drv;
+            P[OP_DRV] = C[c].drv;
             patch_set(P);
             chord_on();
             blocks(44100);
@@ -346,7 +221,7 @@ int main(void)
             check("  .. the output is quiet again (peak at most 1)", pk <= 1);
         }
         boot();
-        P[OP_ROT] = 1; P[OP_ROT_SPEED] = 2; P[OP_DRV] = 1;
+        P[OP_DRV] = 1;
         patch_set(P);
         song.master_q12 = 0;
         chord_on();
@@ -358,7 +233,7 @@ int main(void)
                 if (a > pk) pk = a;
                 if (b > pk) pk = b;
             }
-            check("MASTER 0 with the rotary and the drive on, a chord held: silent", pk == 0);
+            check("MASTER 0 with the drive on, a chord held: silent", pk == 0);
         }
         song.master_q12 = 4096;
     }
@@ -451,7 +326,7 @@ int main(void)
         chord_off();
         /* silence, and MASTER 0 */
         boot();
-        P[OP_EQ] = 1; P[OP_EQ_LOW] = 12; P[OP_EQ_MID] = 12; P[OP_EQ_HIGH] = 12; P[OP_ROT] = 1; P[OP_DRV] = 1;
+        P[OP_EQ] = 1; P[OP_EQ_LOW] = 12; P[OP_EQ_MID] = 12; P[OP_EQ_HIGH] = 12; P[OP_DRV] = 1;
         patch_set(P);
         chord_on();
         blocks(22050);
@@ -465,7 +340,7 @@ int main(void)
                 pk = y > pk ? y : pk;
             }
             printf("effects: everything on, eight seconds after the keys: peak %d\n", pk);
-            check("the EQ on with the rotary and the drive, long after the keys: silent (peak at most 1)", pk <= 1);
+            check("the EQ on with the drive, long after the keys: silent (peak at most 1)", pk <= 1);
         }
         boot();
         P[OP_EQ] = 1; P[OP_EQ_LOW] = 12; P[OP_EQ_MID] = 12; P[OP_EQ_HIGH] = 12;
@@ -484,11 +359,11 @@ int main(void)
         song.master_q12 = 4096;
     }
     /* 8. CPU overload (fx_cpu_high, which audio.c's shed_voice calls when it has no voice to take): the oldest key let go
-     * (never the last); the delay, the rotary and the drive stay as chosen (no CPU HIGH indicator, 0.9.26) */
+     * (never the last); the delay and the drive stay as chosen (no CPU HIGH indicator, 0.9.26) */
     {
         boot();
         memset(P, 0, sizeof P);
-        P[OP_UB + 2] = 8; P[OP_ROT] = 1; P[OP_ROT_MODEL] = 0; P[OP_ROT_SPEED] = 2; P[OP_ROT_BAL] = 4; P[OP_DRV] = 1; P[OP_DRV_GAIN] = 60;
+        P[OP_UB + 2] = 8; P[OP_DRV] = 1; P[OP_DRV_GAIN] = 60;
         patch_set(P);
         trk[0].p[P_DLY] = 60;
         org_key(10, 1); org_key(20, 1); org_key(30, 1);
@@ -498,7 +373,7 @@ int main(void)
         blocks(256);
         check("  .. the delay still runs", fx.dly_on == 1);
         check("  .. the oldest key let go, the others held", org.keys[10] == 0 && org.keys[20] && org.keys[30] && org.ndown == 2);
-        check("  .. the rotary and the drive are as chosen", rot_model_req == 0 && rot_on && dr_on == 1);
+        check("  .. the drive is as chosen", dr_on == 1);
         fx_cpu_high(); blocks(256);
         check("  .. the next oldest goes", org.keys[20] == 0 && org.keys[30] && org.ndown == 1);
         fx_cpu_high(); blocks(256);
@@ -525,7 +400,7 @@ int main(void)
         memset(P, 0, sizeof P);
         for (i = 0; i < 27u; i++)
             P[i] = 8;                                    /* every drawbar of every manual at 8 */
-        P[OP_PERC] = 1; P[OP_VIB] = 5; P[OP_ROT] = 1; P[OP_ROT_SPEED] = 2; P[OP_ROT_BAL] = 4; P[OP_DRV] = 1; P[OP_DRV_GAIN] = 100;
+        P[OP_PERC] = 1; P[OP_VIB] = 5; P[OP_DRV] = 1; P[OP_DRV_GAIN] = 100;
         P[OP_EQ] = 1; P[OP_EQ_LOW] = 12; P[OP_EQ_MID] = 12; P[OP_EQ_HIGH] = 12;
         patch_set(P);
         trk[0].p[P_REV] = 127; trk[0].p[P_DLY] = 127;
@@ -559,7 +434,7 @@ int main(void)
         printf("effects: 14 s after letting go: peak %d\n", pk_end);
         check("  .. and after letting go it falls quiet (peak at most 2 after 14 s)", pk_end <= 2);
     }
-    /* 11. the drive's two types, its tone and output, and the Leslie's own speeds and ramps (0.9.2) */
+    /* 6. the drive's two types, its tone and output (0.9.2 .. 0.9.44) */
     {
         double f0 = 130.81, d1, d2, d3, t1, t2, t3, rd, rt, rt0, rt1;
         boot();
@@ -641,82 +516,7 @@ int main(void)
         check("OUTPUT: -4 dB takes the level down to 0.63 (within 3 %)", rt1 / rt0 > 0.61 && rt1 / rt0 < 0.65);
         input_off(&trk[0], 48);
         blocks(44100 * 2);
-        /* the Leslie's speeds and ramps: the rotors' targets and the ramp steps follow the bytes */
-        boot();
-        memset(P, 0, sizeof P);
-        P[OP_UB + 2] = 8; P[OP_ROT] = 1; P[OP_ROT_SPEED] = 1;
-        patch_set(P);
-        input_on(&trk[0], 48, 100);
-        blocks(4410);
-        {
-            uint32_t h0 = rot_st.tgt_h, d0 = rot_st.tgt_d;
-            int32_t kh0 = rot_st.k_ha, kd0 = rot_st.k_da;
-            P[OP_ROT_HSLOW] = (uint8_t)org_b9(8);                    /* horn slow, the top index: x 1.574 */
-            P[OP_ROT_DSLOW] = (uint8_t)org_b9(0);                    /* drum slow, the bottom: x 0.637 */
-            P[OP_ROT_HRAMP] = (uint8_t)org_b9(8);                    /* horn ramp: slower, x 3.84 in time */
-            P[OP_ROT_DRAMP] = (uint8_t)org_b9(0);                    /* drum ramp: faster, x 0.26 */
-            patch_set(P);
-            blocks(4410);
-            printf("effects: horn target %u -> %u, drum %u -> %u, horn ramp step %d -> %d, drum %d -> %d\n", h0, rot_st.tgt_h, d0, rot_st.tgt_d, kh0, rot_st.k_ha, kd0, rot_st.k_da);
-            check("the horn's slow speed: the top step is 12 % x 4 faster (x 1.574, within 1 %)",
-                  (double)rot_st.tgt_h / h0 > 1.574 * 0.99 && (double)rot_st.tgt_h / h0 < 1.574 * 1.01);
-            check("the drum's slow speed: the bottom step is x 0.637 (within 1 %)",
-                  (double)rot_st.tgt_d / d0 > 0.637 * 0.99 && (double)rot_st.tgt_d / d0 < 0.637 * 1.01);
-            check("the horn's ramp 3.84 times longer (the step 3.84 times smaller, within 3 %)",
-                  (double)kh0 / rot_st.k_ha > 3.84 * 0.97 && (double)kh0 / rot_st.k_ha < 3.84 * 1.03);
-            check("the drum's ramp 0.26 times as long (the step 3.8 times larger, within 3 %)",
-                  (double)rot_st.k_da / kd0 > 3.82 * 0.97 && (double)rot_st.k_da / kd0 < 3.82 * 1.03);
-            P[OP_ROT_SPEED] = 2;
-            P[OP_ROT_HFAST] = (uint8_t)org_b9(8);
-            patch_set(P);
-            blocks(4410);
-            check("the horn's fast speed follows its own byte (x 1.574 of 6.5 Hz)", (double)rot_st.tgt_h / (double)rot_inc(6500u) > 1.574 * 0.99 &&
-                  (double)rot_st.tgt_h / (double)rot_inc(6500u) < 1.574 * 1.01);
-        }
-        input_off(&trk[0], 48);
-        blocks(44100);
-        {   /* the table of the ramps' steps against rot_k itself */
-            static const uint32_t BASE[4] = {1500000u, 3000000u, 4127000u, 1371000u};
-            uint32_t b, i, bad_k = 0;
-            for (b = 0; b < 4u; b++)
-                for (i = 0; i < 9u; i++)
-                    bad_k += ROT_KT[b][i] != rot_k((BASE[b] * ROT_RTF[i]) >> 8);
-            check("the ramps' step table is rot_k of each time (36 entries)", bad_k == 0);
-        }
     }
-    /* 10. headroom: a loud chord (the mix several times 1.0) goes through the cabinet without clipping at its input. The swell
-     * taken down by 12 dB must take the output down by 12 dB (4.0 in rms) through CLASSIC and CLASSIC 2 as it does dry; a hard clip
-     * at the cabinet's input (the distortion with the rotary on) leaves the loud case well under 4 times the quiet one */
-    {
-        uint32_t m;
-        for (m = 0; m < 3; m++) {                       /* 0 dry, 1 CLASSIC, 2 CLASSIC 2 */
-            double r_hi, r_lo;
-            boot();
-            memset(P, 0, sizeof P);
-            for (i = 0; i < 9; i++)
-                P[OP_UB + i] = 8;
-            P[OP_ROT] = m ? 1 : 0; P[OP_ROT_MODEL] = m == 2; P[OP_ROT_SPEED] = 0; P[OP_ROT_BAL] = 4;
-            patch_set(P);
-            song.master_q12 = 300;                      /* (the limiter stays out of it) */
-            org.swell = 32768;
-            chord_on();
-            blocks(44100);
-            pos = 0;
-            blocks(22050);
-            r_hi = rms_win(oL, 0, 22050);
-            org.swell = 8192;
-            blocks(44100);
-            pos = 0;
-            blocks(22050);
-            r_lo = rms_win(oL, 0, 22050);
-            printf("effects: headroom, %s: loud %.0f, quiet %.0f (ratio %.2f, 4.00 is linear)\n", m == 0 ? "dry" : m == 1 ? "CLASSIC" : "CLASSIC 2", r_hi, r_lo, r_hi / r_lo);
-            check("  .. the output follows the swell linearly (12 dB = 4.0 within 5 %)", r_lo > 20.0 && r_hi / r_lo > 3.8 && r_hi / r_lo < 4.2);
-            chord_off();
-        }
-        song.master_q12 = 4096;
-        org.swell = 32768;
-    }
-    chord_off();
     printf(bad ? "effects: FAILED\n" : "effects: all ok\n");
     return bad;
 }

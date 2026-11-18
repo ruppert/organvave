@@ -47,7 +47,6 @@
 
 /* ----------------------------------------------------------- sound --- */
 #include "core.h"
-#define ROT_RAM 1                /* eng_rotary.c (included by fx.c): the angle tables in SRAM */
 #include "engines.c"             /* dsp.c, the engines */
 #include "params.c"
 #include "voice.c"

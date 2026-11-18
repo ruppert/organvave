@@ -105,8 +105,6 @@ static void felucca_init(void)
     for (i = 0; i < G_COUNT; i++)
         song.g[i] = GP[i].def;
     org_init();                               /* the tone generator at rest */
-    rot_load_tables();                        /* the rotary's angle tables to SRAM, the cabinet at rest */
-    rot_init(&rot_st);
     dr_init(&dr_st);
     eq_init(&eq_st);
     track_defaults(t);

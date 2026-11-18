@@ -1117,36 +1117,15 @@ static void mix_part(track_t *t, uint32_t n)
 }
 
 static void events_block(uint32_t n);                 /* (seq.c) */
-#include "eng_rotary.c"             /* the rotary speaker, CLASSIC */
-#include "eng_drive.c"              /* the drive: the organ's preamp, before the master and the rotary */
+#include "eng_drive.c"              /* the drive: the organ's effect, before the master */
 #include "eng_eq.c"                 /* the equaliser: after MASTER, before the limiter */
 static dr_t dr_st;
 static eq_t eq_st;
 static volatile uint8_t eq_on;                          /* the equaliser, on or off (the patch) */
 static volatile uint8_t dr_on;                          /* 0 off, 1 on (the effects section sets it) */
-/* the rotary speaker (eng_rotary.c) between the mix and the master: off (rot_on 0) the mix is as it was; on, the mono
- * sum of the mix and the reverb's return goes through the cabinet and comes out in stereo */
-static rot_t rot_st __attribute__((section(".pool")));
-static volatile uint8_t rot_on;
-static volatile uint8_t rot_model_req;                  /* 0 CLASSIC .. 4 CLASSIC 5 (the effects section sets it) */
-
-/* the organ's effects settings (the patch bytes OP_ROT .. OP_DRV_FAT), taken at the next block after a change */
-/* the drive's output gain: setBfree's 0.8795 and 3 dB (the curve saturates: with a few keys it comes out 2 to 16 dB below the dry mix, with a full chord about 2 dB) */
-static const uint16_t ROT_BAL_HL[9] = {5734, 6820, 8110, 9644, 11469, 13639, 16220, 19288, 22938};
-/* the rotary's speed and ramp scales (the bytes OP_ROT_HSLOW .. OP_ROT_DRAMP, index 0..8, 4 the default): 1.12^(i-4) and 1.4^(i-4), Q8 */
-static const uint16_t ROT_SPF[9] = {163, 182, 204, 229, 256, 287, 321, 360, 403};
-static const uint16_t ROT_RTF[9] = {67, 93, 131, 183, 256, 358, 502, 702, 983};
-/* rot_k (the ramp's step per block, Q30) of the four base times (horn up 1.5 s, horn down 3.0 s, drum up 4.127 s, drum down
- * 1.371 s) times ROT_RTF: a table, because rot_k divides in 64 bits (tests/effects_test.c checks every entry against it) */
-static const int32_t ROT_KT[4][9] = {
-    {1982823, 1428856, 1014574, 726377, 519296, 371366, 264852, 189402, 135263},
-    {991870, 714666, 507407, 363250, 259679, 185699, 132434, 94705, 67633},
-    {721101, 519552, 368868, 264066, 188773, 134992, 96270, 68844, 49164},
-    {2169204, 1563201, 1109987, 794698, 568144, 406302, 289768, 207222, 147989},
-};
 static uint8_t fxo_seen = 0xFF;
 /* CPU overload (audio.c shed_voice): the oldest key is let go (eng_organ.c org_fragment); the popup is armed by fx_cpu_pop.
- * The delay, the rotary and the drive are left as they are */
+ * The delay and the drive are left as they are */
 #define CPU_POP_BLOCKS 689u                    /* 0.5 s of the popup (CTL 32 at 44.1 kHz: 1378 blocks a second) */
 static void fx_cpu_pop(void)
 {
@@ -1158,26 +1137,10 @@ static void fx_cpu_high(void)
 }
 static void fx_organ_apply(void)
 {
-    uint32_t sp, g;
+    uint32_t g;
     if (org_pgen == fxo_seen)
         return;
     fxo_seen = org_pgen;
-    rot_on = org_patch[OP_ROT];
-    rot_model_req = org_patch[OP_ROT_MODEL];
-    sp = org_patch[OP_ROT_SPEED];       /* setBfree's speeds: horn 0.672 / 6.5 Hz (390 rpm), drum 0.600 / 5.955 Hz, each scaled by its byte (12 % a step) */
-    rot_target(&rot_st,
-               sp ? rot_inc(((sp == 1u ? 672u : 6500u) * ROT_SPF[org_c9(org_patch[sp == 1u ? OP_ROT_HSLOW : OP_ROT_HFAST])]) >> 8) : 0u,
-               sp ? rot_inc(((sp == 1u ? 600u : 5955u) * ROT_SPF[org_c9(org_patch[sp == 1u ? OP_ROT_DSLOW : OP_ROT_DFAST])]) >> 8) : 0u);
-    {   /* the ramps: the horn 1.5 s up / 3.0 s down (setBfree's 0.161 / 0.321 before 0.9.3), drum 4.127 s / 1.371 s, each scaled (x1.4 a step): ROT_KT, no division here */
-        uint32_t hi = org_c9(org_patch[OP_ROT_HRAMP]), di = org_c9(org_patch[OP_ROT_DRAMP]);
-        rot_st.k_ha = ROT_KT[0][hi];
-        rot_st.k_hd = ROT_KT[1][hi];
-        rot_st.k_da = ROT_KT[2][di];
-        rot_st.k_dd = ROT_KT[3][di];
-    }
-    rot_st.hset = org_patch[OP_ROT_HORN];
-    rot_mic(&rot_st, 180u - 30u * org_patch[OP_ROT_MIC]);
-    rot_st.hl = ROT_BAL_HL[org_patch[OP_ROT_BAL] % 9u];
     g = org_patch[OP_DRV_GAIN] > 100u ? 100u : org_patch[OP_DRV_GAIN];   /* 0.9.25: tenths, 0 bypasses the drive, more saturates */
     if (dr_st.type != (int32_t)dr_type_of(org_patch[OP_DRV_TYPE]))
         dr_clear(&dr_st);               /* (another type starts from silence) */
@@ -1190,10 +1153,9 @@ static void fx_organ_apply(void)
 
 /* the effects come in and out over about 20 ms (FX_FADE a block, Q15) */
 #define FX_FADE 1170
-static int32_t dr_w, rot_w, eq_w;                             /* Q15: how much of the drive / the rotary is in the mix */
-#define ROT_IDLE_BLOCKS 1500u                           /* quiet blocks (32 samples) before the cabinet is emptied */
-static uint32_t rot_idle, eq_idle;
-static int32_t rot_dc;                                  /* the rotary input's DC estimate (x 1024) */
+static int32_t dr_w, eq_w;                                    /* Q15: how much of the drive / the equaliser is in the mix */
+#define EQ_IDLE_BLOCKS 1500u                            /* quiet blocks (32 samples) before the equaliser is emptied */
+static uint32_t eq_idle;
 static inline int32_t fx_lerp(int32_t a, int32_t b, int32_t w)      /* a + (b - a) w, w Q15; |b - a| < 2^20 */
 {
     return a + ((((b - a) >> 2) * (w >> 3)) >> 10);
@@ -1229,7 +1191,7 @@ static void fx_eq_apply(int32_t *l, int32_t *r, uint32_t n)
         }
     if (pk >= 8)
         eq_idle = 0;
-    else if (eq_idle < ROT_IDLE_BLOCKS + 1u && ++eq_idle == ROT_IDLE_BLOCKS)
+    else if (eq_idle < EQ_IDLE_BLOCKS + 1u && ++eq_idle == EQ_IDLE_BLOCKS)
         eq_clear(&eq_st);
 }
 
@@ -1237,7 +1199,7 @@ static void mix_block(int32_t *out, uint32_t n)
 {
     uint32_t i;
     int32_t mg = ((fx_usb_fixed ? MASTER_FULL : (int32_t)song.master_q12) * ORG_TO_MASTER + 2048) >> 12;   /* (USB LEVEL FIXED: MASTER after) */
-    int32_t ol[CTL], orr[CTL], eq_a[CTL], eq_b[CTL];
+    int32_t eq_a[CTL], eq_b[CTL];
     fx_organ_apply();
     if (cpu_pop)
         cpu_pop--;
@@ -1265,64 +1227,11 @@ static void mix_block(int32_t *out, uint32_t n)
             mix_l[i] = mix_r[i] = fx_lerp(dry, m[i] << 1, dr_w);   /* (the drive's output is Q15, up to 4.0: x 2 back to the mix) */
         }
     }
-    if (rot_on || rot_w) {                              /* the rotary: the mono sum of the mix and the reverb's return, in stereo */
-        int32_t xin[CTL];
-        if (rot_on && !rot_w) {                         /* coming in: the cabinet starts empty */
-            rot_dc = 0;
-            rot_flush(&rot_st);
-        }
-        int32_t pk = 0;
-        for (i = 0; i < n; i++) {
-            int32_t a;
-            int32_t v = ((mix_l[i] + mix_r[i]) >> 1) + wet[i];  /* (MASTER after the cabinet: at 0 it is silent, whatever the cabinet's states hold) */
-            v -= rot_dc >> 10;                          /* the reverb's return holds a constant (-41 / 32768 in its tail): the rotors would turn it */
-            rot_dc += v;                                /* into a tone (a one-pole high-pass, 7 Hz) */
-            a = v < 0 ? -v : v;
-            pk = a > pk ? a : pk;
-            xin[i] = v >> 4;                            /* the cabinet takes at most 1.0 (32767): a chord is several times that, and the dry */
-        }                                               /* path leaves it to the limiter; a hard clip here was the distortion. Back x16 below:
-                                                         * 0.9.38, 12 dB more headroom (x4 was a high chord's crackle: 4 full wheels clipped) */
-        /* the rounding of the cabinet's filters leaves a faint tone (up to 20 / 32768) running after the last sound: once the
-         * input has been below 8 for 1.1 s (the cabinet's tail is long gone) its states are emptied: silence is silence */
-        if (pk >= 8)
-            rot_idle = 0;
-        else if (rot_idle < ROT_IDLE_BLOCKS + 1u && ++rot_idle == ROT_IDLE_BLOCKS) {
-            rot_flush(&rot_st);
-        }
-        if (rot_idle >= ROT_IDLE_BLOCKS)                /* (and the input stays zero while it is that quiet: v >> 2 of a faint, */
-            for (i = 0; i < n; i++)                     /* mostly negative remainder is a constant -1 the cabinet would carry to the output x4) */
-                xin[i] = 0;
-        rotary_model(&rot_st, rot_model_req);
-        rot_block(&rot_st, xin, ol, orr, n);
-        rot_w += rot_on ? FX_FADE : -FX_FADE;
-        rot_w = rot_w < 0 ? 0 : rot_w > 32768 ? 32768 : rot_w;
-        for (i = 0; i < n; i++) {
-            ol[i] = ((ol[i] * mg) >> 10) << 2;          /* (x16: the input was taken down by 16) */
-            orr[i] = ((orr[i] * mg) >> 10) << 2;
-        }
-        if (rot_w == 32768) {
-            for (i = 0; i < n; i++)
-                eq_a[i] = ol[i], eq_b[i] = orr[i];
-            if (eq_on || eq_w)
-                fx_eq_apply(eq_a, eq_b, n);
-            for (i = 0; i < n; i++) {
-                int32_t l = eq_a[i], r = eq_b[i];
-                master_out(&l, &r);
-                out[2u * i] = l;
-                out[2u * i + 1u] = r;
-            }
-            return;
-        }
-    }
     if (hl.side || fx.ds_on)
         rev_side_mix(mix_l, mix_r, n);                  /* the reverb's, the delay's / chorus's stereo */
     for (i = 0; i < n; i++) {
         int32_t l = (((mix_l[i] + wet[i]) >> 2) * mg) >> 10;
         int32_t r = (((mix_r[i] + wet[i]) >> 2) * mg) >> 10;
-        if (rot_w) {                                    /* (fading in or out) */
-            l = fx_lerp(l, ol[i], rot_w);
-            r = fx_lerp(r, orr[i], rot_w);
-        }
         eq_a[i] = l;
         eq_b[i] = r;
     }
