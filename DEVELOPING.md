@@ -6,6 +6,14 @@ seeded from FMini-1 (Guilherme Ruppert), itself a fork of Felucca (Leo Kuroshita
 [CREDITS.md](CREDITS.md). Since 0.1.0 the instrument is the organ alone: FMini-1's synthesizer engine, its UI and its
 editor are gone, and so are the sequencer, the arpeggiator and Felucca's other engines.
 
+**Status of `new-float` (0.11.0, the owner's decision).** This branch rebuilds the organ's sound as close to setBFree as the
+FM-1 allows: the whole organ path follows setBfree's own float code (its `tonegen.c`, `vibrato.c` and `b_overdrive`), in
+single-precision float, with the rest of the chain (reverb, delay, EQ, the existing drive) kept as it is. Removed on this branch:
+the rotary (Leslie CLASSIC), the percussion, the organ's limiter and compressors (the master ends in a hard clip), and the
+PRESET SETTINGS rows except VOLUME, SPLIT and SPLIT POINT. Nothing is migrated from 0.10.x: patches, user presets and the
+factory bank are rebuilt. Where a section below describes the integer port on `main`, it says so; the target is the setBfree
+port described here and in ORGAN.md.
+
 ## 1. What runs on the chip
 
 The FM-1 has a JieLi AC79 (pi32v2 core, clang 4.0.1), an I2S codec, a 240 x 240 RGB565 LCD, a key matrix with 14 labelled
@@ -32,7 +40,7 @@ Budget (`./build.sh` prints these and fails when they do not fit): image 277,640
 | `firmware/src/organvave_splash.h` | **generated** from `docs/organvave-splash.png` (`tools/gen_splash.py`); do not edit |
 | `firmware/engines/` | **git submodule** (MIT, Felucca-Engines). Only its shared `dsp.c` is built (`sine_i`). Never edited here |
 | `firmware/hal/`, `firmware/loader/` | register access (only here); the update loader |
-| `tools/` | Python generators and the measuring tools (floating point lives here); `build.py` is what `build.sh` runs |
+| `tools/` | Python generators and the measuring tools (the host-side floating point lives here; `build.py` is what `build.sh` runs) |
 | `tools/setbfree_ref/` | setBfree's tone generator as the reference: `sbf_ref.c`, the dump the tables come from, `compare.py` |
 | `tests/` | host tests (`run_tests.sh`), the harnesses `host.h` and `editor_host.h`, goldens, budgets |
 | `web/` | the site (`site_organ.html`, `make_site.py`), the installer's JavaScript, the patch editor (`editor_organ.html`), `EDITOR_PROTOCOL.md`, `emu/` (the browser emulator) |
@@ -54,20 +62,22 @@ integer and meet the float path at a conversion. No 64-bit multiply in a per-sam
 the host-side work (the generators and the reference).
 
 **Audio.** `audio.c` (the I2S interrupt) calls `mix_block` (`fx.c`) per block: events, then each track (`mix_part`, which calls
-`track_render`), the sends into the buses, the master (a peak limiter at `LIM_T` 18000, then the soft clip), and the USB audio tap.
+`track_render`), the sends into the buses, the master, and the USB audio tap. On `main` the master is a look-ahead peak limiter and a
+soft knee; on `new-float` they are removed (owner) and the master ends in a hard clip at the output.
 `track_render` hands the organ to `org_track_render` (its keys are `org_key`, from `org_note`): the organ renders its whole part
 into the buffer and the track's level, pan and sends apply after it, as for any part. The main loop runs the UI and the MIDI; the
 interrupt never waits for it. Anything the main loop changes that the interrupt reads goes through a publish step:
 `org_set_patch` copies the patch, then bumps `org_pgen`; the interrupt takes it at the start of the next block (`org_block`).
 
-**The organ's tone generator** (`eng_organ.c`, the setBfree port). Each of the 91 wheels is a 32-bit phase accumulator on one
+**The organ's tone generator on `main`** (`eng_organ.c`, the integer port; on `new-float` it is rebuilt from setBfree's
+`tonegen.c` in float, and this paragraph no longer describes the code). Each of the 91 wheels is a 32-bit phase accumulator on one
 shared sine (`sine_i`), with the three tunings of setBfree as increments (`ORG_WINC`: gear 60 Hz, gear 50 Hz, equal). A key
 is a list of (wheel, bus, level) contributions (`ORG_KC`, with crosstalk; `ORG_KCX`, without); the key's messages (`org_key`) go into a
 queue that `org_fragment` applies at each 128-frame fragment, as setBfree's `oscGenerateFragment` does: the attack's click
 (`ORG_ATK`), the release (`ORG_REL`), the key compression (`ORG_KEYCOMP`), the swell (`ORG_SWELL_TC`). The drawbars enter as
 Q12 bus levels (`/8` of the drawbar's 0..8). `org_render` sums the wheels per bus and mixes the result into the part.
 
-**Numbers.** Q15 signals; the wheel levels Q18 packed with the wheel and bus into one word (`wheel << 25 | bus << 20 | level`).
+**Numbers on `main`.** Q15 signals; the wheel levels Q18 packed with the wheel and bus into one word (`wheel << 25 | bus << 20 | level`).
 `tools/setbfree_ref/compare.py` shows the port against the reference: levels within 0.002 dB, the attack within 0.04 dB,
 waveforms with 43 dB SNR over 0.25 s (the wheels are pure sines here; setBfree's wavetables carry a dither).
 
@@ -83,9 +93,10 @@ waveforms with 43 dB SNR over 0.25 s (the wheels are pure sines here; setBfree's
 - **A stored value's meaning** never changes silently. The patch bytes, the autosave and the user presets are stored: a new
   meaning needs a new version (`AS_MAGIC`, `UP_VER`, the patch's `ORG_PSIZE`), a note in `web/EDITOR_PROTOCOL.md`, and a rule for
   older records. `ENGINES[]` entries are appended, never reordered.
-- **The rotary, the vibrato, the percussion, the lower manual and the pedals** are the next milestones in ORGAN.md. They are
-  ports of setBfree's `whirl.c`, `vibrato.c`, `percussion` and the lower and pedal keys; the reduced rotary (1024 angles,
-  interpolated coefficients) is the plan of the owner's approved revision.
+- **On `new-float`**: the rotary and the percussion are not ported (removed, owner). The organ's pieces are ports of setBfree's
+  own files in float: `tonegen.c` (wheels, keys, buses, tapering, crosstalk, click, key compression), `vibrato.c` (scanner CV) and
+  `b_overdrive/overdrive.c` (the Preamp/Overdrive module, with its oversampling and the tube tables from `overmaker`). The
+  reduced rotary of `main` (1024 angles) is not part of this branch.
 
 ## 5. Tests
 
@@ -151,7 +162,7 @@ repository.
 7. **Tests with the code**, and the static budget for the new render functions (`tests/target_budget.py` FUNCS).
 8. **Site, installer, emulator** last: they are generated from the same sources.
 
-**The organ's source.** The organ and the rotary are ported from setBfree (GPL-2.0-or-later, compatible with this GPL-3.0-only tree;
+**The organ's source.** The organ (and, on `main`, the rotary) is ported from setBfree (GPL-2.0-or-later, compatible with this GPL-3.0-only tree;
 its notices stay in the derived files). Felucca's organ engine (`firmware/engines/src/eng_wheel.c`) is not used, not even as a
 starting point (the owner's decision). Files without a licence header in setBfree are not copied. Method: a float reference
 from setBfree, the fixed-point port, host tests against the reference, then the content, then the UI.
@@ -172,8 +183,10 @@ The organ has no voices to shed. `shed_voice()` (audio.c) therefore calls `fx_cp
 
 ## 10. Drive, rotary and page model (0.9.2)
 
-- **Drive**: GAIN, TYPE, TONE, OUTPUT (patch bytes 41, 48, 49, 50). TYPE 0 is setBfree's preamp (DISTORTION, `dr_run`, untouched); TYPE 1 is TUBE (`dr_tube` in eng_drive.c: an asymmetric soft cubic with a DC tracker, as loud as DISTORTION at the default gain). `dr_run_ex` runs either curve and then `dr_post` (a tilt around 1 kHz and an output gain, 2 dB a step). The old CHARACTER byte (42) is ignored.
-- **Rotary**: bytes 51..56 scale the horn and drum speeds (1.12^n a step) and the ramp times (1.4^n a step). The coding is "zero is the default": `org_c9` / `org_b9` (eng_organ.c). The ramp steps are the table `ROT_KT` (fx.c), because `rot_k` divides in 64 bits and the interrupt cannot link `__udivdi3`; effects_test.c checks every entry against `rot_k`.
+- **Drive**: GAIN, TYPE, TONE, OUTPUT (patch bytes 41, 48, 49, 50). TYPE 0 is DISTORTION (`dr_run`, an approximation made in 0.9.2, untouched). It is **not** setBfree's preamp: setBfree's
+Preamp/Overdrive is `b_overdrive/overdrive.c` (a float module, 4x oversampled, with a clean bypass as its default), which
+`new-float` ports as the `original` type. TYPE 1 is TUBE (`dr_tube` in eng_drive.c: an asymmetric soft cubic with a DC tracker, as loud as DISTORTION at the default gain). `dr_run_ex` runs either curve and then `dr_post` (a tilt around 1 kHz and an output gain, 2 dB a step). The old CHARACTER byte (42) is ignored.
+- **Rotary** (on `main` only; removed on `new-float`): bytes 51..56 scale the horn and drum speeds (1.12^n a step) and the ramp times (1.4^n a step). The coding is "zero is the default": `org_c9` / `org_b9` (eng_organ.c). The ramp steps are the table `ROT_KT` (fx.c), because `rot_k` divides in 64 bits and the interrupt cannot link `__udivdi3`; effects_test.c checks every entry against `rot_k`.
 - **Rotary input**: the reverb's return holds a faint constant, which the turning rotors would make a tone: `mix_block` runs a 7 Hz high-pass (`rot_dc`) in front of the cabinet and feeds zeros once the input has been quiet for 1.1 s. The host tests (regress.c, audio_test.c) now initialise the effects like main.c's `felucca_init`; before, the rotors never turned in them.
 - **Pages**: pages 2..7 are row lists (`oa_val`, `oa_adj`, `oa_rows` in organ_app.c): SELECT picks a row (highlighted), ALGORITHM changes it, K1..K4 act on rows 1..4. The drawbar page is UPPER or LOWER+PEDAL (EDIT toggles): the Hammond has 2 pedal drawbars (16' and 8'), shown at the left of the 9 lower ones.
 - **Editor**: `ORG_PUT` carries at most 48 bytes, so the editor sends the 57 patch bytes in two frames.
