@@ -411,35 +411,45 @@ static __attribute__((noinline)) void org_vib(const int32_t *x, int32_t *o, uint
     org.vst = st;
 }
 
-static inline int32_t org_sine_n(uint32_t ph) { return SINE[ph >> 22]; }   /* the faint wheels' sine (ORG_FAINT) */
+/* 0.11.0 (owner: setBfree's float path): the wheels sum in single precision, in Q15 units (a gain Q12 x 8 is Q15 per unit of
+ * sine). The sine is setBfree's: a table of 1024 points with linear interpolation (ORG_SINEF, generated). Converted to the
+ * integer path at the end of the fragment's block (f2i). The faint shortcut (ORG_FAINT) is the nearest point, as before. */
+static inline float sine_f(uint32_t ph)
+{
+    uint32_t i = ph >> 22;
+    float a = ORG_SINEF[i];
+    return a + (ORG_SINEF[i + 1u] - a) * (float)((ph >> 6) & 0xFFFFu) * (1.0f / 65536.0f);
+}
+static inline float sine_n(uint32_t ph) { return ORG_SINEF[ph >> 22]; }
+static inline int32_t f2i(float v) { return v >= 0.0f ? (int32_t)(v + 0.5f) : -(int32_t)(0.5f - v); }
 
 /* a wheel on the percussion's bus: its sine once per sample, into the organ (y) and the contact (p) with their own gains
  * (the same ramps as the organ's), and the phase advanced. Not inlined (tests/target_budget.py counts it) */
-static __attribute__((noinline)) void org_wheel_pc(org_wheel_t *w, uint32_t inc, uint32_t off, uint32_t n, int32_t *y, int32_t *p)
+static __attribute__((noinline)) void org_wheel_pc(org_wheel_t *w, uint32_t inc, uint32_t off, uint32_t n, float *y, float *p)
 {
     uint32_t ph = w->ph, i;
-    int32_t g = w->gs, pg = w->pgs;
+    float g = (float)w->gs * 8.0f, pg = (float)w->pgs * 8.0f;
     if (w->env) {
         const int16_t *e = w->env + off;
-        int32_t gd = w->gd, pgd = w->pgd;
+        float gd = (float)w->gd * (1.0f / 2048.0f), pgd = (float)w->pgd * (1.0f / 2048.0f);
         for (i = 0; i < n; i++) {
-            int32_t s = sine_i(ph), ee = (int32_t)e[i];
-            y[i] += (s * (g + ((ee * gd) >> 14))) >> 12;
-            p[i] += (s * (pg + ((ee * pgd) >> 14))) >> 12;
+            float s = sine_f(ph), ee = (float)e[i];
+            y[i] += s * (g + ee * gd);
+            p[i] += s * (pg + ee * pgd);
             ph += inc;
         }
-    } else if (g < ORG_FAINT && pg < ORG_FAINT) {
+    } else if (w->gs < ORG_FAINT && w->pgs < ORG_FAINT) {
         for (i = 0; i < n; i++) {
-            int32_t s = org_sine_n(ph);
-            y[i] += (s * g) >> 12;
-            p[i] += (s * pg) >> 12;
+            float s = sine_n(ph);
+            y[i] += s * g;
+            p[i] += s * pg;
             ph += inc;
         }
     } else {
         for (i = 0; i < n; i++) {
-            int32_t s = sine_i(ph);
-            y[i] += (s * g) >> 12;
-            p[i] += (s * pg) >> 12;
+            float s = sine_f(ph);
+            y[i] += s * g;
+            p[i] += s * pg;
             ph += inc;
         }
     }
@@ -447,68 +457,68 @@ static __attribute__((noinline)) void org_wheel_pc(org_wheel_t *w, uint32_t inc,
 }
 
 /* a wheel on the scanner's bus (0.9.28): its sine once per sample, into the dry organ (y: its share that is not on the scanner,
- * sum - ssum), the scanner's input (ys: ssum) and, with p, the percussion's contact; the phase advanced. Before 0.9.28 the
- * scanner's share was a second pass with its own sine (org_wheel_scan) and y held the whole sum (the scanner's share taken
- * out again after it): twice the sines for every wheel of a manual on the scanner. Not inlined (tests/target_budget.py) */
-static __attribute__((noinline)) void org_wheel_sc(org_wheel_t *w, uint32_t inc, uint32_t off, uint32_t n, int32_t *y, int32_t *ys)
+ * sum - ssum), the scanner's input (ys: ssum) and, with p, the percussion's contact; the phase advanced. Not inlined
+ * (tests/target_budget.py) */
+static __attribute__((noinline)) void org_wheel_sc(org_wheel_t *w, uint32_t inc, uint32_t off, uint32_t n, float *y, float *ys)
 {
     uint32_t ph = w->ph, i;
-    int32_t g = w->gs - w->sgs, sg = w->sgs;
+    float g = (float)(w->gs - w->sgs) * 8.0f, sg = (float)w->sgs * 8.0f;
     if (w->env) {
         const int16_t *e = w->env + off;
-        int32_t gd = w->gd - w->sgd, sgd = w->sgd;
+        float gd = (float)(w->gd - w->sgd) * (1.0f / 2048.0f), sgd = (float)w->sgd * (1.0f / 2048.0f);
         for (i = 0; i < n; i++) {
-            int32_t s = sine_i(ph), ee = (int32_t)e[i];
-            y[i] += (s * (g + ((ee * gd) >> 14))) >> 12;
-            ys[i] += (s * (sg + ((ee * sgd) >> 14))) >> 12;
+            float s = sine_f(ph), ee = (float)e[i];
+            y[i] += s * (g + ee * gd);
+            ys[i] += s * (sg + ee * sgd);
             ph += inc;
         }
     } else if (w->gs < ORG_FAINT) {
         for (i = 0; i < n; i++) {
-            int32_t s = org_sine_n(ph);
-            y[i] += (s * g) >> 12;
-            ys[i] += (s * sg) >> 12;
+            float s = sine_n(ph);
+            y[i] += s * g;
+            ys[i] += s * sg;
             ph += inc;
         }
     } else {
         for (i = 0; i < n; i++) {
-            int32_t s = sine_i(ph);
-            y[i] += (s * g) >> 12;
-            ys[i] += (s * sg) >> 12;
+            float s = sine_f(ph);
+            y[i] += s * g;
+            ys[i] += s * sg;
             ph += inc;
         }
     }
     w->ph = ph;
 }
-static __attribute__((noinline)) void org_wheel_scp(org_wheel_t *w, uint32_t inc, uint32_t off, uint32_t n, int32_t *y, int32_t *ys,
-                                                   int32_t *p)
+static __attribute__((noinline)) void org_wheel_scp(org_wheel_t *w, uint32_t inc, uint32_t off, uint32_t n, float *y, float *ys,
+                                                   float *p)
 {
     uint32_t ph = w->ph, i;
-    int32_t g = w->gs - w->sgs, sg = w->sgs, pg = w->pgs;
+    float g = (float)(w->gs - w->sgs) * 8.0f, sg = (float)w->sgs * 8.0f, pg = (float)w->pgs * 8.0f;
     if (w->env) {
         const int16_t *e = w->env + off;
-        int32_t gd = w->gd - w->sgd, sgd = w->sgd, pgd = w->pgd;
+        float gd = (float)(w->gd - w->sgd) * (1.0f / 2048.0f), sgd = (float)w->sgd * (1.0f / 2048.0f);
+        float pgd = (float)w->pgd * (1.0f / 2048.0f);
         for (i = 0; i < n; i++) {
-            int32_t s = sine_i(ph), ee = (int32_t)e[i];
-            y[i] += (s * (g + ((ee * gd) >> 14))) >> 12;
-            ys[i] += (s * (sg + ((ee * sgd) >> 14))) >> 12;
-            p[i] += (s * (pg + ((ee * pgd) >> 14))) >> 12;
+            float s = sine_f(ph), ee = (float)e[i];
+            y[i] += s * (g + ee * gd);
+            ys[i] += s * (sg + ee * sgd);
+            p[i] += s * (pg + ee * pgd);
             ph += inc;
         }
-    } else if (w->gs < ORG_FAINT && pg < ORG_FAINT) {
+    } else if (w->gs < ORG_FAINT && w->pgs < ORG_FAINT) {
         for (i = 0; i < n; i++) {
-            int32_t s = org_sine_n(ph);
-            y[i] += (s * g) >> 12;
-            ys[i] += (s * sg) >> 12;
-            p[i] += (s * pg) >> 12;
+            float s = sine_n(ph);
+            y[i] += s * g;
+            ys[i] += s * sg;
+            p[i] += s * pg;
             ph += inc;
         }
     } else {
         for (i = 0; i < n; i++) {
-            int32_t s = sine_i(ph);
-            y[i] += (s * g) >> 12;
-            ys[i] += (s * sg) >> 12;
-            p[i] += (s * pg) >> 12;
+            float s = sine_f(ph);
+            y[i] += s * g;
+            ys[i] += s * sg;
+            p[i] += s * pg;
             ph += inc;
         }
     }
@@ -519,6 +529,7 @@ static __attribute__((noinline)) void org_wheel_scp(org_wheel_t *w, uint32_t inc
 static __attribute__((noinline)) void org_render(int32_t *out, uint32_t n)
 {
     int32_t y[CTL], p[CTL], q[CTL], v[CTL], ys[CTL];
+    float yf[CTL], pf[CTL], ysf[CTL];                                 /* the wheels' sums, single precision, Q15 units (0.11.0) */
     const int32_t *vv = y;
     uint32_t i, k, off;
     const uint32_t *winc;
@@ -530,12 +541,12 @@ static __attribute__((noinline)) void org_render(int32_t *out, uint32_t n)
     org.sub = (uint8_t)((org.sub + 1u) % ORG_SUB);
     winc = org.wtab[org.temp_cur];
     for (i = 0; i < n; i++) {
-        y[i] = 0;
-        p[i] = 0;
+        yf[i] = 0.0f;
+        pf[i] = 0.0f;
     }
     if (vr)
         for (i = 0; i < n; i++)
-            ys[i] = 0;
+            ysf[i] = 0.0f;
     for (k = 0; k < org.nins; k++) {
         uint32_t wn = org.ins[k];
         org_wheel_t *w = &org.w[wn];
@@ -543,33 +554,33 @@ static __attribute__((noinline)) void org_render(int32_t *out, uint32_t n)
         int32_t g = w->gs;
         if (vr && (w->sgs | w->sgd)) {                                /* on the scanner: the sine once, y the dry share */
             if (w->pgs | w->pgd)
-                org_wheel_scp(w, inc, off, n, y, ys, p);
+                org_wheel_scp(w, inc, off, n, yf, ysf, pf);
             else
-                org_wheel_sc(w, inc, off, n, y, ys);
+                org_wheel_sc(w, inc, off, n, yf, ysf);
             continue;
         }
         if (w->pgs | w->pgd) {                                        /* on the percussion's bus: the sine once, both sums */
-            org_wheel_pc(w, inc, off, n, y, p);
+            org_wheel_pc(w, inc, off, n, yf, pf);
             continue;
         }
         if (w->env) {
             const int16_t *e = w->env + off;
-            int32_t gd = w->gd, *yp = y;
+            float gd = (float)w->gd * (1.0f / 2048.0f), gq = (float)g * 8.0f;
+            float *yp = yf;
             for (i = n; i; i--) {
-                int32_t gg = g + (((int32_t)*e++ * gd) >> 14);
-                *yp++ += (sine_i(ph) * gg) >> 12;
+                *yp++ += sine_f(ph) * (gq + (float)*e++ * gd);
                 ph += inc;
             }
         } else if (g >= ORG_FAINT) {
-            int32_t *yp = y;
+            float gq = (float)g * 8.0f, *yp = yf;
             for (i = n; i; i--) {
-                *yp++ += (sine_i(ph) * g) >> 12;
+                *yp++ += sine_f(ph) * gq;
                 ph += inc;
             }
         } else if (g) {                                               /* a faint wheel (the crosstalk's leakage): no interpolation */
-            int32_t *yp = y;
+            float gq = (float)g * 8.0f, *yp = yf;
             for (i = n; i; i--) {
-                *yp++ += (org_sine_n(ph) * g) >> 12;
+                *yp++ += sine_n(ph) * gq;
                 ph += inc;
             }
         } else {
@@ -577,6 +588,13 @@ static __attribute__((noinline)) void org_render(int32_t *out, uint32_t n)
         }
         w->ph = ph;
     }
+    for (i = 0; i < n; i++) {                                         /* to the integer path: Q15 */
+        y[i] = f2i(yf[i]);
+        p[i] = f2i(pf[i]);
+    }
+    if (vr)
+        for (i = 0; i < n; i++)
+            ys[i] = f2i(ysf[i]);
     if (vr) {                                                         /* the scanner: its manuals' sound, replaced by its wet; the rest stays dry */
         org_vib(ys, v, n);
         for (i = 0; i < n; i++)

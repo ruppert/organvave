@@ -46,8 +46,10 @@ def functions(path):
                     cur = out.setdefault(name, []) if name in FUNCS else None
                 continue
             m = INSN.match(line)
-            if cur is not None and m and not m.group(3).lstrip().startswith("<"):
-                cur.append((int(m.group(1), 16), m.group(3).strip()))
+            # (0.11.0: an instruction objdump cannot decode, the pi32v2 FPU's, is a real instruction of one word: it counts;
+            # jump-table data ("< n : 0x.. >") does not)
+            if cur is not None and m and (not m.group(3).lstrip().startswith("<") or "<unknown instruction>" in m.group(3)):
+                cur.append((int(m.group(1), 16), "<unknown instruction>" if "<unknown" in m.group(3) else m.group(3).strip()))
     return out
 
 

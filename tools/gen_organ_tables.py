@@ -239,6 +239,13 @@ def main():
     L.append("#define ORG_SWELL_TC %du                /* the swell's smoothing per sample, Q16 (setBfree's %.9f) */" %
              (int(round(d["gaintc"] * 65536)), d["gaintc"]))
     L.append("")
+    L.append("")
+    L.append("/* ORG_SINEF[1025]: sin(2 pi k / 1024) in single precision, the wheels' sine (0.11.0: the float path; setBfree's wavetables"
+             " are float) */")
+    L.append("static const float ORG_SINEF[1025] = {")
+    L.append("    " + ", ".join("%.9ef" % math.sin(2.0 * math.pi * k / 1024.0) for k in range(1025)).replace(", ", ",\n    ", 0))
+    L.append("};")
+    L.append("")
     L.append("#endif")
     open(OUT, "w").write("\n".join(L) + "\n")
     print("wrote", os.path.relpath(OUT))

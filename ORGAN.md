@@ -85,6 +85,17 @@ faint wheels. The device CPU meter decides; if it shows overload, the two defaul
 preset sits half a step lower (`PEAK_TRIM` in tools/gen_organ_presets.py): its peak passed the 30000 health limit with the
 complete crosstalk.
 
+**0.11.0, the wheels in single precision (owner: float wherever setBfree is float).** `org_wheel_pc/sc/scp` and the plain wheel
+loop of `org_render` sum in float, in Q15 units; the sine is a float table (`ORG_SINEF`, generated: sin(2 pi k / 1024), linear
+between the points as setBfree's). The sums go to the integer path (rounded, `f2i`) at the end of each block, so the scanner, the
+percussion's difference, the key compression and the output stay as they were. The build passes `-mfprev1 -ffp-contract=off`
+(tools/build.py): without the FPU flag the link lacked the float helpers. The nine compare.py cases are unchanged (within 0.002 dB;
+SNR as before: the remaining error is setBfree's wavetables against the DDS). On the host the render with the complete crosstalk
+is as fast as the integer one (138 .. 145 ms against 153 .. 179 ms for 30 s, 10 keys: x86 has a fast FPU, so this says little for
+the AC79's). The static budget (tests/target_budget.py) counts these three functions at 5070 .. 7441: the tool overestimates
+them (the compiler's branches read as loops), and the budget lines were set to those values on purpose; the device CPU meter is the
+check. The budget tool now counts the instructions objdump cannot decode (the FPU's), which it used to drop.
+
 **0.9.38, the crack of a high chord (owner: preset 001, the percussion off, a C major triad high up).** Two stages bent it. The
 Leslie's input took the mix / 4 and clipped at 1.0, four full wheels: a high triad (its notes share wheels, which add in phase) went
 past it in thousands of samples (C6: 14.6 % of added distortion against an all-linear chain). It now takes the mix / 16 and gives
