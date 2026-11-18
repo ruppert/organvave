@@ -152,6 +152,7 @@ static void power_on(void)
     host_tracks_init();
     org_init();                                /* the tone generator at rest (main.c's boot) */
     dr_init(&dr_st);
+    rot_load_tables(); rot_init(&rot_st);                 /* the rotary (main.c does the same at boot) */
     eq_init(&eq_st);
     song.g[G_RTYPE] = 0;                       /* ROOM: the renders' reverb (see the top) */
 }

@@ -48,6 +48,7 @@ static void boot(void)
     rev_clear();
     org_init();
     dr_init(&dr_st);
+    rot_load_tables(); rot_init(&rot_st);                 /* the rotary (main.c does the same at boot) */
     eq_init(&eq_st);
     dc_l = dc_r = dce_l = dce_r = 0;
     eq_w = 0; eq_idle = 0; eq_on = 0;

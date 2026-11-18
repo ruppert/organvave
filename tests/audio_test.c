@@ -47,6 +47,7 @@ static void fresh(void)
     org_init();                                        /* (the tone generator from power-on: runs compare) */
     org_pgen_seen = 0xFF;
     dr_init(&dr_st); eq_init(&eq_st);
+    rot_load_tables(); rot_init(&rot_st);                 /* the rotary (main.c does the same at boot) */
     fxo_seen = 0xFF;
     for (p = 0; p < NPART; p++) host_preset(&trk[p], ENGI_ORGAN, 0);
     memset(&felucca_dbg, 0, sizeof felucca_dbg);
