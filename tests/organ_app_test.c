@@ -678,7 +678,7 @@ int main(int argc, char **argv)
             press(B_EDIT);
             bad += check("PRESET SETTINGS (was ADVANCED EDIT): opened from HOME by one EDIT", oa_page == 8);
             h_a = frame_hash();
-            bad += check("  .. 30 rows, the first picked (VOLUME; then SPLIT, no TUNING or TEMPERAMENT row)", OA_NR[8] == 30 && oa_row[8] == 0 && !strcmp(OA_LB[8][0], "VOLUME") && !strcmp(OA_LB[8][1], "SPLIT"));
+            bad += check("  .. 3 rows, the first picked (VOLUME, SPLIT, SPLIT POINT; no TUNING or TEMPERAMENT row)", OA_NR[8] == 3 && oa_row[8] == 0 && !strcmp(OA_LB[8][0], "VOLUME") && !strcmp(OA_LB[8][1], "SPLIT"));
             turn(EN_SELECT, 1);
             bad += check("  .. SELECT picks the next row (SPLIT)", oa_row[8] == 1);
             turn(EN_ALGO, 1);
@@ -697,11 +697,11 @@ int main(int argc, char **argv)
             org_set(OP_SPLIT_PT, 0);
             for (i = 0; i < 40u; i++)
                 turn(EN_SELECT, 1);
-            bad += check("  .. SELECT stops at the last row (no wrap)", oa_row[8] == 29);
+            bad += check("  .. SELECT stops at the last row (no wrap)", oa_row[8] == 2);
             for (i = 0; i < 40u; i++)
                 turn(EN_SELECT, -1);
             bad += check("  .. and at the first", oa_row[8] == 0);
-            for (r = 0; r < 30u; r++) {
+            for (r = 0; r < OA_NR[8]; r++) {
                 uint32_t op = OA_AOP[r], rows_ok;
                 if (op == OA_VOL)                                /* (VOLUME is the preset's level: the check below is the patch's) */
                     continue;
@@ -718,31 +718,6 @@ int main(int argc, char **argv)
             {
                 oa_val_t v;
                 memset(org_patch + OP_TUNING, 0, ORG_PSIZE - OP_TUNING);
-                oa_val(8u, 23u, &v);
-                bad += check("  .. PERC TRIGGER 1'", !strcmp(v.t, "1'"));
-                oa_val(8u, 24u, &v);
-                bad += check("  .. SCAN RATE 7.25 HZ", !strcmp(v.t, "7.25 HZ"));
-                oa_val(8u, 13u, &v);
-                bad += check("  .. WIRING -40 DB", !strcmp(v.t, "-40 DB"));
-                oa_val(8u, 14u, &v);
-                bad += check("  .. XT FLOOR -96 DB", !strcmp(v.t, "-96 DB"));
-                oa_val(8u, 10u, &v);
-                bad += check("  .. COMPARTMENT -40 DB", !strcmp(v.t, "-40 DB"));
-                oa_val(8u, 15u, &v);
-                bad += check("  .. XT MIN OFF", !strcmp(v.t, "OFF"));
-                oa_val(8u, 16u, &v);
-                bad += check("  .. PERC FAST 1.0 S", !strcmp(v.t, "1.0 S"));
-                oa_val(8u, 20u, &v);
-                bad += check("  .. PERC GAIN 11.0", !strcmp(v.t, "11.0"));
-                oa_val(8u, 8u, &v);
-                bad += check("  .. RELEASE MODEL CLICK (the default since 0.9.5)", !strcmp(v.t, "CLICK"));
-                oa_val(8u, 3u, &v);
-                bad += check("  .. ATTACK CLICK 100 % by default (0.9.5)", !strcmp(v.t, "100 %"));
-                oa_val(8u, 4u, &v);
-                bad += check("  .. RELEASE CLICK 50.0 % by default (0.9.5)", !strcmp(v.t, "50.0 %"));
-                org_set(OP_ATK_LEVEL, org_bi(OP_ATK_LEVEL, 40));
-                oa_val(8u, 3u, &v);
-                bad += check("  .. ATTACK CLICK up to 200 %", !strcmp(v.t, "200 %"));
                 oa_val(8u, 1u, &v);
                 bad += check("  .. SPLIT OFF by default", !strcmp(v.t, "OFF") && !v.on);
                 oa_val(8u, 2u, &v);
@@ -756,12 +731,6 @@ int main(int argc, char **argv)
                 org_set(OP_SPLIT_PT, org_bi(OP_SPLIT_PT, 1));
                 oa_val(8u, 2u, &v);
                 bad += check("  .. and the bottom C#2 (37) is the second", !strcmp(v.t, "C#2"));
-                org_set(OP_XTALK, 0);
-                oa_val(8u, 10u, &v);
-                bad += check("  .. the crosstalk rows are dim with CROSSTALK off", !v.on);
-                oa_row[8] = 10;
-                turn(EN_ALGO, 1);
-                bad += check("  .. and changing one switches CROSSTALK on", org_patch[OP_XTALK] == 1);
             }
             memset(org_patch + OP_TUNING, 0, ORG_PSIZE - OP_TUNING);
             {   /* 0.9.78: VOLUME, the last row, is the preset's level (P_LEVEL): one unit a detent, 0..127, OFF at 0 */
