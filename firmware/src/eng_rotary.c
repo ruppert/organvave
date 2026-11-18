@@ -318,9 +318,9 @@ static inline __attribute__((always_inline)) void rot_body(rot_t *r, const int32
 
         /* 4) the outputs: the drum's shelf and the horn, and the leakage on both */
         y = rot_cplf(r->dL, cs, r->DL[op]);
-        lo = y + RC_HL * r->HL[op] + leak;
+        lo = y + r->hl * r->HL[op] + leak;
         y = rot_cplf(r->dR, cs, r->DR[op]);
-        ro = y + RC_HL * r->HR[op] + leak;
+        ro = y + r->hl * r->HR[op] + leak;
         outL[i] = (int32_t)(lo * 32768.0f + (lo >= 0.0f ? 0.5f : -0.5f));
         outR[i] = (int32_t)(ro * 32768.0f + (ro >= 0.0f ? 0.5f : -0.5f));
         r->HL[op] = 0.0f; r->HR[op] = 0.0f; r->DL[op] = 0.0f; r->DR[op] = 0.0f;
