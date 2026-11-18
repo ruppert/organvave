@@ -31,11 +31,6 @@ RTYPES = {"room": 0, "hall": 1, "plate": 2, "spring": 3, "cloud": 4}   # params.
 TEMPS = {"gear60": 0, "gear50": 1, "equal": 2}
 
 
-# 0.11.0: the organ has no limiter (the master ends in a hard clip). Three presets' peaks reach the clip at their RMS level
-# (health: 30000 is the ceiling); they play 2 dB quieter (4 level steps, 0.5 dB each). A peak-based calibration of the whole
-# bank comes with the port (ORGAN.md, the factory bank).
-PEAK_TRIM = {"FULL ORGAN": -4, "REED": -4, "STRINGS": -4}
-
 def effects(p, fx):
     """The rotary and the drive bytes (0.3.0). Without them the neutral values are written (horn level even, gain 0 dB),
     so that switching an effect on in the panel starts from a sensible place."""
@@ -119,7 +114,7 @@ def main():
         p[OP_XTALK] = 1 if xt else 0
         effects(p, fx)
         db = 20 * math.log10(ref / chord_rms(contrib, bars(up), xt))
-        lv = max(1, min(127, 112 + int(round(2 * db)) + PEAK_TRIM.get(name, 0)))
+        lv = max(1, min(127, 112 + int(round(2 * db))))
         levels.append((name, db, lv))
         rt, rs = fx.get("rvb", ("hall", 90))
         assert rt in RTYPES and 0 <= rs <= 100

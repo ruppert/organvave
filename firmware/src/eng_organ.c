@@ -1112,7 +1112,7 @@ static void org_block(struct track *t)          /* audio path, before the render
         org.pdec_slow = ORG_PERC_DEC[org_ci(OP_PC_SLOW, org_patch[OP_PC_SLOW])];
         org.pbusa = (uint8_t)org_ci(OP_PC_BUSA, org_patch[OP_PC_BUSA]);
         org.pbusb = (uint8_t)org_ci(OP_PC_BUSB, org_patch[OP_PC_BUSB]);
-        org.ptrig = -1;                 /* the trigger mute goes with the percussion (0.11.0 dummy): no drawbar is muted */
+        org.ptrig = (int8_t)((int32_t)org_ci(OP_PC_TRIG, org_patch[OP_PC_TRIG]) - 1);   /* (inert: org.perc is 0, 0.11.0) */
         org.vinc = ORG_SCAN_INC[org_ci(OP_SC_HZ, org_patch[OP_SC_HZ])];
         org.vamp2[0] = (uint8_t)org_ci(OP_SC_V1, org_patch[OP_SC_V1]);
         org.vamp2[1] = (uint8_t)org_ci(OP_SC_V2, org_patch[OP_SC_V2]);

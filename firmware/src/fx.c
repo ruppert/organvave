@@ -170,7 +170,7 @@ static volatile uint8_t fx_usb_fixed;
  * the top 8 .. 19 dB, held 300 ms and released over ~370 ms: the level moved by itself as chords changed. With the organ 14 dB
  * down, at the MASTER's top a note, a triad or a four-note chord with its bass pass untouched; two hands (eight notes) lose about
  * 2 dB, a high triad without the Leslie about 5 dB. The limiter is a safety again. (setBfree's key compression, before it, stays.) */
-#define ORG_TO_MASTER 817                   /* Q12: 0.1995, -14.0 dB */
+#define ORG_TO_MASTER 728                   /* Q12: 0.1778, -15.0 dB (0.11.0: 1 dB less, the hard clip has no limiter before it) */
 /* the MASTER pot (ADC 0..1023, smoothed in main.c) to its level, square law: 0 .. 4088 (Q12) */
 static inline uint32_t master_of_pot(uint32_t k10) { return (k10 * k10) >> 8; }
 static __attribute__((noinline)) void usb_fixed_dac(int32_t *out, uint32_t n)   /* audio ISR, after uac_tap */
