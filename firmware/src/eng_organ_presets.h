@@ -27,7 +27,7 @@ static const uint8_t ORG_FACTORY[ORG_NFACTORY][ORG_PSIZE] = {
 };
 
 /* level (P_LEVEL, 112 = 0 dB) of each factory preset: the C major chord as loud as JAZZ's */
-static const uint8_t ORG_LEVEL[ORG_NFACTORY] = {112, 101, 110, 112, 112, 117, 121, 109, 111, 114, 108, 111, 114, 110, 121, 117, 107};
+static const uint8_t ORG_LEVEL[ORG_NFACTORY] = {112, 97, 110, 112, 112, 117, 121, 105, 111, 114, 108, 111, 114, 106, 121, 117, 107};
 
 /* the reverb's TYPE and SIZE (0..127) of each factory preset: the preset sets them (0.9.8) */
 static const uint8_t ORG_RVB[ORG_NFACTORY][2] = {{0, 51}, {0, 51}, {1, 114}, {1, 114}, {1, 114}, {1, 114}, {1, 114}, {1, 114}, {1, 114}, {1, 114}, {1, 114}, {1, 114}, {1, 114}, {1, 114}, {1, 114}, {1, 114}, {1, 114}};

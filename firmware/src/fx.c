@@ -158,49 +158,8 @@ static void track_dist(track_t *t, int32_t *b, uint32_t n)
     }
 }
 
-/* master: a look-ahead peak limiter (0.9.39, below) in front of a soft knee. Before 0.9.38 its gain followed every peak as it
- * came (~0.1 ms) and moved with a chord's beats, about 5 % of intermodulation; the knee (master_knee, 0.9.38) is linear up to
- * 0.8 of full scale and bends towards 0.9 above (it was a tanh over the whole range: the signal the limiter holds at 0.55 was
- * already bent by it); with the look-ahead it is only a guard. */
-#define LIM_T 24000                       /* 0.73 of full scale (0.9.39: under the knee; it was 18000, 0.55, with the knee taking the overshoot); a safety only since 0.9.40 (ORG_TO_MASTER) */
-#define LIM_KNEE 26214                    /* 0.8 of full scale: linear under it */
-#define LIM_CEIL 29491                    /* 0.9: the knee never reaches it (the health checks' 30000 stays free) */
-static inline int32_t master_knee(int32_t x)
-{
-    int32_t a = x < 0 ? -x : x, y;
-    if (a <= LIM_KNEE)
-        return x;
-    y = LIM_KNEE + ((softclip((a - LIM_KNEE) * 10) * (LIM_CEIL - LIM_KNEE)) >> 15);   /* tanh of the excess, x 10: 0.8 .. 0.9 */
-    return x < 0 ? -y : y;
-}
-static int32_t lim_env = LIM_T;
-/* 0.9.39: the limiter looks ahead. The signal waits LIM_LA samples (0.73 ms); the gain comes down, over a few samples, to what the
- * loudest sample in that window needs (LIM_T), before it plays, holds LIM_HOLD samples (the chord's beats do not move it) and then
- * returns slowly. Measured (host, preset 001's triads, the Leslie on and off): no energy left at frequencies the clean chord has
- * not (0.9.38: 0.5 .. 2.8 %), about 2 .. 3 dB quieter at the same MASTER (MASTER up only compresses more). Nothing gets past the threshold, so the knee is only a guard: before, the gain followed the peaks as they came
- * (it lagged them: the knee took the rest) and moved with the beats */
-#define LIM_LA 32u
-#define LIM_HOLD 13230u                   /* 300 ms: longer than a chord's beats, which then do not move the gain */
-static int32_t lim_dl[LIM_LA], lim_dr[LIM_LA], lim_mag[LIM_LA], lim_g = 32768, lim_max;
-static uint32_t lim_pos, lim_hold;
-/* x * g / 32768, g Q15 <= 1.0, exact (floor) for any x (|x| may be far above Q15): the high part and the low 15 bits apart. (A
- * truncated >> 4 first made a -1 remainder -16, a DC after the notes; two formulas switched at a size made steps.) Unity passes */
-static inline int32_t lim_scale(int32_t x, int32_t g)
-{
-    if (g >= 32768)
-        return x;
-    return (x >> 15) * g + (((x & 32767) * g) >> 15);
-}
-static void master_lim_reset(void)                /* power-on (and the tests) */
-{
-    memset(lim_dl, 0, sizeof lim_dl);
-    memset(lim_dr, 0, sizeof lim_dr);
-    memset(lim_mag, 0, sizeof lim_mag);
-    lim_g = 32768;
-    lim_max = 0;
-    lim_pos = lim_hold = 0;
-    lim_env = LIM_T;
-}
+/* master (0.11.0, owner): no limiter and no soft knee. The organ ends in a hard clip at the output's full scale; the organ's
+ * own levels (ORG_TO_MASTER) keep a chord inside it. The old look-ahead limiter and the knee are on main. */
 /* MENU > USB LEVEL FIXED (for #42: record over USB with the speaker turned down): the mix goes to master_out at the
  * full MASTER level, USB audio takes that (audio.c uac_tap), and only then does MASTER scale what the DAC gets
  * (usb_fixed_dac). MASTER (0, the default): MASTER before master_out, as always (USB follows the knob) */
@@ -275,7 +234,6 @@ static inline int32_t spk_bass(int32_t m)
 
 static inline void master_out(int32_t *l, int32_t *r)
 {
-    int32_t al, ar, a;
     *l = dc_block(*l, &dc_l, &dce_l);
     *r = dc_block(*r, &dc_r, &dce_r);
     if (fx_lowcut) {                  /* two one-pole high-passes, error feedback as dc_block (the */
@@ -286,39 +244,8 @@ static inline void master_out(int32_t *l, int32_t *r)
         *r = lowcut1(*r, &lc_r1, &lce[2], sh);
         *r = lowcut1(*r, &lc_r2, &lce[3], sh) + b;
     }
-    al = *l < 0 ? -*l : *l;
-    ar = *r < 0 ? -*r : *r;
-    a = al > ar ? al : ar;
-    {   /* the lookahead window: the sample LIM_LA ago comes out, this one goes in; the window's loudest sample */
-        uint32_t p = lim_pos;
-        int32_t ol = lim_dl[p], orr = lim_dr[p], gone = lim_mag[p], tg;
-        lim_dl[p] = *l;
-        lim_dr[p] = *r;
-        lim_mag[p] = a;
-        lim_pos = p + 1u < LIM_LA ? p + 1u : 0u;
-        if (a >= lim_max)
-            lim_max = a;
-        else if (gone == lim_max) {                  /* the loudest left the window: look again (rarely) */
-            uint32_t j;
-            lim_max = 0;
-            for (j = 0; j < LIM_LA; j++)
-                lim_max = lim_mag[j] > lim_max ? lim_mag[j] : lim_max;
-        }
-        lim_env = lim_max > LIM_T ? lim_max : LIM_T;     /* (what the tests and the meter read) */
-        tg = lim_max > LIM_T ? (int32_t)(((uint32_t)LIM_T << 15) / (uint32_t)lim_max) : 32768;
-        if (tg < lim_g) {                            /* down before the peak comes out: 1/16 of the way a sample (87 % in 32; */
-            lim_g -= ((lim_g - tg) >> 4) + 1;        /* the knee, from 0.8, takes the rest with LIM_T at 0.73) */
-            lim_g = lim_g < tg ? tg : lim_g;
-            lim_hold = LIM_HOLD;
-        } else if (lim_hold)
-            lim_hold--;
-        else
-            lim_g += ((tg - lim_g) >> 14) + (tg > lim_g);   /* back up slowly (~370 ms; at least 1, so it gets there) */
-        *l = lim_scale(ol, lim_g);
-        *r = lim_scale(orr, lim_g);
-    }
-    *l = master_knee(*l);
-    *r = master_knee(*r);
+    *l = *l > 32767 ? 32767 : *l < -32768 ? -32768 : *l;     /* the hard clip (0.11.0) */
+    *r = *r > 32767 ? 32767 : *r < -32768 ? -32768 : *r;
 }
 
 /* length of one division (N_DIV order) in samples at the song tempo */

@@ -145,10 +145,10 @@ static double usb_run(uint32_t fixed, uint32_t master, int dac_is_tap_scaled_ok[
     uint32_t b, i;
     double usb = 0, dac = 0;
     fresh();
-    master_lim_reset(); dc_l = dc_r = dce_l = dce_r = 0;    /* (the master's state as at power-on: runs compare) */
+    dc_l = dc_r = dce_l = dce_r = 0;    /* (the master's state as at power-on: runs compare) */
     trk[0].p[P_VOICE] = V_POLY;
     trk[0].p[P_DIST] = trk[0].p[P_CHOR] = trk[0].p[P_DLY] = trk[0].p[P_REV] = 0;   /* (no tails between runs) */
-    trk[0].p[P_LEVEL] = 40;                            /* (quiet: at the default the full MASTER chord hits the limiter, LIM_T) */
+    trk[0].p[P_LEVEL] = 40;                            /* (quiet: the full MASTER chord would clip at the output, 0.11.0) */
     trk_note_on(&trk[0], 48, 110); trk_note_on(&trk[0], 55, 110); trk_note_on(&trk[0], 64, 110);
     fx_usb_fixed = (uint8_t)fixed;
     song.master_q12 = master;
@@ -188,7 +188,7 @@ static void usb_level(void)
 static void boot_fresh(void)
 {
     fresh();
-    master_lim_reset(); dc_l = dc_r = dce_l = dce_r = 0;
+    dc_l = dc_r = dce_l = dce_r = 0;
     memset(kb_note, 0, sizeof kb_note); kb_prev = 0;
     trk[0].p[P_VOICE] = V_POLY;
     trk[0].p[P_DIST] = trk[0].p[P_CHOR] = trk[0].p[P_DLY] = trk[0].p[P_REV] = 0;

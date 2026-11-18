@@ -48,7 +48,6 @@ static void boot(void)
     org_init();
     dr_init(&dr_st);
     eq_init(&eq_st);
-    master_lim_reset();                  /* (the master as at power-on, 0.9.39: its look-ahead and hold keep a tail of the last case) */
     dc_l = dc_r = dce_l = dce_r = 0;
     eq_w = 0; eq_idle = 0; eq_on = 0;
     dr_w = 0;

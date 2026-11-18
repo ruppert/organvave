@@ -1095,7 +1095,7 @@ static void org_block(struct track *t)          /* audio path, before the render
         org.bars[i] = org_patch[OP_UB + i];
     org.temp = 0u;                                          /* 0.9.7: the tuning is fixed (60 Hz gear, A 440); OP_TEMP and OP_TUNING are kept, not read */
     org.xtalk = org_patch[OP_XTALK];
-    org.perc = org_patch[OP_PERC];
+    org.perc = 0;                       /* 0.11.0: the percussion is a dummy (owner): OP_PERC is stored, nothing renders */
     org.psoft = org_patch[OP_PERC_SOFT];
     org.pfast = org_patch[OP_PERC_FAST];
     org.psel = org_patch[OP_PERC_SEL];
@@ -1112,7 +1112,7 @@ static void org_block(struct track *t)          /* audio path, before the render
         org.pdec_slow = ORG_PERC_DEC[org_ci(OP_PC_SLOW, org_patch[OP_PC_SLOW])];
         org.pbusa = (uint8_t)org_ci(OP_PC_BUSA, org_patch[OP_PC_BUSA]);
         org.pbusb = (uint8_t)org_ci(OP_PC_BUSB, org_patch[OP_PC_BUSB]);
-        org.ptrig = (int8_t)((int32_t)org_ci(OP_PC_TRIG, org_patch[OP_PC_TRIG]) - 1);
+        org.ptrig = -1;                 /* the trigger mute goes with the percussion (0.11.0 dummy): no drawbar is muted */
         org.vinc = ORG_SCAN_INC[org_ci(OP_SC_HZ, org_patch[OP_SC_HZ])];
         org.vamp2[0] = (uint8_t)org_ci(OP_SC_V1, org_patch[OP_SC_V1]);
         org.vamp2[1] = (uint8_t)org_ci(OP_SC_V2, org_patch[OP_SC_V2]);
