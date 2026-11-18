@@ -53,6 +53,7 @@ static int32_t rot_disp_ram[4][ROT_NA];
 #define RC_Q12 (1.0f / 4096.0f)        /* a delay's fraction */
 #define RC_REFL (6554.0f / 16384.0f)   /* the reflection's 0.4 */
 #define RC_HL (11469.0f / 16384.0f)    /* the horn level, 0.7 */
+#define RC_TRIM 0.794f                 /* the output's trim, -2 dB: with the Leslie the mix is no louder than without it (0.11.0, no limiter) */
 #define RC_LEAK (1720.0f / 16384.0f)   /* the leakage, 0.15 * 0.7 */
 
 typedef struct {
@@ -321,6 +322,7 @@ static inline __attribute__((always_inline)) void rot_body(rot_t *r, const int32
         lo = y + r->hl * r->HL[op] + leak;
         y = rot_cplf(r->dR, cs, r->DR[op]);
         ro = y + r->hl * r->HR[op] + leak;
+        lo *= RC_TRIM; ro *= RC_TRIM;
         outL[i] = (int32_t)(lo * 32768.0f + (lo >= 0.0f ? 0.5f : -0.5f));
         outR[i] = (int32_t)(ro * 32768.0f + (ro >= 0.0f ? 0.5f : -0.5f));
         r->HL[op] = 0.0f; r->HR[op] = 0.0f; r->DL[op] = 0.0f; r->DR[op] = 0.0f;
