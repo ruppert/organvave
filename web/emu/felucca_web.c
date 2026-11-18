@@ -242,6 +242,7 @@ enum { FM1_GUARD_STACK = 1, FM1_GUARD_WRITE = 2, FM1_GUARD_BUS = 4, FM1_GUARD_PC
 #define usb_retry(ms) ((void)(ms))
 #define usb_detach() ((void)0)
 #include "../../firmware/src/master.c"
+#include "../../firmware/src/bench.c"
 #include "../../firmware/src/organ_app.c"
 #include "../../firmware/src/main.c"
 #undef usb_poll
