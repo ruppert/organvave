@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Guilherme Ruppert (OrganVave-1) */
-/* BENCHMARK (0.11.0, GLOBAL > BENCHMARK): the runner. Eight kernels, each the work of one second of audio: the wheels,
+/* BENCHMARK (0.11.0, GLOBAL > BENCHMARK): the runner. Nine kernels (kernel 8: the organ played, 25 keys changing each block,
+ * the crosstalk on and the scanner on the upper manual; the patch is saved and restored), each the work of one second of audio: the wheels,
  * the FIR and the DRIVE in integers and in single precision, the organ itself (float, ten keys held), and the rotary
  * (the Leslie's float engine, 400 / 340 rpm, no integer partner: 0.11.0 WIP). While it runs
  * the audio is muted (audio.c: the ISR writes silence and keeps its own time apart, bench_isr_ticks), the watchdog is fed
@@ -9,7 +10,7 @@
 #include "bench_kernels.h"
 #include "bench_state.h"                        /* bench_mute, bench_isr_ticks (also in audio.c: the guard keeps one) */
 
-#define BENCH_KERNELS 8u
+#define BENCH_KERNELS 9u
 #define BENCH_REPS 2u
 
 static uint32_t bench_ticks[BENCH_KERNELS];     /* ticks of one second of audio, the faster of the repeats */
@@ -25,6 +26,7 @@ static volatile uint32_t bench_blk = BENCH_BLK;
 
 static const uint8_t BENCH_KEYS[10] = {12, 19, 24, 28, 31, 36, 40, 43, 48, 55};   /* a chord, the organ's keys 0..60 */
 
+static uint8_t bsave[ORG_PSIZE];                 /* the organ's patch, kept while kernel 8 changes it */
 static uint32_t bph[BENCH_N], binc[BENCH_N];
 static int32_t bgi[BENCH_N];                    /* gains, Q9 */
 static float bgf[BENCH_N];
@@ -70,6 +72,18 @@ static void bench_setup(uint32_t k)             /* not timed: the states the ker
         org_all_off();
         for (i = 0; i < 10u; i++)
             org_key(BENCH_KEYS[i], 1u);
+    } else if (k == 8u) {
+        uint32_t i;
+        memcpy(bsave, org_patch, sizeof bsave);
+        org_patch[OP_XTALK] = 1;
+        org_patch[OP_VIB] = 1;                  /* the scanner: VIB 1 */
+        org_patch[OP_VIB_ROUTE] = 1;
+        org_patch[OP_VIB_UP] = 1;               /* the upper manual through it, the lower dry */
+        org_patch[OP_VIB_LO] = 0;
+        org_adv_poll();
+        org_all_off();
+        for (i = 0; i < 25u; i++)
+            org_key(36u + i, 1u);
     } else if (k == 7u) {
         rot_init(&brot);                        /* the cabinet at rest, the rotors at 400 / 340 rpm (649277 / 551885 per sample) */
         rot_target(&brot, 649277u, 551885u);
@@ -91,6 +105,11 @@ static void bench_teardown(uint32_t k)
 {
     if (k == 6u)
         org_all_off();
+    else if (k == 8u) {
+        org_all_off();
+        memcpy(org_patch, bsave, sizeof bsave);
+        org_adv_poll();
+    }
 }
 
 static void bench_body(uint32_t k)              /* one second: BENCH_BLOCKS blocks of BENCH_BLK samples */
@@ -122,6 +141,17 @@ static void bench_body(uint32_t k)              /* one second: BENCH_BLOCKS bloc
         case 7u:
             rot_block(&brot, bx, byi, bout, BENCH_BLK);
             bench_sink += (uint32_t)bout[BENCH_BLK - 1u];
+            break;
+        case 8u:                                /* played: one key up and one down each block, as the host probe */
+            {
+                uint32_t i;
+                org_key(36u + b % 25u, 0u);
+                org_key(36u + (b + 7u) % 25u, 1u);
+                for (i = 0; i < BENCH_BLK; i++)
+                    bout[i] = 0;
+                org_render(bout, BENCH_BLK);
+                bench_sink += (uint32_t)bout[BENCH_BLK - 1u];
+            }
             break;
         default:                                /* 6: the organ's own render, as the audio path calls it */
             {
@@ -159,7 +189,7 @@ static uint32_t bench_one(uint32_t k)
 
 static void bench_show(uint32_t k)              /* "BENCHMARK 3/7", over the whole screen while it runs */
 {
-    char s[] = "BENCHMARK 0/8";
+    char s[] = "BENCHMARK 0/9";
     s[10] = (char)('1' + k);
     s[12] = (char)('0' + BENCH_KERNELS);
     lcd_fill(0, 0, 240, 240, T_BG);

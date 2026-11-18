@@ -712,7 +712,7 @@ static void bench_cell(char *b, uint32_t k)
 }
 static void scr_bench(void)
 {
-    static const char *const BN_LB[BENCH_KERNELS] = {"WHEELS INT", "WHEELS FLOAT", "FIR INT", "FIR FLOAT", "TUBE INT", "ORIGINAL FLOAT", "ORGAN FLOAT", "ROTARY FLOAT"};
+    static const char *const BN_LB[BENCH_KERNELS] = {"WHEELS INT", "WHEELS FLOAT", "FIR INT", "FIR FLOAT", "TUBE INT", "ORIGINAL FLOAT", "ORGAN FLOAT", "ROTARY FLOAT", "PLAYING XT+SC"};
     char b[24];
     uint32_t k;
     header("BENCHMARK", "");
@@ -722,9 +722,9 @@ static void scr_bench(void)
             bench_cell(b, k);
             v = b;
         }
-        oa_gl_line((int32_t)(34u + 22u * k), BN_LB[k], v, 0);
+        oa_gl_line((int32_t)(34u + 20u * k), BN_LB[k], v, 0);
     }
-    oa_gl_line((int32_t)(34u + 22u * BENCH_KERNELS), "1 S OF AUDIO = 100%", "", 0);
+    oa_gl_line((int32_t)(34u + 20u * BENCH_KERNELS), "1 S OF AUDIO = 100%", "", 0);
     footer(bench_have ? "ALGO: RUN AGAIN   GLO: BACK" : "ALGO: RUN   GLO: BACK");
 }
 
