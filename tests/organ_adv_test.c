@@ -84,8 +84,12 @@ static void defaults(void)
         check("the default crosstalk table has setBfree's entries (those above 8 / 2^18 all there, none more)", miss == 0 && extra == 0);
         check("  .. with their levels within 2 LSB of Q18 (0.9.36: both pruned at 40 dB under each key's strongest)", lv == 0 && tot == ORG_KC_OFF[96] && tot > 2000u);
         check("  .. and nothing was cut for room", fl == ORG_XT_G[org_ci(OP_XT_FLOOR, 0)]);
-        {   /* the prune (0.9.36): every key keeps exactly its entries within 40 dB of its strongest; off, setBfree's full model */
-            uint32_t bad40 = 0, full;
+        {   /* the prune (0.9.36, an option since 0.11.0: org_xt_prune 1 keeps a key's entries within 40 dB of its strongest);
+             * the default (0.11.0) is setBfree's full model, the flash table too */
+            uint32_t bad40 = 0, pr, full;
+            org_xt_prune = 1;
+            (void)org_xt_build(z);
+            pr = org_xt_off[96];
             for (k = 0; k < 96u; k++) {
                 uint32_t j, mx = 0;
                 for (j = org_xt_off[k]; j < org_xt_off[k + 1]; j++)
@@ -96,10 +100,10 @@ static void defaults(void)
             org_xt_prune = 0;
             (void)org_xt_build(z);
             full = org_xt_off[96];
-            org_xt_prune = 1;
-            printf("organ adv: the prune: %u entries kept of setBfree's %u\n", (unsigned)ORG_KC_OFF[96], full);
-            check("  .. the prune: no entry kept more than 40 dB under its key's strongest, and setBfree's full model without it (over 10000 entries)",
-                  bad40 == 0 && full > 10000u);
+            printf("organ adv: the prune: %u entries kept of setBfree's %u\n", (unsigned)pr, full);
+            check("  .. the prune option: no entry kept more than 40 dB under its key's strongest, fewer entries than the full model",
+                  bad40 == 0 && pr < full && full > 10000u);
+            check("  .. the default: the flash table is setBfree's full model (no entry pruned)", ORG_KC_OFF[96] == full);
         }
     }
 }
@@ -560,7 +564,7 @@ int main(void)
     org_init();
     defaults();
     reference();
-    org_xt_prune = 1;                           /* (the firmware's: the 40 dB prune, 0.9.36) */
+    org_xt_prune = 0;                           /* (the firmware's default since 0.11.0: setBfree's full crosstalk) */
     {   /* 0.9.36: the faint wheels (under -30 dB: the crosstalk's leakage) take the sine without interpolation; against every wheel
          * interpolated, a held chord with the crosstalk on differs by less than -80 dB of one full wheel */
         static int32_t ya[2][44100];
@@ -590,7 +594,7 @@ int main(void)
         e = 10 * log10(e / (44100 - 4410) / (32768.0 * 32768.0 / 2) + 1e-30);
         printf("organ adv: the faint wheels without interpolation: the difference %.1f dB re one full wheel (the chord %.1f dB)\n", e,
                10 * log10(s2 / (44100 - 4410) / (32768.0 * 32768.0 / 2)));
-        check("the faint wheels' sine (no interpolation under -30 dB) changes a crosstalk chord by less than -80 dB of a full wheel", e < -80.0);
+        check("the faint wheels' shortcut (CPU option, off by default since 0.11.0) changes a crosstalk chord by less than -75 dB of a full wheel", e < -75.0);
     }
     engine();
     params();

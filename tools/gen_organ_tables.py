@@ -11,8 +11,8 @@ DIR/sbf_ref dump tools/setbfree_ref/tonegen_dump.txt (glibc's rand(): the click 
 
 The tables (FS 44100, the firmware's and the reference's rate):
   ORG_WINC[3][91]    the wheels' 32-bit DDS increments: [0] gear 60 Hz, [1] gear 50 Hz, [2] equal temperament
-  ORG_KC, ORG_KC_OFF the keys' contributions, crosstalk on (setBfree's default model, 0.9.36: a key's entries more than 40 dB
-                     under its strongest dropped, a much reduced crosstalk for the CPU): for key k the entries
+  ORG_KC, ORG_KC_OFF the keys' contributions, crosstalk on (setBfree's default model, complete since 0.11.0: no entry pruned;
+                     0.9.36 .. 0.10.x dropped a key's entries more than 40 dB under its strongest for the CPU): for key k the entries
                      ORG_KC[ORG_KC_OFF[k] .. ORG_KC_OFF[k + 1] - 1]; keys 0..63 the upper manual (the lower manual is
                      the same on buses + 9), 64..95 the pedals (setBfree's keys 128..159)
   ORG_KCX, ORG_KCX_OFF the same with the crosstalk off (compartment, terminal strip and wiring at 0)
@@ -104,7 +104,7 @@ def check_envelopes(d):
         p += 2 + rb
 
 
-XT_PRUNE = 100        # 0.9.36 (owner: a much reduced crosstalk): ORG_KC keeps a key's entries within 40 dB of its strongest
+XT_PRUNE = 0          # 0.11.0 (owner: setBfree's crosstalk, complete): 0 keeps every entry; 0.9.36's prune was 100 (40 dB)
 
 
 def pack(contrib, prune=False):
@@ -170,7 +170,7 @@ def main():
     for w in range(1, 92):
         assert abs(d["wheel"][w][3] - 1.0) < 1e-9, "wheel attenuation is not 1: the firmware assumes setBfree's default"
     for tag, key in (("ORG_KC", "contrib"), ("ORG_KCX", "contribnx")):
-        ent, off = pack(d[key], prune=(tag == "ORG_KC"))
+        ent, off = pack(d[key], prune=(tag == "ORG_KC" and XT_PRUNE > 0))
         L.append("")
         L.append("/* %s: %d contributions; an entry: wheel << 25 | bus << 20 | level Q18 */" %
                  ("crosstalk on" if tag == "ORG_KC" else "crosstalk off", len(ent)))

@@ -49,7 +49,7 @@
 /* 0.9.36: a wheel held at a gain under -30 dB of a full wheel (Q12; in practice the crosstalk's leakage) takes the sine without its
  * interpolation (org_sine_n): its error, about -55 dB of the wheel, is under -85 dB of a full one, and the sine costs half */
 #define ORG_FAINT org_faint
-static int32_t org_faint = 130;                 /* (tests set 0: every wheel interpolated) */
+static int32_t org_faint = 0;                   /* 0.11.0: every wheel interpolated (setBfree's; was 130, the faint wheels unrounded for the CPU) */
 #define ORG_XT_CAP 10752u               /* the RAM crosstalk table's entries (setBfree's default needs 10687) */
 #define ORG_VIB_N 1024u                 /* the delay line: 1024 samples (setBfree's BUF_SIZE) */
 #define ORG_VIB_CLAMP 65535             /* the delay line's input: x >> 3, clamped */
@@ -956,10 +956,10 @@ static void org_xt_term(uint32_t term, uint32_t b, int32_t lev, int32_t comp, in
         org_xt_add(ORG_XT_TSW[term], b, lev, tstrip);
     }
 }
-/* 0.9.36 (owner: a much reduced crosstalk): a key keeps only its entries within 40 dB of its strongest (v * 100 >= the max, in
- * Q18), as tools/gen_organ_tables.py does for the flash table: the faint leakage woke whole wheels for nothing audible. 0 builds
- * setBfree's full model (tests/organ_adv_test.c compares it with setBfree's) */
-static uint8_t org_xt_prune = 1;
+/* 0.11.0 (owner): setBfree's full crosstalk is the default. 1 would keep a key's entries within 40 dB of its strongest (v * 100
+ * >= the max, in Q18), as 0.9.36 .. 0.10.x did for the CPU; the 40 dB prune drops about 0.24 dB on a four-note chord (measured
+ * against tools/setbfree_ref: the level is exact without it). tests/organ_adv_test.c compares this with setBfree's */
+static uint8_t org_xt_prune = 0;                 /* 0.11.0: setBfree's complete model (was 1, the 40 dB prune) */
 /* the build; returns the floor it ended with (Q24; higher than asked when the table would not fit, ORG_XT_CAP) */
 static uint32_t org_xt_build(const uint8_t *p)
 {

@@ -465,8 +465,10 @@ int main(void)
             blocks(44100 * 2);
             u1 = tone(oL, pos - 44100, 44100, f0); u2 = tone(oL, pos - 44100, 44100, 2 * f0);
             printf("effects: TUBE at GAIN 10: H2 %.1f dB re H1 (at 6: %.1f)\n", db(u2 / u1), db(t2 / t1));
-            check("TUBE: the curve's even harmonics (at GAIN 10 the second rises above -40 dB re the fundamental, over GAIN 6's)",
-                  db(u2 / u1) > -40.0 && db(u2 / u1) > db(t2 / t1));
+            /* 0.11.0: the complete crosstalk (setBfree's) puts the 4' leakage back into the second harmonic at every GAIN, so the
+             * rise over GAIN 6 is no longer what this measures; the check is that GAIN 10 has its even harmonic above -40 dB */
+            check("TUBE: the curve's even harmonics (at GAIN 10 the second is above -40 dB re the fundamental)",
+                  db(u2 / u1) > -40.0);
             P[OP_DRV_GAIN] = 60;
             patch_set(P);
             blocks(44100);

@@ -29,6 +29,9 @@ OP_DRV_TREB = 90                                    # 0.9.44: the tone stack's T
 OP_PERC, OP_PERC_SOFT, OP_PERC_FAST, OP_PERC_SEL = 29, 30, 31, 32   # the percussion (0.2.0)
 RTYPES = {"room": 0, "hall": 1, "plate": 2, "spring": 3, "cloud": 4}   # params.c N_RTYPE
 TEMPS = {"gear60": 0, "gear50": 1, "equal": 2}
+# 0.11.0: the complete crosstalk (setBfree's) raises a few chords' peaks: REED's registration put one sample over 30000 (the
+# health limit). A step (0.5 dB) under its RMS level; the other presets keep the RMS calibration unchanged.
+PEAK_TRIM = {"REED": -1}
 
 
 def effects(p, fx):
@@ -114,7 +117,7 @@ def main():
         p[OP_XTALK] = 1 if xt else 0
         effects(p, fx)
         db = 20 * math.log10(ref / chord_rms(contrib, bars(up), xt))
-        lv = max(1, min(127, 112 + int(round(2 * db))))
+        lv = max(1, min(127, 112 + int(round(2 * db)) + PEAK_TRIM.get(name, 0)))
         levels.append((name, db, lv))
         rt, rs = fx.get("rvb", ("hall", 90))
         assert rt in RTYPES and 0 <= rs <= 100

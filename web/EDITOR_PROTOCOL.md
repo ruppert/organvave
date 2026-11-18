@@ -1404,3 +1404,7 @@ firmware ignores 90..92 (reserved there) and plays such a patch's tone flat.
 Version 0.9.36 reduces the crosstalk (for the CPU): with `OP_XTALK` on, a key keeps only its contributions within 40 dB of its
 strongest, in the default table and in the one the crosstalk bytes 64..69 build. The bytes keep their meaning; a patch with the
 crosstalk on sounds a little cleaner than before (the faint leakage is gone; within 0.3 dB of level).
+
+Version 0.11.0 restores setBfree's complete crosstalk as the default (the 40 dB prune and the faint shortcut are options in the firmware,
+not in the bytes). The meaning of the bytes 64..69 is the same; a patch with the crosstalk on sounds fuller again, by up to 0.24 dB
+of level on a four-note chord (setBfree's own level), and the CPU cost of the crosstalk rises by about 15 % on a ten-key chord.

@@ -74,6 +74,17 @@ interpolation (`ORG_FAINT`): under -80 dB of a full wheel on a crosstalk chord. 
 312), 3 keys 1,148 -> 541, 10 keys 2,330 -> 1,254, changing chords -35 .. -42 %; with 30 keys or more every wheel sounds anyway
 (little or no change). The nine cases against setBfree: within 0.24 dB rms, 0.31 dB on the attack.
 
+**0.11.0, setBfree's complete crosstalk again (owner).** The 0.9.36 prune and the faint shortcut were the cause of the level gap
+against setBfree: a four-note chord (C major, 888888888) sat 0.24 dB under it, a ten-key chord 0.10 dB, with the crosstalk on
+only (no crosstalk: 0.000 dB). Now the default is setBfree's full model: `tools/gen_organ_tables.py` keeps every entry in the flash
+table (10,687, the count setBfree needs; `XT_PRUNE` 0), `org_xt_prune` 0 and `org_faint` 0 in the firmware. The nine cases of
+`tools/setbfree_ref/compare.py` are within 0.002 dB rms; SNR 43 .. 65 dB over the first 0.25 s (the rest is setBfree's wavetables
+against the DDS). The prune (`org_xt_prune` 1) and the faint shortcut stay as options for the CPU. Cost, measured on the host by
+the wheels in use (not the device): 1 key 17 -> 17, 3 keys 39 -> 39, 10 keys 55 -> 63 (+15 %), plus the interpolated sine for the
+faint wheels. The device CPU meter decides; if it shows overload, the two defaults go back (one line each). The factory REED
+preset sits half a step lower (`PEAK_TRIM` in tools/gen_organ_presets.py): its peak passed the 30000 health limit with the
+complete crosstalk.
+
 **0.9.38, the crack of a high chord (owner: preset 001, the percussion off, a C major triad high up).** Two stages bent it. The
 Leslie's input took the mix / 4 and clipped at 1.0, four full wheels: a high triad (its notes share wheels, which add in phase) went
 past it in thousands of samples (C6: 14.6 % of added distortion against an all-linear chain). It now takes the mix / 16 and gives
