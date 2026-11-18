@@ -76,6 +76,8 @@ $HC -O2 -o "$OUT/drive_test" tests/drive_test.c -lm
 run "the drive: its six types (0.9.41) on their THD laws, level, bounds, silence, DC, block independence, TIGHT TUBE's bass" "$OUT/drive_test"
 $HC -O2 -o "$OUT/drive_orig_test" tests/drive_orig_test.c -lm
 run "the drive's ORIGINAL (byte 8, 0.11.0): setBfree's overdrive in float against its own loop in double (4 LSB), the level, bounds, silence, block independence, DC, the switch" "$OUT/drive_orig_test"
+$HC -O2 -o "$OUT/rotary_test" tests/rotary_test.c -lm
+run "the rotary CLASSIC against setBfree's: the sidebands, stopped rotors, the speed ramp reaching its targets, bounds at full scale and at the filters' resonances, silence, the models' levels" "$OUT/rotary_test"
 $HC -O2 -o "$OUT/bench_test" tests/bench_test.c -lm
 run "the BENCHMARK kernels (0.11.0): the integer and the float wheels and FIR agree, the clock across a wrap, the percentages, ratios and formatting" "$OUT/bench_test"
 $HC -O2 -o "$OUT/effects_test" tests/effects_test.c -lm
