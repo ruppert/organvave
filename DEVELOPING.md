@@ -11,8 +11,7 @@ FM-1 allows: the whole organ path follows setBfree's own float code (its `tonege
 single-precision float, with the rest of the chain (reverb, delay, EQ, the existing drive) kept as it is. The rotary (Leslie
 CLASSIC) has no sound on this branch: its DSP is removed (`eng_rotary.c` and its tables), and its controls (the HOME box, the
 ROTARY page, SCL, the lowest F of DRAWBAR PRESET MODE) are dummies that store their bytes and change nothing (owner). Still to
-remove: the percussion and the organ's limiter are dummies or gone (the master ends in a hard clip), and PRESET SETTINGS keeps
-only VOLUME, SPLIT and SPLIT POINT on the panel (0.11.0, owner; the other setBfree settings come back later). Nothing is migrated from 0.10.x: patches, user presets and the factory bank are rebuilt.
+remove: the percussion, the organ's limiter and compressors (the master ends in a hard clip). Nothing is migrated from 0.10.x: patches, user presets and the factory bank are rebuilt.
 Where a section below describes the integer port on `main`, it says so; the target is the setBfree port described here and in
 ORGAN.md.
 
@@ -186,7 +185,7 @@ The organ has no voices to shed. `shed_voice()` (audio.c) therefore calls `fx_cp
 ## 10. Drive, rotary and page model (0.9.2)
 
 - **Drive**: GAIN, TYPE, TONE, OUTPUT (patch bytes 41, 48, 49, 50). TYPE 0 is DISTORTION (`dr_run`, an approximation made in 0.9.2, untouched). It is **not** setBfree's preamp: setBfree's
-Preamp/Overdrive is `b_overdrive/overdrive.c` (a float module, 4x oversampled, with a clean bypass as its default), which
+(0.11.0: setBfree's overdrive is now the type ORIGINAL, byte 8, in float and without oversampling: its loop has none, see ORGAN.md.) Preamp/Overdrive is `b_overdrive/overdrive.c` (a float module, with a clean bypass as its default), which
 `new-float` ports as the `original` type. TYPE 1 is TUBE (`dr_tube` in eng_drive.c: an asymmetric soft cubic with a DC tracker, as loud as DISTORTION at the default gain). `dr_run_ex` runs either curve and then `dr_post` (a tilt around 1 kHz and an output gain, 2 dB a step). The old CHARACTER byte (42) is ignored.
 - **Rotary** (the DSP is on `main` only; on `new-float` the bytes below are stored and ignored, owner's dummy controls): bytes 51..56 scale the horn and drum speeds (1.12^n a step) and the ramp times (1.4^n a step). The coding is "zero is the default": `org_c9` / `org_b9` (eng_organ.c). The ramp steps are the table `ROT_KT` (fx.c), because `rot_k` divides in 64 bits and the interrupt cannot link `__udivdi3`; effects_test.c checks every entry against `rot_k`.
 - **Rotary input**: the reverb's return holds a faint constant, which the turning rotors would make a tone: `mix_block` runs a 7 Hz high-pass (`rot_dc`) in front of the cabinet and feeds zeros once the input has been quiet for 1.1 s. The host tests (regress.c, audio_test.c) now initialise the effects like main.c's `felucca_init`; before, the rotors never turned in them.
@@ -195,7 +194,7 @@ Preamp/Overdrive is `b_overdrive/overdrive.c` (a float module, 4x oversampled, w
 
 ## 11. PRESET SETTINGS (ADVANCED EDIT until 0.9.77; 0.9.4)
 
-- **The page**: EDIT walks UPPER, LOWER + PEDAL, ADVANCED (page 8 of organ_app.c: 3 rows since 0.11.0, VOLUME, SPLIT, SPLIT POINT; `OA_AOP` maps a row to its patch byte, `oa_val_adv` / `oa_adj_adv` keep the code of the other rows, which return by adding them to `OA_AOP` and `OA_NR`). FX never visits it.
+- **The page**: EDIT walks UPPER, LOWER + PEDAL, ADVANCED (page 8 of organ_app.c: 27 rows, `OA_AOP` maps a row to its patch byte, `oa_val_adv` / `oa_adj_adv`). FX never visits it.
 - **The bytes**: `ORG_PSIZE` 96; bytes 57..81 are `OP_TUNING` .. `OP_SC_V3`, table `ORG_ADV[]` = {op, N, D}: a byte b is the step (b + D) mod N (`org_ci`, `org_bi`; conditional subtractions, no division), so zero is setBfree's default and an older patch sounds as before. The meaning of each is in `web/EDITOR_PROTOCOL.md`. The autosave record keeps its old 64-byte patch and appends `patch_ext`; the shorter 0.9.3 record is still accepted (`AS_OLD_SIZE`).
 - **Tables built in the main loop** (`org_adv_poll`, called from main.c): the click envelopes (`org_env_build`, setBfree's `initEnvelopes` with glibc's `rand()` stream reproduced from the same position, so the defaults equal `ORG_ATK` / `ORG_REL` within 2 LSB), the scaled wheel increments (`org_tuning_build`) and the crosstalk table (`org_xt_build`: setBfree's `applyDefaultConfiguration` + `compilePlayMatrix` on `ORG_KCX` with the neighbour tables `ORG_XT_PAIR/TRE/TRW/TSE/TSW`). A zero patch keeps pointing at the flash tables; the RAM ones are used only for a setting that leaves the defaults. Pool: about 50 KB of RAM (`ORG_XT_CAP` = 10752 entries x 4 B); when a setting asks for more entries the floor is raised until it fits (the faintest entries go first).
 - **Key accounting**: a key remembers the crosstalk table it went down with (`org.keys[k]` 1 flash, 3 RAM; `q[]` bits 1..2). The RAM table is rebuilt only while `org.nram` is 0 (keys down on it, plus releases not yet applied by the interrupt, which decrements in `org_fragment`); until then new keys keep the table that is there. Nothing in the interrupt allocates, divides in 64 bits or multiplies in 64 bits per sample.
