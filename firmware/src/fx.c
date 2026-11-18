@@ -1053,7 +1053,7 @@ static volatile uint8_t eq_on;                          /* the equaliser, on or 
 static volatile uint8_t dr_on;                          /* 0 off, 1 on (the effects section sets it) */
 /* the rotary speaker (eng_rotary.c) between the mix and the master: off (rot_on 0) the mix is as it was; on, the mono
  * sum of the mix and the reverb's return goes through the cabinet and comes out in stereo */
-static rot_t rot_st __attribute__((section(".pool")));
+static rot_t rot_st;                                    /* .bss, not .pool (the POOL region is full) */
 static volatile uint8_t rot_on;
 static volatile uint8_t rot_model_req;                  /* 0 CLASSIC .. 4 CLASSIC 5 (the effects section sets it) */
 

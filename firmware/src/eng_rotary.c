@@ -23,11 +23,12 @@
 #include <stdint.h>
 #include "eng_rotary_tables.h"
 
-/* ROT_RAM (the firmware): the displacement tables (16 KB) are copied to SRAM at boot (rot_load_tables). The FIRs (20 KB)
- * stay in flash: the POOL region has no room for both (0.11.0), and the FIR is read per tap at the angle's nearest 16384th
- * (held per block in CLASSIC 2 .. 5). The host test reads the constants */
+/* ROT_RAM (the firmware): the displacement tables (16 KB) are copied to SRAM at boot (rot_load_tables), in .bss (not
+ * .pool: the POOL region is full, the SRAM has room). The FIRs (20 KB) stay in flash: neither fits in SRAM beside them,
+ * and the FIR is read per tap at the angle's nearest 16384th (held per block in CLASSIC 2 .. 5). The host test reads the
+ * constants */
 #ifdef ROT_RAM
-static int32_t rot_disp_ram[4][ROT_NA] __attribute__((section(".pool")));
+static int32_t rot_disp_ram[4][ROT_NA];
 #define RT_DISP rot_disp_ram
 #else
 #define RT_DISP ROT_DISP
