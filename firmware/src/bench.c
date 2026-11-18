@@ -1,14 +1,15 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Guilherme Ruppert (OrganVave-1) */
-/* BENCHMARK (0.11.0, GLOBAL > BENCHMARK): the runner. Seven kernels, each the work of one second of audio: the wheels,
- * the FIR and the DRIVE in integers and in single precision, and the organ itself (float, ten keys held). While it runs
+/* BENCHMARK (0.11.0, GLOBAL > BENCHMARK): the runner. Eight kernels, each the work of one second of audio: the wheels,
+ * the FIR and the DRIVE in integers and in single precision, the organ itself (float, ten keys held), and the rotary
+ * (the Leslie's float engine, 400 / 340 rpm, no integer partner: 0.11.0 WIP). While it runs
  * the audio is muted (audio.c: the ISR writes silence and keeps its own time apart, bench_isr_ticks), the watchdog is fed
  * between blocks, and each kernel runs twice keeping the faster. The arithmetic is in bench_kernels.h. Outside the audio
  * path: no budget entry. The results are the device's own; the host test checks the kernels agree, not the timing. */
 #include "bench_kernels.h"
 #include "bench_state.h"                        /* bench_mute, bench_isr_ticks (also in audio.c: the guard keeps one) */
 
-#define BENCH_KERNELS 7u
+#define BENCH_KERNELS 8u
 #define BENCH_REPS 2u
 
 static uint32_t bench_ticks[BENCH_KERNELS];     /* ticks of one second of audio, the faster of the repeats */
@@ -31,6 +32,8 @@ static int32_t byi[BENCH_BLK], bout[BENCH_BLK], bx[BENCH_BLK], bc[BENCH_TAPS], b
 static float byf[BENCH_BLK], bxf[BENCH_BLK], bcf[BENCH_TAPS], bhistf[64];
 static uint32_t bhp, bhpf;
 static dr_t bdr;
+/* the rotary's state: in .pool (the SRAM .bss is nearly full); the audio is muted while the benchmark runs */
+static rot_t brot __attribute__((section(".pool")));
 
 /* the inputs and the tables, once per run (outside the timing): the phases' steps for 55 Hz .. 830 Hz (inc = f * 2^32 / fs,
  * 2^32 / 44100 = 97391.4), the gains, the FIR's taps (a binomial of 33 terms, normalised, in Q10 and as floats) and a sine
@@ -67,6 +70,9 @@ static void bench_setup(uint32_t k)             /* not timed: the states the ker
         org_all_off();
         for (i = 0; i < 10u; i++)
             org_key(BENCH_KEYS[i], 1u);
+    } else if (k == 7u) {
+        rot_init(&brot);                        /* the cabinet at rest, the rotors at 400 / 340 rpm (649277 / 551885 per sample) */
+        rot_target(&brot, 649277u, 551885u);
     } else if (k == 4u || k == 5u) {
         dr_init(&bdr);
         dr_user(&bdr, k == 4u ? 2u : 8u, 40u, 4u);  /* TUBE DRIVE (2) or ORIGINAL (8), GAIN 4.0 */
@@ -113,6 +119,10 @@ static void bench_body(uint32_t k)              /* one second: BENCH_BLOCKS bloc
             bench_drive(&bdr, bx, byi, bench_blk);
             bench_sink += (uint32_t)byi[BENCH_BLK - 1u];
             break;
+        case 7u:
+            rot_block(&brot, bx, byi, bout, BENCH_BLK);
+            bench_sink += (uint32_t)bout[BENCH_BLK - 1u];
+            break;
         default:                                /* 6: the organ's own render, as the audio path calls it */
             {
                 uint32_t i;
@@ -149,8 +159,9 @@ static uint32_t bench_one(uint32_t k)
 
 static void bench_show(uint32_t k)              /* "BENCHMARK 3/7", over the whole screen while it runs */
 {
-    char s[] = "BENCHMARK 0/7";
+    char s[] = "BENCHMARK 0/8";
     s[10] = (char)('1' + k);
+    s[12] = (char)('0' + BENCH_KERNELS);
     lcd_fill(0, 0, 240, 240, T_BG);
     draw_text_box(0, 110, 240, &AF_M, s, T_THEME, 1);
 }

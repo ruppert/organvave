@@ -698,7 +698,7 @@ static void bench_cell(char *b, uint32_t k)
     while (b[n])
         n++;
     b[n++] = '%';
-    if (k & 1u) {                                         /* the float rows: 1, 3, 5 against 0, 2, 4 */
+    if ((k & 1u) && k < 6u) {                             /* the float rows: 1, 3, 5 against 0, 2, 4 (the rotary, 7, has none) */
         r = bench_ratio(bench_ticks[k], bench_ticks[k - 1u]);
         b[n++] = ' ';
         b[n++] = ' ';
@@ -712,7 +712,7 @@ static void bench_cell(char *b, uint32_t k)
 }
 static void scr_bench(void)
 {
-    static const char *const BN_LB[BENCH_KERNELS] = {"WHEELS INT", "WHEELS FLOAT", "FIR INT", "FIR FLOAT", "TUBE INT", "ORIGINAL FLOAT", "ORGAN FLOAT"};
+    static const char *const BN_LB[BENCH_KERNELS] = {"WHEELS INT", "WHEELS FLOAT", "FIR INT", "FIR FLOAT", "TUBE INT", "ORIGINAL FLOAT", "ORGAN FLOAT", "ROTARY FLOAT"};
     char b[24];
     uint32_t k;
     header("BENCHMARK", "");
@@ -722,9 +722,9 @@ static void scr_bench(void)
             bench_cell(b, k);
             v = b;
         }
-        oa_gl_line((int32_t)(34u + 24u * k), BN_LB[k], v, 0);
+        oa_gl_line((int32_t)(34u + 22u * k), BN_LB[k], v, 0);
     }
-    oa_gl_line((int32_t)(34u + 24u * BENCH_KERNELS), "1 S OF AUDIO = 100%", "", 0);
+    oa_gl_line((int32_t)(34u + 22u * BENCH_KERNELS), "1 S OF AUDIO = 100%", "", 0);
     footer(bench_have ? "ALGO: RUN AGAIN   GLO: BACK" : "ALGO: RUN   GLO: BACK");
 }
 
