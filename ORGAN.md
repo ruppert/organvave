@@ -113,6 +113,17 @@ The packed integer table still decides which entries exist and their wheel and b
 The budget lines of `org_msg` and `org_fragment` are counted in full: they run per key and per 128-sample block, not per
 sample. The image grows about 46 KB in flash (the two float level tables); the RAM pool is 343384 B of 368640 B.
 
+**0.11.0, the drive's ORIGINAL type (byte 8, owner: setBfree's overdrive).** setBfree's `b_overdrive/overdrive.c` as a drive
+type, in single precision: the input gain x the input (3.5675 at GAIN 4.0, linear in the knob), the sag, the effective 9-tap
+interpolation FIR (setBfree's four polyphase rows summed per tap), setBfree's transfer curve with its feedback and one-poles,
+the 33-tap decimation, and the output gain (0.8795 at OUTPUT 0 dB). It has no oversampling: setBfree's loop has none. Its
+trim is measured like the other types' (the organ-like chord, +1 % a GAIN unit); the level holds within 0.9 dB of the dry
+chord at every GAIN tenth. The double-precision model of the same loop agrees with the firmware within 0.9 LSB (Q15), and
+`tests/drive_orig_test.c` keeps it there. One deliberate difference: a 10 Hz DC blocker after the output, as the other
+types have (setBfree's curve leaves about 1.3 % of DC at GAIN 4.0, which would reach the reverb and the output unfiltered).
+Cost: about 42 multiply-adds and two float divisions per sample; the static estimate is 1702 in `tests/target_budget.txt`,
+which is not a device measurement. The TREBLE / MIDDLE / BASS stack follows the drive as for the others.
+
 **0.9.38, the crack of a high chord (owner: preset 001, the percussion off, a C major triad high up).** Two stages bent it. The
 Leslie's input took the mix / 4 and clipped at 1.0, four full wheels: a high triad (its notes share wheels, which add in phase) went
 past it in thousands of samples (C6: 14.6 % of added distortion against an all-linear chain). It now takes the mix / 16 and gives

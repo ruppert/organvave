@@ -8,6 +8,9 @@
 dr_chain 77
 dr_chain2 121
 dr_eq_run 345
+# 0.11.0: dr_orig (ORIGINAL, float) per sample: 9 + 33 MACs, the transfer with two float divisions (helper calls): the static count
+# is an estimate; the device CPU meter is the real check.
+dr_orig 1702
 org_render 395
 org_fragment 333
 org_msg 219

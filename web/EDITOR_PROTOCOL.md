@@ -1408,3 +1408,8 @@ crosstalk on sounds a little cleaner than before (the faint leakage is gone; wit
 Version 0.11.0 restores setBfree's complete crosstalk as the default (the 40 dB prune and the faint shortcut are options in the firmware,
 not in the bytes). The meaning of the bytes 64..69 is the same; a patch with the crosstalk on sounds fuller again, by up to 0.24 dB
 of level on a four-note chord (setBfree's own level), and the CPU cost of the crosstalk rises by about 15 % on a ten-key chord.
+
+Version 0.11.0 adds the drive type 8, ORIGINAL (`OP_DRV_TYPE` 48, setBfree's overdrive in single precision; its GAIN is the input
+gain, its OUTPUT the output gain, and the TREBLE / MIDDLE / BASS stack follows as for the others). Before 0.11.0 the byte 8 was not
+a type: it played as TUBE DRIVE, like any byte outside 2..7. A patch or a user preset that stores 8 by hand now plays ORIGINAL; the
+panel and the factory bank write 2..8 only as the type cycle chooses (the factory bank has no 8). The bytes keep their meaning.

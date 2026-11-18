@@ -259,21 +259,21 @@ int main(void)
     }
     /* the removed types and the bytes out of range play as TUBE DRIVE */
     {
-        static const uint32_t B[4] = {0, 1, 8, 255};
+        static const uint32_t B[3] = {0, 1, 255};          /* (8 is ORIGINAL since 0.11.0: drive_orig_test.c) */
         int ok = 1;
         for (i = 0; i < N; i++)
             in[i] = (int32_t)lrint(0.5 * 8192 * sin(2 * M_PI * 220.0 * (double)i / 44100.0));
         dr_init(&D);
         dr_user(&D, 2u, 40u, 4u);
         run_drive(&D, in, ref, 64);
-        for (t = 0; t < 4; t++) {
+        for (t = 0; t < 3; t++) {
             dr_init(&D);
             dr_user(&D, B[t], 40u, 4u);
             run_drive(&D, in, out, 64);
             if (memcmp(out, ref, sizeof out))
                 ok = 0;
         }
-        check("the type bytes 0 and 1 (TUBE SCREAM, TUBE PREAMP before 0.9.30), 8 and 255 play as TUBE DRIVE", ok);
+        check("the type bytes 0, 1 (TUBE SCREAM, TUBE PREAMP before 0.9.30) and 255 play as TUBE DRIVE", ok);
     }
     /* 4. block independence */
     {

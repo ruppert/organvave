@@ -207,9 +207,9 @@ static void oa_flash(const char *t)
         oa_fl_until = 1;
 }
 
-/* the drive's types by dr_t.type (dr_type_of of OP_DRV_TYPE; six since 0.9.41: the bytes 2 .. 7; 0 and 1, the removed TUBE
+/* the drive's types by dr_t.type (dr_type_of of OP_DRV_TYPE; seven since 0.11.0: the bytes 2 .. 8, 8 ORIGINAL; six since 0.9.41: the bytes 2 .. 7; 0 and 1, the removed TUBE
  * SCREAM and TUBE PREAMP, play as TUBE DRIVE): the DRIVE page's TYPE row and its header */
-static const char *const OA_DRV_NAME[DR_TYPES] = {"TUBE DRIVE", "DISTORTION", "SOFT TUBE", "MID DRIVE", "HARD CLIP", "TIGHT TUBE"};
+static const char *const OA_DRV_NAME[DR_NAMES] = {"TUBE DRIVE", "DISTORTION", "SOFT TUBE", "MID DRIVE", "HARD CLIP", "TIGHT TUBE", "ORIGINAL"};
 static void header(const char *page, const char *right)
 {
     wood(0, 0, 240, 22);
@@ -1298,7 +1298,7 @@ static void oa_adj1(uint32_t pg, uint32_t r, int32_t d)
         if (r == 0u)
             org_set(OP_DRV, on);
         else if (r == 1u)
-            org_set(OP_DRV_TYPE, 2u + (uint32_t)clamp((int32_t)dr_type_of(org_patch[OP_DRV_TYPE]) + d, 0, DR_TYPES - 1));   /* the bytes 2 .. 7 (0.9.41) */
+            org_set(OP_DRV_TYPE, 2u + (uint32_t)clamp((int32_t)dr_type_of(org_patch[OP_DRV_TYPE]) + d, 0, DR_NAMES - 1));   /* the bytes 2 .. 7 (0.9.41) */
         else if (r == 2u)
             org_set(OP_DRV_GAIN, (uint32_t)clamp(oa_u(OP_DRV_GAIN, 100u) + d, 0, 100));  /* tenths; 0 is the bypass */
         else if (r >= 3u && r <= 5u)                    /* TREBLE, MIDDLE, BASS */

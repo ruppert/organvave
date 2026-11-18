@@ -14,7 +14,10 @@
  * at 39x, a truncation's half-LSB bias was a DC of -9 % of the signal at GAIN 0.1. Coefficients Q15, the pre-gain Q10, the trim Q8. The tables come from
  * tools/gen_drive_tables.py. No 64-bit multiply; latency 0. Patch byte OP_DRV_TYPE: 2 TUBE DRIVE, 3 DISTORTION, 4 SOFT TUBE,
  * 5 MID DRIVE, 6 HARD CLIP, 7 TIGHT TUBE (0.9.41); 0 and 1 (TUBE SCREAM and TUBE PREAMP before 0.9.30) and any other byte play
- * as TUBE DRIVE. */
+ * as TUBE DRIVE.
+ * ORIGINAL (0.11.0, byte 8, owner: the setBfree overdrive): setBfree's own overdrive.c (b_overdrive, GPL-2.0-or-later) in single
+ * precision: dr_orig below. Its GAIN is setBfree's input gain (linear in the knob: 3.5675 at 4.0), its OUTPUT setBfree's output
+ * gain, its trim measured like the others'. No oversampling (setBfree's loop has none). */
 #ifndef ENG_DRIVE_C
 #define ENG_DRIVE_C
 #include "eng_drive_tables.h"
@@ -37,13 +40,32 @@ typedef struct {
     int32_t row, sh, kl, dry, xc, dcp, plp;
     int32_t h2, yp, bs, pl;
     int32_t be, pe;                                 /* the remainders of the DC blocker and the fixed low-pass (0.9.41) */
+    /* ORIGINAL (dr_orig, 0.11.0): the input and output histories (rings of 64), the sag, the adaptive one-pole's state, the one-pole
+     * after it, the global feedback, the ring positions, the input gain and the output gain (with the trim) */
+    float oxz[64], oyz[64];
+    float osag, oaz, oaz1, ogfz;
+    uint32_t oxp, oyp;
+    float oink, oout;
+    float obx, oby;                                 /* the DC blocker after the output (0.11.0: setBfree's has none; see dr_orig) */
 } dr_t;
+
+#define DR_ORIG 6u                                  /* dr_t.type of ORIGINAL (the byte 8) */
+#define DR_NAMES 7u                                 /* the drive's names: TUBE DRIVE .. TIGHT TUBE, ORIGINAL */
+/* setBfree's overdrive constants (its defaults; overdrive.c, fctl_* and the preamp's init): the sag's pole, the bias's base and
+ * its sag share, the adaptive one-pole's feedback and the post one-pole's, the global feedback (negative: its sign is set here) */
+#define DR_OR_SAGFB 0.991f
+#define DR_OR_BIAS 0.5347f
+#define DR_OR_SAGGB 0.0094f
+#define DR_OR_FB 0.5821f
+#define DR_OR_FB2 0.999f
+#define DR_OR_GFB 0.6214f                           /* u -= (-0.6214) * the last output */
+#define DR_OR_DCP 0.998566f                         /* the DC blocker's pole: the 10 Hz one of the other types (DR_DCB) */
 
 #define DR_DCB 32721                                /* the DC blocker's pole, Q15: 1 - 2 pi 10 Hz / 44.1 kHz */
 
-static inline uint32_t dr_type_of(uint32_t b)       /* the patch byte (OP_DRV_TYPE) -> dr_t.type: 3 -> 1, 4..7 -> 2..5, else 0 */
+static inline uint32_t dr_type_of(uint32_t b)       /* the patch byte (OP_DRV_TYPE) -> dr_t.type: 3 -> 1, 4..7 -> 2..5, 8 -> 6, else 0 */
 {
-    return b == 3u ? 1u : b >= 4u && b <= 7u ? b - 2u : 0u;
+    return b == 3u ? 1u : b >= 4u && b <= 7u ? b - 2u : b == 8u ? DR_ORIG : 0u;
 }
 
 static inline int32_t dr_ws(uint32_t stage, int32_t x)     /* x Q12 (+-8 at +-32768): the waveshaper, out Q15 */
@@ -58,6 +80,18 @@ static inline int32_t dr_ws(uint32_t stage, int32_t x)     /* x Q12 (+-8 at +-32
     return a + (((b - a) * f + 64) >> 7);
 }
 
+static void dr_orig_clear(dr_t *d)                  /* ORIGINAL's histories and states: empty */
+{
+    uint32_t k;
+    for (k = 0; k < 64u; k++) {
+        d->oxz[k] = 0.0f;
+        d->oyz[k] = 0.0f;
+    }
+    d->osag = d->oaz = d->oaz1 = d->ogfz = 0.0f;
+    d->oxp = d->oyp = 0u;
+    d->obx = d->oby = 0.0f;
+}
+
 static void dr_clear(dr_t *d)
 {
     uint32_t k, j;
@@ -68,6 +102,7 @@ static void dr_clear(dr_t *d)
         for (j = 0; j < 4u; j++)
             d->es[k][j] = 0;
     d->ez = 0;
+    dr_orig_clear(d);
 }
 
 static void dr_init(dr_t *d)
@@ -90,6 +125,14 @@ static void dr_user(dr_t *d, uint32_t type, uint32_t gain, uint32_t out)
 {
     static const uint16_t OUT_G[9] = {1630, 2053, 2584, 3254, 4096, 5157, 6492, 8173, 10289};   /* -8 .. +8 dB, Q12 */
     uint32_t g = gain > 100u ? 100u : gain, o = out > 8u ? 8u : out, ty = dr_type_of(type);
+    if (ty == DR_ORIG) {                            /* ORIGINAL: its own gains (the tables are DR_OR_*, generated) */
+        if (d->type != (int32_t)DR_ORIG)
+            dr_orig_clear(d);                       /* a new start: no stale history from the other types */
+        d->type = (int32_t)DR_ORIG;
+        d->oink = DR_OR_INK * (float)g;
+        d->oout = DR_OR_OUT * DR_OR_TRIM[g] * (float)OUT_G[o] * (1.0f / 4096.0f);
+        return;
+    }
     d->type = (int32_t)ty;
     d->ig = DR_PRE[ty][g];
     d->hc = DR_HP[ty];
@@ -264,12 +307,78 @@ static __attribute__((noinline)) void dr_eq_run(dr_t *d, int32_t *out, uint32_t 
         out[i] = out[i] > 131071 ? 131071 : out[i] < -131072 ? -131072 : out[i];
 }
 
+/* ORIGINAL (0.11.0): setBfree's overdrive() (b_overdrive/overdrive.c) in single precision, sample by sample, its loop as it is:
+ *   xin = the input gain x (in, Q13 -> float) -> the sag: sag = Fs sag + |xin|; bias = B - Sg sag; norm = 1 - 1 / (1 + bias^2)
+ *   -> u = the effective 9-tap interpolation FIR over xin's history (DR_OR_H) -> u += G yPrev (global feedback)
+ *   -> the adaptive one-pole: t = u - az; az = u + Fa az; u = t
+ *   -> the transfer: u < 0: v = 1/(1 + (u - bias)^2) - 1 + norm; else v = 1 - norm - 1/(1 + (u + bias)^2)
+ *   -> the post one-pole: t = v + Fb az1; v = t - az1; az1 = t; yPrev = v -> the history -> y = the 33-tap decimation (DR_OR_AAL)
+ *   -> out = the output gain x y (Q15, +-4.0). No oversampling, as setBfree's loop has none. The states are kept across blocks. */
+static __attribute__((noinline)) void dr_orig(dr_t *d, const int32_t *in, int32_t *out, uint32_t n)
+{
+    uint32_t i, k;
+    float sag = d->osag, az = d->oaz, az1 = d->oaz1, gfz = d->ogfz, ink = d->oink, outg = d->oout;
+    float bx = d->obx, by = d->oby;
+    uint32_t xp = d->oxp, yp = d->oyp;
+    float *xz = d->oxz, *yz = d->oyz;
+    for (i = 0; i < n; i++) {
+        float xin = ink * ((float)in[i] * (1.0f / 8192.0f)), u, v, bias, norm, t, x2, y, s;
+        int32_t o;
+        sag = DR_OR_SAGFB * sag + (xin < 0.0f ? -xin : xin);
+        bias = DR_OR_BIAS - DR_OR_SAGGB * sag;
+        norm = 1.0f - 1.0f / (1.0f + bias * bias);
+        xp = (xp + 1u) & 63u;
+        xz[xp] = xin;
+        u = 0.0f;
+        for (k = 0; k < 9u; k++)
+            u += DR_OR_H[k] * xz[(xp - k) & 63u];
+        u += DR_OR_GFB * gfz;
+        t = u - az;
+        az = u + az * DR_OR_FB;
+        u = t;
+        if (u < 0.0f) {
+            x2 = u - bias;
+            v = 1.0f / (1.0f + x2 * x2) - 1.0f + norm;
+        } else {
+            x2 = u + bias;
+            v = 1.0f - norm - 1.0f / (1.0f + x2 * x2);
+        }
+        t = v + DR_OR_FB2 * az1;
+        v = t - az1;
+        az1 = t;
+        gfz = v;
+        yp = (yp + 1u) & 63u;
+        yz[yp] = v;
+        y = 0.0f;
+        for (k = 0; k < 33u; k++)
+            y += DR_OR_AAL[k] * yz[(yp - k) & 63u];
+        s = y * outg * 32768.0f;                    /* Q15 */
+        by = s - bx + DR_OR_DCP * by;               /* the DC blocker: the asymmetric curve's DC (setBfree's has none) */
+        bx = s;
+        s = by;
+        s = s > 131071.0f ? 131071.0f : s < -131072.0f ? -131072.0f : s;
+        o = (int32_t)(s >= 0.0f ? s + 0.5f : s - 0.5f);   /* rounded to the nearest */
+        out[i] = o;
+    }
+    d->obx = bx;
+    d->oby = by;
+    d->osag = sag;
+    d->oaz = az;
+    d->oaz1 = az1;
+    d->ogfz = gfz;
+    d->oxp = xp;
+    d->oyp = yp;
+}
+
 static void dr_run_ex(dr_t *d, const int32_t *in, int32_t *out, uint32_t n)
 {
-    if (d->type >= 2)
+    if (d->type == (int32_t)DR_ORIG) {
+        dr_orig(d, in, out, n);
+    } else if (d->type >= 2) {
         dr_chain2(d, in, out, n);
-    else
+    } else {
         dr_chain(d, in, out, n);
+    }
     if (d->eon)
         dr_eq_run(d, out, n);
 }

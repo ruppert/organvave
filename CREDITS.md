@@ -13,6 +13,10 @@ second core taken out; the credits for those parts stay below, marked "(Felucca:
   Speaker", AES 127th Convention, 2009 (speeds and time constants); J. Smith, S. Serafin, J. Abel, D. Berners, "Doppler
   simulation and the Leslie", DAFx-02, 2002 (the horn's angle-dependent impulse responses, read off a figure by setBfree's
   author)
+- The drive's type ORIGINAL (0.11.0) is setBfree's own overdrive, `b_overdrive/overdrive.c` (GPL-2.0-or-later; the same authors),
+  in single precision: its curve, sag, feedback, the two one-poles, the 33-tap interpolation and decimation filters
+  (`tests/drive_orig_ref.h` and `tools/gen_drive_tables.py` copy its filter definitions) and its default constants. The DC
+  blocker after it is OrganVave-1's (setBfree's has none).
 - The equaliser's filters (0.5.0) use the formulas of Robert Bristow-Johnson's "Cookbook formulae for audio EQ biquad filter
   coefficients" (a published recipe, no code taken), evaluated by `tools/gen_eq_tables.py`
 - The splash picture is the owner's

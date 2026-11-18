@@ -8,6 +8,9 @@ an input high-pass (one pole), a pre-gain (the GAIN knob, 0.0 .. 10.0 in tenths;
 on -8..8, 512 steps), an optional second stage (DISTORTION), a DC blocker, an output trim, then the tone stack (TREBLE, MIDDLE,
 BASS since 0.9.44, the equaliser's biquads; TONE before).
 
+ORIGINAL (byte 8, 0.11.0) is setBfree's overdrive in float: its filters, its input and output gains and its trim are the
+DR_OR_* tables at the end of the header (the model is orig_run below; tests/drive_orig_test.c checks the firmware against it).
+
   TUBE DRIVE    (byte 2; 0 and 1 too) a warm overdrive: a mild, slightly asymmetric soft clip (tanh with an offset: even
                 harmonics). Its GAIN follows the harmonic distortion, not the pre-gain (0.9.30, the owner's law): a 441 Hz sine
                 at the organ's level comes out with THD(g) = 25.2 (e^(0.085 g) - 1) % (0.9.31): 0.21 % at 0.1, 4.7 % at 2.0,
@@ -287,6 +290,78 @@ def mud(ty, G):
     low = (fr > 20) & (fr < 250)
     return 10 * math.log10(Y[low & ~near].sum() / Y.sum()), 10 * math.log10(Y[low].sum() / Y.sum())
 
+# ---- 0.11.0: ORIGINAL (byte 8): setBfree's overdrive (b_overdrive/overdrive.c) in single precision. Float, no oversampling:
+# the input runs through the effective 9-tap interpolation FIR (the sum of setBfree's four polyphase rows), the transfer
+# curve (with the sag, the feedback and the DC-like one-pole of setBfree), then the 33-tap decimation FIR; out = outG * y.
+# Its gain: the input gain = setBfree's 3.5675 at GAIN 4.0 (linear in the knob); its output trim, measured like the others'.
+# The original overdrive (0.11.0, byte 8 ORIGINAL): setBfree's b_overdrive/overdrive.c (GPL-2.0-or-later; Fredrik Kilander,
+# Robin Gareus, Will Panther) at its default constants. Its 33-tap interpolation filter (ipwdef) and decimation filter (aaldef)
+# are copied here as the C source writes them.
+ORIG_IPW = [-1.5614697728945395e-18, -0.0018878784030675888, 2.2449135885484886e-18, 0.00386247830465436, -4.191197191582164e-18, -0.008242466486990452, 7.104016524965676e-18, 0.015947114676237106, -1.0539920475899653e-17, -0.028676560148596764, 1.3975825254014242e-17, 0.05071856081485748, -1.6888644173807447e-17, -0.09801590442657471, 1.8834927363250817e-17, 0.3159417510032654, 0.5007057785987854, 0.3159417510032654, 1.8834927363250817e-17, -0.09801590442657471, -1.6888644173807447e-17, 0.05071856081485748, 1.3975825254014242e-17, -0.028676560148596764, -1.0539920475899653e-17, 0.015947114676237106, 7.104016524965676e-18, -0.008242466486990452, -4.191197191582164e-18, 0.00386247830465436, 2.2449135885484886e-18, -0.0018878784030675888, -1.5614697728945395e-18]
+ORIG_AAL = [-1.5614697728945395e-18, -0.0018878784030675888, 2.2449135885484886e-18, 0.00386247830465436, -4.191197191582164e-18, -0.008242466486990452, 7.104016524965676e-18, 0.015947114676237106, -1.0539920475899653e-17, -0.028676560148596764, 1.3975825254014242e-17, 0.05071856081485748, -1.6888644173807447e-17, -0.09801590442657471, 1.8834927363250817e-17, 0.3159417510032654, 0.5007057785987854, 0.3159417510032654, 1.8834927363250817e-17, -0.09801590442657471, -1.6888644173807447e-17, 0.05071856081485748, 1.3975825254014242e-17, -0.028676560148596764, -1.0539920475899653e-17, 0.015947114676237106, 7.104016524965676e-18, -0.008242466486990452, -4.191197191582164e-18, 0.00386247830465436, 2.2449135885484886e-18, -0.0018878784030675888, -1.5614697728945395e-18]
+
+ORIG_INK = 3.5675 / 40.0                    # the input gain per GAIN tenth (setBfree's 3.5675 at 4.0)
+ORIG_OUT = 0.8795                           # setBfree's output gain (the OUTPUT knob multiplies it)
+ORIG_SAG_FB, ORIG_BIAS, ORIG_FB, ORIG_FB2, ORIG_GFB, ORIG_SAG_GB = 0.991, 0.5347, 0.5821, 0.999, -0.6214, 0.0094
+
+
+def orig_fir(ipw):
+    """the effective 9-tap input FIR: setBfree's four polyphase rows (wi) summed per tap, normalised by the sum of |ipw|"""
+    s = sum(abs(v) for v in ipw)
+    mix = [v / s for v in ipw]
+    rows = [mix[0:33:4], mix[3:33:4], mix[2:33:4], mix[1:33:4]]
+    h = [0.0] * 9
+    for r in rows:
+        for k, w in enumerate(r):
+            h[k] += w
+    return h
+
+
+def orig_aal(aal):
+    s = sum(abs(v) for v in aal)
+    return [v / s for v in aal]
+
+
+def orig_run(x, h, a, ink, outg):
+    """setBfree's overdrive() as the firmware runs it (float64 here): the samples out"""
+    xz = [0.0] * 64
+    yz = [0.0] * 64
+    sag = adw = adw1 = gfz = 0.0
+    xp = yp = 0
+    out = []
+    for s in x:
+        xin = ink * s
+        sag = ORIG_SAG_FB * sag + abs(xin)
+        bias = ORIG_BIAS - ORIG_SAG_GB * sag
+        norm = 1.0 - 1.0 / (1.0 + bias * bias)
+        xp = (xp + 1) & 63
+        xz[xp] = xin
+        u = 0.0
+        for k in range(9):
+            u += h[k] * xz[(xp - k) & 63]
+        u -= ORIG_GFB * gfz
+        t = u - adw
+        adw = u + adw * ORIG_FB
+        u = t
+        if u < 0.0:
+            x2 = u - bias
+            v = 1.0 / (1.0 + x2 * x2) - 1.0 + norm
+        else:
+            x2 = u + bias
+            v = 1.0 - norm - 1.0 / (1.0 + x2 * x2)
+        t = v + ORIG_FB2 * adw1
+        v = t - adw1
+        adw1 = t
+        gfz = v
+        yp = (yp + 1) & 63
+        yz[yp] = v
+        y = 0.0
+        for k in range(33):
+            y += a[k] * yz[(yp - k) & 63]
+        out.append(outg * y)
+    return out
+
+
 def main():
     pre = []
     for ty in TYPES:
@@ -314,6 +389,16 @@ def main():
             pk = max(abs(v) for v in y)
             row.append(min(target / rms(y), 0.95 * OUT_CLAMP / pk))
         trims.append(row)
+    # ORIGINAL: the same target as the others (the organ-like chord, +1 % a unit), its trim (linear) and the input gain's table
+    orig_h = orig_fir(ORIG_IPW)
+    orig_a = orig_aal(ORIG_AAL)
+    orig_trim = [1.0]
+    for gi in range(1, NG):
+        g = gi / 10.0
+        y = orig_run(sig, orig_h, orig_a, ORIG_INK * gi, ORIG_OUT)[n // 2:]
+        target = ref * (1.0 + 0.01 * g)
+        pk = max(abs(v) for v in y)
+        orig_trim.append(min(target / rms(y), 0.95 * OUT_CLAMP / pk))
     nt = len(TYPES)
     L = []
     L.append("/* GENERATED by tools/gen_drive_tables.py: do not edit (0.9.44). The drive's curves, gains and trims. */")
@@ -349,6 +434,13 @@ def main():
     for row in trims:
         L.append("  {" + ",".join(str(min(65535, int(round(t * 256)))) for t in row) + "},")
     L.append("};")
+    L.append("/* ORIGINAL (byte 8, 0.11.0): setBfree's overdrive in float. The effective input FIR (9 taps, the four polyphase rows summed),")
+    L.append(" * the decimation FIR (33 taps), the input gain per GAIN tenth (x GAIN / 10 at 4.0 = 3.5675), setBfree's output gain, and the trim */")
+    L.append("#define DR_OR_INK %.10ff" % ORIG_INK)
+    L.append("#define DR_OR_OUT %.10ff" % ORIG_OUT)
+    L.append("static const float DR_OR_H[9] = {%s};" % ", ".join("%.9ef" % v for v in orig_h))
+    L.append("static const float DR_OR_AAL[33] = {%s};" % ", ".join("%.9ef" % v for v in orig_a))
+    L.append("static const float DR_OR_TRIM[DR_NG] = {%s};" % ", ".join("%.6ff" % v for v in orig_trim))
     # (0.9.44: TONE's tables are gone: the tone stack, TREBLE, MIDDLE, BASS, uses the equaliser's biquads, eng_eq_tables.h)
     L.append("#endif")
     with open(OUT, "w") as f:

@@ -661,7 +661,7 @@ enum {
     OP_EQ_MID = 45,             /* MID (the peak), the same coding */
     OP_EQ_FREQ = 46,            /* the peak's frequency, 0..11: 0 900 Hz, then 1280 Hz .. 7.2 kHz, 7 is 160 Hz .. 11 is 640 Hz */
     OP_EQ_HIGH = 47,            /* HIGH (4 kHz shelf), the same coding as LOW */
-    OP_DRV_TYPE = 48,           /* the drive's type: 2 TUBE DRIVE, 3 DISTORTION (0.9.30), 4 SOFT TUBE, 5 MID DRIVE, 6 HARD CLIP, 7 TIGHT TUBE (0.9.41; 0 and 1, TUBE SCREAM and TUBE PREAMP in 0.9.24 .. 0.9.29, play as TUBE DRIVE; before 0.9.24: 0 DISTORTION, 1 TUBE) */
+    OP_DRV_TYPE = 48,           /* the drive's type: 2 TUBE DRIVE, 3 DISTORTION (0.9.30), 4 SOFT TUBE, 5 MID DRIVE, 6 HARD CLIP, 7 TIGHT TUBE (0.9.41), 8 ORIGINAL (0.11.0, setBfree's overdrive; 0 and 1, TUBE SCREAM and TUBE PREAMP in 0.9.24 .. 0.9.29, play as TUBE DRIVE; before 0.9.24: 0 DISTORTION, 1 TUBE) */
     OP_DRV_TONE = 49,           /* its tone until 0.9.43: 0..8 "zero is the default" (c9: index (s + 4) % 9, 4 flat, 0 dark .. 8 bright).
                                  * Since 0.9.44 always 0: a patch with another value is moved to OP_DRV_TREB when it is set (org_sanitize) */
     OP_DRV_OUT = 50,            /* its output level, the same coding: index 4 is 0 dB, 2 dB a step (-8 .. +8 dB) */
