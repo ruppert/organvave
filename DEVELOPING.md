@@ -11,7 +11,7 @@ FM-1 allows: the whole organ path follows setBfree's own float code (its `tonege
 single-precision float, with the rest of the chain (reverb, delay, EQ, the existing drive) kept as it is. The rotary (Leslie
 CLASSIC) has no sound on this branch: its DSP is removed (`eng_rotary.c` and its tables), and its controls (the HOME box, the
 ROTARY page, SCL, the lowest F of DRAWBAR PRESET MODE) are dummies that store their bytes and change nothing (owner). Still to
-remove: the percussion, the organ's limiter and compressors (the master ends in a hard clip). Nothing is migrated from 0.10.x: patches, user presets and the factory bank are rebuilt.
+remove: the organ's limiter and compressors (the master ends in a hard clip). The percussion was removed in 0.11.0 and is back (owner): OP_PERC switches it. Nothing is migrated from 0.10.x: patches, user presets and the factory bank are rebuilt.
 Where a section below describes the integer port on `main`, it says so; the target is the setBfree port described here and in
 ORGAN.md.
 
@@ -94,7 +94,7 @@ waveforms with 43 dB SNR over 0.25 s (the wheels are pure sines here; setBfree's
 - **A stored value's meaning** never changes silently. The patch bytes, the autosave and the user presets are stored: a new
   meaning needs a new version (`AS_MAGIC`, `UP_VER`, the patch's `ORG_PSIZE`), a note in `web/EDITOR_PROTOCOL.md`, and a rule for
   older records. `ENGINES[]` entries are appended, never reordered.
-- **On `new-float`**: the rotary's DSP is removed and its controls are dummies (owner); the percussion is not ported (removed, owner). The organ's pieces are ports of setBfree's
+- **On `new-float`**: the rotary's DSP is removed and its controls are dummies (owner); the percussion is ported again (owner): OP_PERC switches it in org_block; it was a dummy in the 0.11.0 WIP. The organ's pieces are ports of setBfree's
   own files in float: `tonegen.c` (wheels, keys, buses, tapering, crosstalk, click, key compression), `vibrato.c` (scanner CV) and
   `b_overdrive/overdrive.c` (the Preamp/Overdrive module, with its oversampling and the tube tables from `overmaker`). The
   reduced rotary of `main` (1024 angles) is not part of this branch.

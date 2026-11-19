@@ -201,6 +201,7 @@ static void host_preset(track_t *t, uint32_t e, uint32_t pi)
         t->p[P_DIST + i] = (int16_t)(p->fx[i] ? p->fx[i] - 1 : FX_DEF[i]);
     if (e == ENGI_ORGAN) {
         org_set_patch(ORG_FACTORY[pi % ORG_NFACTORY]);
+        org_adv_poll();                             /* the main loop's table build (the crosstalk RAM table, the floor): a preset load does it on the device */
         t->p[P_LEVEL] = ORG_LEVEL[pi % ORG_NFACTORY];
     }
 }
