@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Guilherme Ruppert (OrganVave-1) */
-/* ORIGINAL (byte 8, 0.11.0): setBfree's overdrive (src/eng_drive.c dr_orig) on the host.
+/* EXTREME (byte 8, 0.11.0): setBfree's overdrive (src/eng_drive.c dr_orig) on the host.
  * The reference is setBfree's own loop (b_overdrive/overdrive.c: mixFilterWeights and overdrive()) written again here in
  * double, with its default constants and its two 33-tap filters (drive_orig_ref.h). The firmware's float chain must follow it.
  * 1. reference: the firmware's output against the double model, a 441 Hz sine at 0.73 and GAIN 0.1 .. 10.0 (Q15): within 4 LSB.
@@ -8,7 +8,7 @@
  * 3. bounds: a full-scale square at every GAIN stays inside the output's 4.0 (Q15); silence in, silence out (exact).
  * 4. blocks: the output does not depend on the block length (1, 7, 64: bit-exact).
  * 5. DC: the output's mean under 1 % of its RMS.
- * 6. the byte: 8 is ORIGINAL (dr_type_of 6), 2 .. 7 keep their types; ORIGINAL after another type starts from empty states. */
+ * 6. the byte: 8 is EXTREME (dr_type_of 6), 2 .. 7 keep their types; EXTREME after another type starts from empty states. */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -104,7 +104,7 @@ static double rms_of(const int32_t *v, uint32_t from, uint32_t n)
     return sqrt(s / (double)(n - from));
 }
 
-/* the firmware: ORIGINAL at GAIN g, OUTPUT at 0 dB, blocks of blk samples in place */
+/* the firmware: EXTREME at GAIN g, OUTPUT at 0 dB, blocks of blk samples in place */
 static void run_fw(uint32_t g, uint32_t blk, const int32_t *x, int32_t *y, uint32_t n)
 {
     uint32_t i = 0;
@@ -126,7 +126,7 @@ int main(void)
     int32_t peak = 0;
 
     ref_setup();
-    check("byte 8 is ORIGINAL (dr_type_of 6); 2 .. 7 keep their types, 0 and 1 play as TUBE DRIVE",
+    check("byte 8 is EXTREME (dr_type_of 6); 2 .. 7 keep their types, 0 and 1 play as TUBE DRIVE",
           dr_type_of(8u) == DR_ORIG && dr_type_of(2u) == 0u && dr_type_of(3u) == 1u && dr_type_of(7u) == 5u && dr_type_of(1u) == 0u);
 
     /* 1. reference: a 441 Hz sine at 0.73 peak, GAIN 0.1 .. 10.0 (every 9th tenth), against the double loop */
@@ -212,12 +212,12 @@ int main(void)
         check("DC: the output's mean stays under 1 % of its RMS", fabs(mean) < 0.01 * r);
     }
 
-    /* 6. switching: after another type, ORIGINAL starts from empty states */
+    /* 6. switching: after another type, EXTREME starts from empty states */
     dr_init(&D);
     dr_user(&D, 2u, 40u, 4u);
     dr_run_ex(&D, in, out, 256);
     dr_user(&D, 8u, 40u, 4u);
-    check("switch: ORIGINAL after another type starts with empty histories",
+    check("switch: EXTREME after another type starts with empty histories",
           D.osag == 0.0f && D.oaz == 0.0f && D.oaz1 == 0.0f && D.ogfz == 0.0f && D.oxp == 0u && D.oyp == 0u);
 
     printf("orig: %s\n", bad ? "FAILED" : "all ok");

@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Guilherme Ruppert (OrganVave-1) */
 /* The drive (0.9.24, rewritten from scratch; two types since 0.9.30, six since 0.9.41): TUBE DRIVE and DISTORTION (a JCM900
- * style two-stage clip) run dr_chain below; SOFT TUBE, MID DRIVE, HARD CLIP and TIGHT TUBE (a 12AX7 stage's circuit model) run
+ * style two-stage clip) run dr_chain below; SOFT TUBE, SCREAMER, HARD CLIP and TIGHT TUBE (a 12AX7 stage's circuit model) run
  * dr_chain2 (its comment; tools/gen_drive_tables.py has the circuits). dr_chain, in integer:
  *   input high-pass (one pole, DR_HP) -> pre-gain (DR_PRE, the GAIN knob 0.1 .. 10.0; 0 is bypass and the caller takes the
  *   drive out of the mix) -> waveshaper (DR_WS: 512 steps over -8 .. +8; DISTORTION runs a second one after a 2x gain) -> output
@@ -13,9 +13,9 @@
  * hot); inside, the shaper's input Q12 (1.0 = 4096), its output Q15. Every shift rounds to the nearest (0.9.30): with the trim
  * at 39x, a truncation's half-LSB bias was a DC of -9 % of the signal at GAIN 0.1. Coefficients Q15, the pre-gain Q10, the trim Q8. The tables come from
  * tools/gen_drive_tables.py. No 64-bit multiply; latency 0. Patch byte OP_DRV_TYPE: 2 TUBE DRIVE, 3 DISTORTION, 4 SOFT TUBE,
- * 5 MID DRIVE, 6 HARD CLIP, 7 TIGHT TUBE (0.9.41); 0 and 1 (TUBE SCREAM and TUBE PREAMP before 0.9.30) and any other byte play
+ * 5 SCREAMER, 6 HARD CLIP, 7 TIGHT TUBE (0.9.41); 0 and 1 (TUBE SCREAM and TUBE PREAMP before 0.9.30) and any other byte play
  * as TUBE DRIVE.
- * ORIGINAL (0.11.0, byte 8, owner: the setBfree overdrive): setBfree's own overdrive.c (b_overdrive, GPL-2.0-or-later) in single
+ * EXTREME (0.11.0, byte 8, owner: the setBfree overdrive): setBfree's own overdrive.c (b_overdrive, GPL-2.0-or-later) in single
  * precision: dr_orig below. Its GAIN is setBfree's input gain (linear in the knob: 3.5675 at 4.0), its OUTPUT setBfree's output
  * gain, its trim measured like the others'. No oversampling (setBfree's loop has none). */
 #ifndef ENG_DRIVE_C
@@ -24,7 +24,7 @@
 #include "eng_eq.c"                                 /* (0.9.44: the tone stack is three of the equaliser's biquads; needs mul14) */
 
 typedef struct {
-    int32_t type;                                   /* 0 TUBE DRIVE, 1 DISTORTION, 2 SOFT TUBE, 3 MID DRIVE, 4 HARD CLIP, 5 TIGHT TUBE */
+    int32_t type;                                   /* 0 TUBE DRIVE, 1 DISTORTION, 2 SOFT TUBE, 3 SCREAMER, 4 HARD CLIP, 5 TIGHT TUBE */
     int32_t ig;                                     /* pre-gain, Q10 */
     int32_t trim;                                   /* output trim (gain compensation x output level), Q8 */
     int32_t hx, hy;                                 /* the input high-pass: the last input and output (Q12) */
@@ -40,7 +40,7 @@ typedef struct {
     int32_t row, sh, kl, dry, xc, dcp, plp;
     int32_t h2, yp, bs, pl;
     int32_t be, pe;                                 /* the remainders of the DC blocker and the fixed low-pass (0.9.41) */
-    /* ORIGINAL (dr_orig, 0.11.0): the input and output histories (rings of 64), the sag, the adaptive one-pole's state, the one-pole
+    /* EXTREME (dr_orig, 0.11.0): the input and output histories (rings of 64), the sag, the adaptive one-pole's state, the one-pole
      * after it, the global feedback, the ring positions, the input gain and the output gain (with the trim) */
     float oxz[64], oyz[64];
     float osag, oaz, oaz1, ogfz;
@@ -49,8 +49,8 @@ typedef struct {
     float obx, oby;                                 /* the DC blocker after the output (0.11.0: setBfree's has none; see dr_orig) */
 } dr_t;
 
-#define DR_ORIG 6u                                  /* dr_t.type of ORIGINAL (the byte 8) */
-#define DR_NAMES 7u                                 /* the drive's names: TUBE DRIVE .. TIGHT TUBE, ORIGINAL */
+#define DR_ORIG 6u                                  /* dr_t.type of EXTREME (the byte 8) */
+#define DR_NAMES 7u                                 /* the drive's names: TUBE DRIVE .. TIGHT TUBE, EXTREME */
 /* setBfree's overdrive constants (its defaults; overdrive.c, fctl_* and the preamp's init): the sag's pole, the bias's base and
  * its sag share, the adaptive one-pole's feedback and the post one-pole's, the global feedback (negative: its sign is set here) */
 #define DR_OR_SAGFB 0.991f
@@ -80,7 +80,7 @@ static inline int32_t dr_ws(uint32_t stage, int32_t x)     /* x Q12 (+-8 at +-32
     return a + (((b - a) * f + 64) >> 7);
 }
 
-static void dr_orig_clear(dr_t *d)                  /* ORIGINAL's histories and states: empty */
+static void dr_orig_clear(dr_t *d)                  /* EXTREME's histories and states: empty */
 {
     uint32_t k;
     for (k = 0; k < 64u; k++) {
@@ -125,7 +125,7 @@ static void dr_user(dr_t *d, uint32_t type, uint32_t gain, uint32_t out)
 {
     static const uint16_t OUT_G[9] = {1630, 2053, 2584, 3254, 4096, 5157, 6492, 8173, 10289};   /* -8 .. +8 dB, Q12 */
     uint32_t g = gain > 100u ? 100u : gain, o = out > 8u ? 8u : out, ty = dr_type_of(type);
-    if (ty == DR_ORIG) {                            /* ORIGINAL: its own gains (the tables are DR_OR_*, generated) */
+    if (ty == DR_ORIG) {                            /* EXTREME: its own gains (the tables are DR_OR_*, generated) */
         if (d->type != (int32_t)DR_ORIG)
             dr_orig_clear(d);                       /* a new start: no stale history from the other types */
         d->type = (int32_t)DR_ORIG;
@@ -220,9 +220,9 @@ static inline int32_t dr_mq15(int32_t x, int32_t c)
     return (x >> 15) * c + (((x & 32767) * c + 16384) >> 15);
 }
 
-/* dr_chain2 (0.9.41): SOFT TUBE, MID DRIVE, HARD CLIP, TIGHT TUBE.
+/* dr_chain2 (0.9.41): SOFT TUBE, SCREAMER, HARD CLIP, TIGHT TUBE.
  *   input high-pass (DR_HP: the coupling capacitor) -> [the cathode shelf: the lows at DR_KL of the gain below DR_SH's corner]
- *   -> pre-gain (DR_PRE) [+ the dry input at DR_DRY: MID DRIVE's unity-gain lows] -> [the grid's bias shift: what goes past the
+ *   -> pre-gain (DR_PRE) [+ the dry input at DR_DRY: SCREAMER's unity-gain lows] -> [the grid's bias shift: what goes past the
  *   conduction point DR_XC charges the coupling capacitor (DR_BIAS_KC) and pulls the bias down; it leaks back (DR_BIAS_KR)]
  *   -> the curve (DR_WS[DR_ROW]) -> DC blocker (DR_DCP: TIGHT TUBE's output coupling capacitor at 100 Hz) -> [fixed low-pass,
  *   DR_PLP] -> the trim (then the tone stack). Formats as dr_chain's. */
@@ -307,7 +307,7 @@ static __attribute__((noinline)) void dr_eq_run(dr_t *d, int32_t *out, uint32_t 
         out[i] = out[i] > 131071 ? 131071 : out[i] < -131072 ? -131072 : out[i];
 }
 
-/* ORIGINAL (0.11.0): setBfree's overdrive() (b_overdrive/overdrive.c) in single precision, sample by sample, its loop as it is:
+/* EXTREME (0.11.0): setBfree's overdrive() (b_overdrive/overdrive.c) in single precision, sample by sample, its loop as it is:
  *   xin = the input gain x (in, Q13 -> float) -> the sag: sag = Fs sag + |xin|; bias = B - Sg sag; norm = 1 - 1 / (1 + bias^2)
  *   -> u = the effective 9-tap interpolation FIR over xin's history (DR_OR_H) -> u += G yPrev (global feedback)
  *   -> the adaptive one-pole: t = u - az; az = u + Fa az; u = t

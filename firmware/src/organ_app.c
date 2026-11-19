@@ -207,9 +207,9 @@ static void oa_flash(const char *t)
         oa_fl_until = 1;
 }
 
-/* the drive's types by dr_t.type (dr_type_of of OP_DRV_TYPE; seven since 0.11.0: the bytes 2 .. 8, 8 ORIGINAL; six since 0.9.41: the bytes 2 .. 7; 0 and 1, the removed TUBE
+/* the drive's types by dr_t.type (dr_type_of of OP_DRV_TYPE; seven since 0.11.0: the bytes 2 .. 8, 8 EXTREME; six since 0.9.41: the bytes 2 .. 7; 0 and 1, the removed TUBE
  * SCREAM and TUBE PREAMP, play as TUBE DRIVE): the DRIVE page's TYPE row and its header */
-static const char *const OA_DRV_NAME[DR_NAMES] = {"TUBE DRIVE", "DISTORTION", "SOFT TUBE", "MID DRIVE", "HARD CLIP", "TIGHT TUBE", "ORIGINAL"};
+static const char *const OA_DRV_NAME[DR_NAMES] = {"TUBE DRIVE", "DISTORTION", "SOFT TUBE", "SCREAMER", "HARD CLIP", "TIGHT TUBE", "EXTREME"};
 static void header(const char *page, const char *right)
 {
     wood(0, 0, 240, 22);
@@ -712,7 +712,7 @@ static void bench_cell(char *b, uint32_t k)
 }
 static void scr_bench(void)
 {
-    static const char *const BN_LB[BENCH_KERNELS] = {"WHEELS INT", "WHEELS FLOAT", "FIR INT", "FIR FLOAT", "TUBE INT", "ORIGINAL FLOAT", "ORGAN FLOAT", "ROTARY FLOAT", "PLAYING XT+SC", "ROT CLASSIC 5", "PLAY XT ONLY", "PLAY SC ONLY", "PLAY 25 KEYS", "STATIC XT+SC"};
+    static const char *const BN_LB[BENCH_KERNELS] = {"WHEELS INT", "WHEELS FLOAT", "FIR INT", "FIR FLOAT", "TUBE INT", "EXTREME FLOAT", "ORGAN FLOAT", "ROTARY FLOAT", "PLAYING XT+SC", "ROT CLASSIC 5", "PLAY XT ONLY", "PLAY SC ONLY", "PLAY 25 KEYS", "STATIC XT+SC"};
     char b[24];
     uint32_t k;
     header("BENCHMARK", "");

@@ -616,17 +616,17 @@ int main(int argc, char **argv)
         turn(EN_K2, -1);
         bad += check("  .. the bottom stays TUBE DRIVE", org_patch[OP_DRV_TYPE] == 2);
         {   /* 0.9.41: six types, the bytes 2 .. 7 in order, each with its name */
-            static const char *const NM[6] = {"TUBE DRIVE", "DISTORTION", "SOFT TUBE", "MID DRIVE", "HARD CLIP", "TIGHT TUBE"};
+            static const char *const NM[6] = {"TUBE DRIVE", "DISTORTION", "SOFT TUBE", "SCREAMER", "HARD CLIP", "TIGHT TUBE"};
             int ok = 1, k;
             for (k = 0; k < 6; k++) {
                 if (org_patch[OP_DRV_TYPE] != 2 + k || strcmp(OA_DRV_NAME[dr_type_of(org_patch[OP_DRV_TYPE])], NM[k]))
                     ok = 0;
                 turn(EN_K2, 1);
             }
-            bad += check("  .. KNOB 2 steps through the six types (0.9.41): TUBE DRIVE, DISTORTION, SOFT TUBE, MID DRIVE, HARD CLIP, TIGHT TUBE", ok);
+            bad += check("  .. KNOB 2 steps through the six types (0.9.41): TUBE DRIVE, DISTORTION, SOFT TUBE, SCREAMER, HARD CLIP, TIGHT TUBE", ok);
         }
         turn(EN_K2, 9);
-        bad += check("  .. the top is ORIGINAL (8, 0.11.0)", org_patch[OP_DRV_TYPE] == 8);
+        bad += check("  .. the top is EXTREME (8, 0.11.0)", org_patch[OP_DRV_TYPE] == 8);
         turn(EN_K2, -4);
         bad += check("  .. and four down, SOFT TUBE (4)", org_patch[OP_DRV_TYPE] == 4);
         {   /* the GAIN row's meter: nine cells as the other rows (0.9.31; it was 101, off the screen) */

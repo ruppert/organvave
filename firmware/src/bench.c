@@ -107,7 +107,7 @@ static void bench_setup(uint32_t k)             /* not timed: the states the ker
             rotary_model(&brot, 4u);            /* CLASSIC 5 */
     } else if (k == 4u || k == 5u) {
         dr_init(&bdr);
-        dr_user(&bdr, k == 4u ? 2u : 8u, 40u, 4u);  /* TUBE DRIVE (2) or ORIGINAL (8), GAIN 4.0 */
+        dr_user(&bdr, k == 4u ? 2u : 8u, 40u, 4u);  /* TUBE DRIVE (2) or EXTREME (8), GAIN 4.0 */
     } else {
         for (i = 0; i < BENCH_N; i++)
             bph[i] = 0u;

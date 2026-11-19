@@ -1418,3 +1418,5 @@ Version 0.11.1 changes the meaning of `OP_DRV_GAIN` for TUBE DRIVE (type 2, and 
 Up to GAIN 2.0 the sound is as before; GAIN 8.0 now gives the THD that GAIN 10.0 gave (33.75 %), and GAIN 10.0 gives twice that
 pre-gain (+22.6 dB, 39.9 % THD). The other types and their GAIN are unchanged. A patch, a user preset or a sound file that stores
 TUBE DRIVE with GAIN 4.0 or more sounds more driven than before (the most at the top); nothing is migrated (the bytes are the same).
+
+Version 0.11.1 renames two drive types for the panel and the editor: byte 5 MID DRIVE is SCREAMER, byte 8 ORIGINAL is EXTREME. The bytes and their sounds are the same.

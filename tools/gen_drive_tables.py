@@ -8,7 +8,7 @@ an input high-pass (one pole), a pre-gain (the GAIN knob, 0.0 .. 10.0 in tenths;
 on -8..8, 512 steps), an optional second stage (DISTORTION), a DC blocker, an output trim, then the tone stack (TREBLE, MIDDLE,
 BASS since 0.9.44, the equaliser's biquads; TONE before).
 
-ORIGINAL (byte 8, 0.11.0) is setBfree's overdrive in float: its filters, its input and output gains and its trim are the
+EXTREME (byte 8, 0.11.0) is setBfree's overdrive in float: its filters, its input and output gains and its trim are the
 DR_OR_* tables at the end of the header (the model is orig_run below; tests/drive_orig_test.c checks the firmware against it).
 
   TUBE DRIVE    (byte 2; 0 and 1 too) a warm overdrive: a mild, slightly asymmetric soft clip (tanh with an offset: even
@@ -26,7 +26,7 @@ exponential scaled to its own top (the THD at 10.0):
   SOFT TUBE     (byte 4) a gentle valve: a triode-like curve, tanh(k x) / k with k 1.0 above zero and 0.55 below (the positive
                 half bends first): mostly the second harmonic; 80 Hz in, a fixed low-pass at 6 kHz; 30 % at 10.0 (0.9.42, owner:
                 twice 0.9.41's 15 %).
-  MID DRIVE     (byte 5) the classic green mid-boost pedal without its clipping diodes: its op-amp stage has unity gain for the
+  SCREAMER     (byte 5) the classic green mid-boost pedal without its clipping diodes: its op-amp stage has unity gain for the
                 lows and the GAIN for what is above 720 Hz (the 4.7 k / 47 nF leg: x + G hp720(x)), and the op-amp's rails clip
                 the sum (x / (1 + x^4)^(1/4), symmetric: odd harmonics); a fixed low-pass at 6 kHz; 40 % at 10.0. (0.9.42, owner:
                 50 % more than 0.9.41's 30 % was asked; 40 % is what a symmetric clip can give on this measure: the harmonics 2 .. 9
@@ -135,7 +135,7 @@ CURVES = [
     ("DISTORTION stage 1", tanh_abc(0.95, 1.80, 0.20)),
     ("DISTORTION stage 2", tanh_abc(0.90, 1.50, -0.05)),
     ("SOFT TUBE", triode(0.55, 1.0, 0.55)),
-    ("MID DRIVE", rails(0.95, 1.0, 4.0)),          # (0.9.42: the rails at 1 unit, the input / 4; 4 units in 0.9.41)
+    ("SCREAMER", rails(0.95, 1.0, 4.0)),          # (0.9.42: the rails at 1 unit, the input / 4; 4 units in 0.9.41)
     ("HARD CLIP", hard(0.90)),
     ("TIGHT TUBE", tube_12ax7),
 ]
@@ -147,7 +147,7 @@ TYPES = [
     dict(name="TUBE DRIVE", byte=2, hp=60.0, rows=[0], s2=0.0, top=33.76),
     dict(name="DISTORTION", byte=3, hp=180.0, rows=[1, 2], s2=2.0, top=None),
     dict(name="SOFT TUBE", byte=4, hp=80.0, rows=[3], s2=0.0, top=30.0, shelf=None, dry=0.0, bias=False, dc=10.0, lp=6000.0),
-    dict(name="MID DRIVE", byte=5, hp=720.0, rows=[4], s2=0.0, top=40.0, shelf=None, dry=0.25, bias=False, dc=10.0, lp=6000.0),
+    dict(name="SCREAMER", byte=5, hp=720.0, rows=[4], s2=0.0, top=40.0, shelf=None, dry=0.25, bias=False, dc=10.0, lp=6000.0),
     dict(name="HARD CLIP", byte=6, hp=80.0, rows=[5], s2=0.0, top=40.0, shelf=None, dry=0.0, bias=False, dc=10.0, lp=5000.0),
     dict(name="TIGHT TUBE", byte=7, hp=120.0, rows=[6], s2=0.0, top=50.0, shelf=(400.0, 0.30), dry=0.0, bias=True, dc=100.0,
          lp=None, boost=(5.0, 1.4)),
@@ -292,11 +292,11 @@ def mud(ty, G):
     low = (fr > 20) & (fr < 250)
     return 10 * math.log10(Y[low & ~near].sum() / Y.sum()), 10 * math.log10(Y[low].sum() / Y.sum())
 
-# ---- 0.11.0: ORIGINAL (byte 8): setBfree's overdrive (b_overdrive/overdrive.c) in single precision. Float, no oversampling:
+# ---- 0.11.0: EXTREME (byte 8): setBfree's overdrive (b_overdrive/overdrive.c) in single precision. Float, no oversampling:
 # the input runs through the effective 9-tap interpolation FIR (the sum of setBfree's four polyphase rows), the transfer
 # curve (with the sag, the feedback and the DC-like one-pole of setBfree), then the 33-tap decimation FIR; out = outG * y.
 # Its gain: the input gain = setBfree's 3.5675 at GAIN 4.0 (linear in the knob); its output trim, measured like the others'.
-# The original overdrive (0.11.0, byte 8 ORIGINAL): setBfree's b_overdrive/overdrive.c (GPL-2.0-or-later; Fredrik Kilander,
+# The original overdrive (0.11.0, byte 8 EXTREME): setBfree's b_overdrive/overdrive.c (GPL-2.0-or-later; Fredrik Kilander,
 # Robin Gareus, Will Panther) at its default constants. Its 33-tap interpolation filter (ipwdef) and decimation filter (aaldef)
 # are copied here as the C source writes them.
 ORIG_IPW = [-1.5614697728945395e-18, -0.0018878784030675888, 2.2449135885484886e-18, 0.00386247830465436, -4.191197191582164e-18, -0.008242466486990452, 7.104016524965676e-18, 0.015947114676237106, -1.0539920475899653e-17, -0.028676560148596764, 1.3975825254014242e-17, 0.05071856081485748, -1.6888644173807447e-17, -0.09801590442657471, 1.8834927363250817e-17, 0.3159417510032654, 0.5007057785987854, 0.3159417510032654, 1.8834927363250817e-17, -0.09801590442657471, -1.6888644173807447e-17, 0.05071856081485748, 1.3975825254014242e-17, -0.028676560148596764, -1.0539920475899653e-17, 0.015947114676237106, 7.104016524965676e-18, -0.008242466486990452, -4.191197191582164e-18, 0.00386247830465436, 2.2449135885484886e-18, -0.0018878784030675888, -1.5614697728945395e-18]
@@ -405,7 +405,7 @@ def main():
             pk = max(abs(v) for v in y)
             row.append(min(target / rms(y), 0.95 * OUT_CLAMP / pk))
         trims.append(row)
-    # ORIGINAL: the same target as the others (the organ-like chord, +1 % a unit), its trim (linear) and the input gain's table
+    # EXTREME: the same target as the others (the organ-like chord, +1 % a unit), its trim (linear) and the input gain's table
     orig_h = orig_fir(ORIG_IPW)
     orig_a = orig_aal(ORIG_AAL)
     orig_trim = [1.0]
@@ -450,7 +450,7 @@ def main():
     for row in trims:
         L.append("  {" + ",".join(str(min(65535, int(round(t * 256)))) for t in row) + "},")
     L.append("};")
-    L.append("/* ORIGINAL (byte 8, 0.11.0): setBfree's overdrive in float. The effective input FIR (9 taps, the four polyphase rows summed),")
+    L.append("/* EXTREME (byte 8, 0.11.0): setBfree's overdrive in float. The effective input FIR (9 taps, the four polyphase rows summed),")
     L.append(" * the decimation FIR (33 taps), the input gain per GAIN tenth (x GAIN / 10 at 4.0 = 3.5675), setBfree's output gain, and the trim */")
     L.append("#define DR_OR_INK %.10ff" % ORIG_INK)
     L.append("#define DR_OR_OUT %.10ff" % ORIG_OUT)

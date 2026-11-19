@@ -4,7 +4,7 @@
  * 1. the laws: the harmonic distortion of a 441 Hz sine at the organ's level (RMS 0.73 at the drive) follows the GAIN knob on an
  *    exponential. TUBE DRIVE (0.9.31): THD = 25.2 (e^(0.085 g) - 1) %: under 0.5 % at 0.1, 0.6 .. 1.8 % at 0.5, about 4.7 % at
  *    2.0, 16.8 % at 5.0, 33.75 % at 8.0, 39.9 % at 10.0 (0.11.1: the pre-gain of 8.0 is the 0.9.31 law's 10.0, and 10.0 twice it). The four of 0.9.41: the same exponential scaled to each type's top (0.9.42: SOFT TUBE
- *    30 %, MID DRIVE 40 %, HARD CLIP 40 %, TIGHT TUBE 50 %), within 15 % at 2.0, 5.0 and 10.0. Never falling from one tenth to the next
+ *    30 %, SCREAMER 40 %, HARD CLIP 40 %, TIGHT TUBE 50 %), within 15 % at 2.0, 5.0 and 10.0. Never falling from one tenth to the next
  *    (TIGHT TUBE, 0.9.43: up to 5.0; past it its pre-gain rises on to 1.4x its law's at 10.0, the THD at the stage's most).
  * 2. level: the organ-like chord at that level comes out between the dry level -1.5 dB and +1.5 dB at every GAIN step, every type.
  * 3. bounds: a full-scale square and noise stay inside the output's clamp (4.0 in Q15) at every gain; silence in, silence out.
@@ -18,7 +18,7 @@
  *    away from the chord's partials: the intermodulation's difference tones, the rumble) than TUBE DRIVE at the same THD: TUBE
  *    DRIVE at GAIN 8.0 and 10.0 (33.75 %, 39.9 %), TIGHT TUBE at the first tenth that reaches that THD (measured).
  * The input is Q13 (1.0 = 8192), the output Q15 up to 4.0 (+-131071). The type is the patch byte: 2 TUBE DRIVE, 3 DISTORTION,
- * 4 SOFT TUBE, 5 MID DRIVE, 6 HARD CLIP, 7 TIGHT TUBE (0, 1 and others: TUBE DRIVE). */
+ * 4 SOFT TUBE, 5 SCREAMER, 6 HARD CLIP, 7 TIGHT TUBE (0, 1 and others: TUBE DRIVE). */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -38,8 +38,8 @@ static void check(const char *what, int ok)
 static int32_t in[N], out[N], ref[N];
 static dr_t D;
 static double DTHD[6][101];                                     /* the THD measured in 1., per type and tenth */
-static const char *NAME[NT] = {"TUBE DRIVE", "DISTORTION", "SOFT TUBE", "MID DRIVE", "HARD CLIP", "TIGHT TUBE"};
-static const double TOP[NT] = {33.75, 0, 30.0, 40.0, 40.0, 50.0};   /* (0.9.42: SOFT TUBE 15 -> 30, MID DRIVE 30 -> 40, TIGHT TUBE 25 -> 50) */
+static const char *NAME[NT] = {"TUBE DRIVE", "DISTORTION", "SOFT TUBE", "SCREAMER", "HARD CLIP", "TIGHT TUBE"};
+static const double TOP[NT] = {33.75, 0, 30.0, 40.0, 40.0, 50.0};   /* (0.9.42: SOFT TUBE 15 -> 30, SCREAMER 30 -> 40, TIGHT TUBE 25 -> 50) */
 
 static void run_drive(dr_t *d, const int32_t *x, int32_t *y, size_t blk)
 {
@@ -259,7 +259,7 @@ int main(void)
     }
     /* the removed types and the bytes out of range play as TUBE DRIVE */
     {
-        static const uint32_t B[3] = {0, 1, 255};          /* (8 is ORIGINAL since 0.11.0: drive_orig_test.c) */
+        static const uint32_t B[3] = {0, 1, 255};          /* (8 is EXTREME since 0.11.0: drive_orig_test.c) */
         int ok = 1;
         for (i = 0; i < N; i++)
             in[i] = (int32_t)lrint(0.5 * 8192 * sin(2 * M_PI * 220.0 * (double)i / 44100.0));

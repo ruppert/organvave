@@ -13,7 +13,7 @@ second core taken out; the credits for those parts stay below, marked "(Felucca:
   Speaker", AES 127th Convention, 2009 (speeds and time constants); J. Smith, S. Serafin, J. Abel, D. Berners, "Doppler
   simulation and the Leslie", DAFx-02, 2002 (the horn's angle-dependent impulse responses, read off a figure by setBfree's
   author)
-- The drive's type ORIGINAL (0.11.0) is setBfree's own overdrive, `b_overdrive/overdrive.c` (GPL-2.0-or-later; the same authors),
+- The drive's type EXTREME (0.11.0) is setBfree's own overdrive, `b_overdrive/overdrive.c` (GPL-2.0-or-later; the same authors),
   in single precision: its curve, sag, feedback, the two one-poles, the 33-tap interpolation and decimation filters
   (`tests/drive_orig_ref.h` and `tools/gen_drive_tables.py` copy its filter definitions) and its default constants. The DC
   blocker after it is OrganVave-1's (setBfree's has none).
@@ -56,5 +56,5 @@ second core taken out; the credits for those parts stay below, marked "(Felucca:
   repository has schematics and PCB only, no licence and no code: only the circuit's topology was used as a reference)
 - Drive, TIGHT TUBE (0.9.41): the 12AX7's plate curves from Norman Koren's triode model ("Improved VT models for SPICE simulations",
   Glass Audio, 1996; the published equations and the 12AX7 parameters mu 100, ex 1.4, kG1 1060, kp 600, kvb 300), solved on the load
-  line in `tools/gen_drive_tables.py`: equations only, no code. MID DRIVE follows the well-known topology of the classic green
+  line in `tools/gen_drive_tables.py`: equations only, no code. SCREAMER follows the well-known topology of the classic green
   mid-boost overdrive pedal (an op-amp stage with a 720 Hz leg), without its diodes: no code or schematic copied.

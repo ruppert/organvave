@@ -113,7 +113,7 @@ The packed integer table still decides which entries exist and their wheel and b
 The budget lines of `org_msg` and `org_fragment` are counted in full: they run per key and per 128-sample block, not per
 sample. The image grows about 46 KB in flash (the two float level tables); the RAM pool is 343384 B of 368640 B.
 
-**0.11.0, the drive's ORIGINAL type (byte 8, owner: setBfree's overdrive).** setBfree's `b_overdrive/overdrive.c` as a drive
+**0.11.0, the drive's EXTREME type (byte 8, owner: setBfree's overdrive).** setBfree's `b_overdrive/overdrive.c` as a drive
 type, in single precision: the input gain x the input (3.5675 at GAIN 4.0, linear in the knob), the sag, the effective 9-tap
 interpolation FIR (setBfree's four polyphase rows summed per tap), setBfree's transfer curve with its feedback and one-poles,
 the 33-tap decimation, and the output gain (0.8795 at OUTPUT 0 dB). It has no oversampling: setBfree's loop has none. Its
@@ -161,7 +161,7 @@ and the drive on, the economy variant (same sidebands, about 19 dB more residual
 audio path's arithmetic on the device itself. Seven kernels, each the work of one second of audio (44,096 samples in blocks
 of 32, the CTL of the audio path), each run twice with the faster kept: the wheels in integers (`sine_i`, Q9 gains) and in
 single precision (`sine_f`, the float gains), the 33-tap FIR in Q10 and in float, the DRIVE in its TUBE type (integer
-chain, byte 2) and in ORIGINAL (float, byte 8), and the organ's own render (`org_render`, float) with ten keys held. The
+chain, byte 2) and in EXTREME (float, byte 8), and the organ's own render (`org_render`, float) with ten keys held. The
 result is each kernel's share of the real time of one second, in tenths of a percent (100.0 % = a second of work per
 second), and each float row's ratio to its integer partner: x0.82 means the float arithmetic took 82 % of the integer time.
 The organ row has no integer partner: the organ is float since 0.11.0.
@@ -292,7 +292,7 @@ standard libraries, Pd's standard objects or Csound's opcodes.
   **(owner, 0.9.41) Four more types**, on `dr_chain2` (the same steps plus a cathode shelf, a dry share into the clipper, the grid's
   bias shift, the DC blocker at the type's own corner and a fixed low-pass; 142 loop instructions), each on TUBE DRIVE's
   exponential law scaled to its own top: **SOFT TUBE** (byte 4: a gentle triode-like curve, the positive half bending first, mostly
-  the second harmonic; 15 % at 10.0), **MID DRIVE** (byte 5: the green mid-boost pedal without its diodes, x + G hp720(x) clipped by
+  the second harmonic; 15 % at 10.0), **SCREAMER** (byte 5: the green mid-boost pedal without its diodes, x + G hp720(x) clipped by
   the op-amp's rails; 30 %), **HARD CLIP** (byte 6: a flat clip; 40 %) and **TIGHT TUBE** (byte 7: a circuit model of one 12AX7
   common-cathode stage: Koren's triode equations solved on the load line, B+ 250 V, 100 k plate, 1.5 k cathode, -1.2 V bias and a
   gain of 60; the input coupling capacitor at 120 Hz, the cathode partly bypassed (the lows at 30 % of the gain below 400 Hz), the

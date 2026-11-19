@@ -131,7 +131,7 @@ int main(void)
     org_set(OP_DRV_TYPE, 99);
     org_set(OP_DRV_TONE, 99);
     org_set(OP_DRV_TREB, 99);
-    check("the bytes are clamped (GAIN 100, TYPE 8 (ORIGINAL, 0.11.0), TONE 0 and TREBLE 10 (0.9.44))",
+    check("the bytes are clamped (GAIN 100, TYPE 8 (EXTREME, 0.11.0), TONE 0 and TREBLE 10 (0.9.44))",
           org_patch[OP_DRV_GAIN] == 100 && org_patch[OP_DRV_TYPE] == 8 && org_patch[OP_DRV_TONE] == 0 && org_patch[OP_DRV_TREB] == 10);
     /* a patch of zeros in the effects bytes leaves the mix dry */
     boot();
