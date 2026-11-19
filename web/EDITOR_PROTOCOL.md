@@ -1413,3 +1413,8 @@ Version 0.11.0 adds the drive type 8, ORIGINAL (`OP_DRV_TYPE` 48, setBfree's ove
 gain, its OUTPUT the output gain, and the TREBLE / MIDDLE / BASS stack follows as for the others). Before 0.11.0 the byte 8 was not
 a type: it played as TUBE DRIVE, like any byte outside 2..7. A patch or a user preset that stores 8 by hand now plays ORIGINAL; the
 panel and the factory bank write 2..8 only as the type cycle chooses (the factory bank has no 8). The bytes keep their meaning.
+
+Version 0.11.1 changes the meaning of `OP_DRV_GAIN` for TUBE DRIVE (type 2, and bytes 0 and 1 that play as it): the owner's law, option C.
+Up to GAIN 2.0 the sound is as before; GAIN 8.0 now gives the THD that GAIN 10.0 gave (33.75 %), and GAIN 10.0 gives twice that
+pre-gain (+22.6 dB, 39.9 % THD). The other types and their GAIN are unchanged. A patch, a user preset or a sound file that stores
+TUBE DRIVE with GAIN 4.0 or more sounds more driven than before (the most at the top); nothing is migrated (the bytes are the same).

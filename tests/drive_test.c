@@ -3,7 +3,7 @@
 /* The drive (src/eng_drive.c; two types since 0.9.30, six since 0.9.41) on the host, measured on the firmware's integer chains.
  * 1. the laws: the harmonic distortion of a 441 Hz sine at the organ's level (RMS 0.73 at the drive) follows the GAIN knob on an
  *    exponential. TUBE DRIVE (0.9.31): THD = 25.2 (e^(0.085 g) - 1) %: under 0.5 % at 0.1, 0.6 .. 1.8 % at 0.5, about 4.7 % at
- *    2.0, 13.4 % at 5.0, 33.75 % at 10.0. The four of 0.9.41: the same exponential scaled to each type's top (0.9.42: SOFT TUBE
+ *    2.0, 16.8 % at 5.0, 33.75 % at 8.0, 39.9 % at 10.0 (0.11.1: the pre-gain of 8.0 is the 0.9.31 law's 10.0, and 10.0 twice it). The four of 0.9.41: the same exponential scaled to each type's top (0.9.42: SOFT TUBE
  *    30 %, MID DRIVE 40 %, HARD CLIP 40 %, TIGHT TUBE 50 %), within 15 % at 2.0, 5.0 and 10.0. Never falling from one tenth to the next
  *    (TIGHT TUBE, 0.9.43: up to 5.0; past it its pre-gain rises on to 1.4x its law's at 10.0, the THD at the stage's most).
  * 2. level: the organ-like chord at that level comes out between the dry level -1.5 dB and +1.5 dB at every GAIN step, every type.
@@ -16,7 +16,7 @@
  * 5. DC: no type leaves a DC (the shifts round; a DC blocker after the shaper): under 1 % of the signal's RMS.
  * 6. the bass (owner, 0.9.41): on a C2 + C3 triad organ chord, TIGHT TUBE leaves at least 5.5 dB less new low content (20 .. 250 Hz,
  *    away from the chord's partials: the intermodulation's difference tones, the rumble) than TUBE DRIVE at the same THD: TUBE
- *    DRIVE at GAIN 5.0 and 10.0 (13.4 %, 33.75 %), TIGHT TUBE at the first tenth that reaches that THD (measured).
+ *    DRIVE at GAIN 8.0 and 10.0 (33.75 %, 39.9 %), TIGHT TUBE at the first tenth that reaches that THD (measured).
  * The input is Q13 (1.0 = 8192), the output Q15 up to 4.0 (+-131071). The type is the patch byte: 2 TUBE DRIVE, 3 DISTORTION,
  * 4 SOFT TUBE, 5 MID DRIVE, 6 HARD CLIP, 7 TIGHT TUBE (0, 1 and others: TUBE DRIVE). */
 #include <stdio.h>
@@ -106,7 +106,7 @@ int main(void)
             prev = d[g];
         }
         if (t == 0) {
-            static const struct { int g; double lo, hi; } P[] = {{1, 0.0, 0.5}, {5, 0.6, 1.8}, {20, 3.7, 5.7}, {50, 11.4, 15.4}, {100, 30.0, 37.5}};
+            static const struct { int g; double lo, hi; } P[] = {{1, 0.0, 0.5}, {5, 0.6, 1.8}, {20, 3.7, 5.7}, {50, 13.0, 20.0}, {80, 30.0, 37.5}, {100, 36.0, 44.0}};
             for (k = 0; k < sizeof P / sizeof P[0]; k++) {
                 snprintf(what, sizeof what, "TUBE DRIVE law: GAIN %.1f gives %.2f %% THD (between %.1f and %.1f %%)", P[k].g / 10.0, d[P[k].g], P[k].lo, P[k].hi);
                 check(what, d[P[k].g] >= P[k].lo && d[P[k].g] <= P[k].hi);

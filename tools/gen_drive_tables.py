@@ -14,7 +14,9 @@ DR_OR_* tables at the end of the header (the model is orig_run below; tests/driv
   TUBE DRIVE    (byte 2; 0 and 1 too) a warm overdrive: a mild, slightly asymmetric soft clip (tanh with an offset: even
                 harmonics). Its GAIN follows the harmonic distortion, not the pre-gain (0.9.30, the owner's law): a 441 Hz sine
                 at the organ's level comes out with THD(g) = 25.2 (e^(0.085 g) - 1) % (0.9.31): 0.21 % at 0.1, 4.7 % at 2.0,
-                13.4 % at 5.0, 33.75 % at 10.0. The pre-gain of every step is solved here for that THD (bisection on the model).
+                13.4 % at 5.0, 33.75 % at 10.0 (0.9.31). 0.11.1 (owner): up to 2.0 the same; 33.75 % at 8.0 (+16.6 dB of pre-gain), and
+                +22.6 dB at 10.0 (twice the pre-gain of 8.0); between them the pre-gain rises in dB. The pre-gain of the other steps is
+                solved here for that THD (bisection on the model).
   DISTORTION    (byte 3) a high-gain two-stage clip (the second stage clipping the first's output): 3 dB of pre-gain a GAIN
                 unit, as since 0.9.24.
 
@@ -364,11 +366,25 @@ def orig_run(x, h, a, ink, outg):
 
 def main():
     pre = []
+    tube = next(t for t in TYPES if t["name"] == "TUBE DRIVE")
+    # 0.11.1 (owner, option C): the law up to 2.0 is unchanged (a clean start); GAIN 8.0 gives the THD that GAIN 10.0 gave
+    # (33.75 %, +16.6 dB of pre-gain); GAIN 10.0 gives twice that pre-gain (+22.6 dB). Between them the pre-gain rises in dB.
+    tube_g2 = solve_pre(tube, thd_target(tube, 2.0))
+    tube_g8 = solve_pre(tube, thd_target(tube, 10.0))
+    tube_g10 = 2.0 * tube_g8
     for ty in TYPES:
         row = [1.0]
         for gi in range(1, NG):
             g = gi / 10.0
-            G = solve_pre(ty, thd_target(ty, g)) if ty["top"] else 10 ** (dist_pre_db(g) / 20.0)
+            if ty["name"] == "TUBE DRIVE":
+                if g <= 2.0:
+                    G = solve_pre(ty, thd_target(ty, g))
+                elif g <= 8.0:
+                    G = math.exp(math.log(tube_g2) + (g - 2.0) / 6.0 * (math.log(tube_g8) - math.log(tube_g2)))
+                else:
+                    G = math.exp(math.log(tube_g8) + (g - 8.0) / 2.0 * (math.log(tube_g10) - math.log(tube_g8)))
+            else:
+                G = solve_pre(ty, thd_target(ty, g)) if ty["top"] else 10 ** (dist_pre_db(g) / 20.0)
             if ty.get("boost") and g > ty["boost"][0]:
                 G *= ty["boost"][1] ** ((g - ty["boost"][0]) / (10.0 - ty["boost"][0]))
             row.append(G)
