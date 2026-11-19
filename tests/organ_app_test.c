@@ -297,6 +297,23 @@ int main(int argc, char **argv)
     turn(EN_ALGO, 1);
     bad += check("  .. an ALGORITHM turn asks for a run", bench_req == 1);
     bench_req = 0;                                        /* (the run itself is the main loop's: not here) */
+    {   /* BENCHMARK kernels 8, 10 .. 13: each kernel's patch reaches the engine's state (org.xtalk, org.vibm, org.vup, org.vlo),
+         * and the teardown restores the patch and the state (a write of org_patch alone changed nothing: 0.11.0 bench) */
+        static const uint32_t BK[5][4] = {{8, 1, 1, 0}, {10, 1, 1, 0}, {11, 0, 1, 0}, {12, 0, 1, 0}, {13, 1, 1, 0}};
+        static const char *const BKN[5] = {"8 PLAYING XT+SC", "10 PLAY XT ONLY", "11 PLAY SC ONLY", "12 PLAY 25 KEYS", "13 STATIC XT+SC"};
+        uint8_t before[ORG_PSIZE];
+        uint32_t j;
+        memcpy(before, org_patch, sizeof before);
+        for (j = 0; j < 5u; j++) {
+            char what[120];
+            bench_setup(BK[j][0]);
+            snprintf(what, sizeof what, "  .. BENCHMARK kernel %s: crosstalk %u, scanner %u, upper through it %u, lower %u",
+                     BKN[j], (unsigned)BK[j][1], (unsigned)(BK[j][0] != 10u && BK[j][0] != 12u), (unsigned)BK[j][2], (unsigned)BK[j][3]);
+            bad += check(what, org.xtalk == BK[j][1] && (org.vibm != 0u) == (BK[j][0] != 10u && BK[j][0] != 12u) && org.vup == BK[j][2] && org.vlo == BK[j][3]);
+            bench_teardown(BK[j][0]);
+        }
+        bad += check("  .. BENCHMARK teardown: the patch is restored", memcmp(before, org_patch, sizeof before) == 0);
+    }
     press(B_GLO);
     bad += check("  .. GLO goes back to the list, its row kept", oa_gl == 1 && oa_gl_row == 5);
     press(B_GLO);
