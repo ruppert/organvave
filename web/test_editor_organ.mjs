@@ -166,7 +166,11 @@ ok(byId("dtype").value === "3" && Number(byId("dtreb").value) === 2 && Number(by
 // ---- 3d: ADVANCED EDIT (0.9.4): the bytes 57..83 go to the instrument (the second frame carries bytes 48..83; 0.9.5 adds the split, 82 and 83), and read back
 const advc = (op) => P.ADVC.find((c) => c.op === op);
 ok(P.ADVC.length === 29 && new Set(P.ADVC.map((c) => c.op)).size === 29 && P.ADVC.every((c) => c.op >= 57 && c.op <= 85), "advanced: 29 sliders, one for each of the bytes 57..85");
-ok(P.ADVC.every((c) => Number(c.inp.value) === c.d), "advanced: a patch of zeros shows every default (the middle of the step)");
+{ // (the patch read is the factory's: its crosstalk floor is not zero (0.11.0: byte 68 = 32), so the zeros are set here, and the patch restored)
+  const keep = P.patch.slice(); P.patch = P.patch.map(() => 0); P.showPatch();
+  ok(P.ADVC.every((c) => Number(c.inp.value) === c.d), "advanced: a patch of zeros shows every default (the middle of the step)");
+  P.patch = keep; P.showPatch();
+}
 advc(57).inp.value = 64 + 20;                  // 450 Hz
 advc(59).inp.value = 16;                       // attack click 80 % (5 % a step, 100 % the default)
 advc(62).inp.value = 2;                        // release model LINEAR (the default is CLICK since 0.9.5)

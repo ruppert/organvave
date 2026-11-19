@@ -53,7 +53,7 @@ static int32_t rot_disp_ram[4][ROT_NA];
 #define RC_Q12 (1.0f / 4096.0f)        /* a delay's fraction */
 #define RC_REFL (6554.0f / 16384.0f)   /* the reflection's 0.4 */
 #define RC_HL (11469.0f / 16384.0f)    /* the horn level, 0.7 */
-#define RC_TRIM 0.794f                 /* the output's trim, -2 dB: with the Leslie the mix is no louder than without it (0.11.0, no limiter) */
+#define RC_TRIM 0.95f                  /* the output's trim, -0.45 dB (0.11.1; was 0.794): the loudest the factory presets allow under 30000 (the regress headroom: their peaks at 1.0 are 30.5k) */
 #define RC_LEAK (1720.0f / 16384.0f)   /* the leakage, 0.15 * 0.7 */
 
 typedef struct {
