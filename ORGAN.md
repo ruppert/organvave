@@ -82,7 +82,7 @@ table (10,687, the count setBfree needs; `XT_PRUNE` 0), `org_xt_prune` 0 and `or
 against the DDS). The prune (`org_xt_prune` 1) and the faint shortcut stay as options for the CPU. Cost, measured on the host by
 the wheels in use (not the device): 1 key 17 -> 17, 3 keys 39 -> 39, 10 keys 55 -> 63 (+15 %), plus the interpolated sine for the
 faint wheels. The device CPU meter decides; if it shows overload, the two defaults go back (one line each). The factory REED
-preset sits half a step lower (`PEAK_TRIM` in tools/gen_organ_presets.py): its peak passed the 30000 health limit with the
+preset sits half a step lower (`PEAK_TRIM` in tools/gen_organ_presets.py): its peak passed the 31500 health limit with the
 complete crosstalk.
 
 **0.11.0, the wheels in single precision (owner: float wherever setBfree is float).** `org_wheel_pc/sc/scp` and the plain wheel
@@ -130,7 +130,7 @@ past it in thousands of samples (C6: 14.6 % of added distortion against an all-l
 the 12 dB back after the cabinet. The master's limiter followed every peak (attack ~0.1 ms): on a chord its gain moved with the
 notes' beats (about 5 %), and a tanh over the whole range bent the signal it held at 0.55 of full scale. Now the attack is ~6 ms and
 the tanh is a knee, linear up to 0.8 of full scale and bending towards 0.9 above (it takes the start of a note the slower attack
-lets through; the health checks' 30000 stays free): C4 / C5 / C6 triads 6.1 / 4.8 / 14.6 % -> 2.0 / 1.8 / 1.4 %.
+lets through; the health checks' 31500 stays free): C4 / C5 / C6 triads 6.1 / 4.8 / 14.6 % -> 2.0 / 1.8 / 1.4 %.
 
 **0.9.39, still cracking (owner: the same chord, the Leslie on, and more with it off).** The limiter of 0.9.38 still lagged the
 peaks: without the Leslie 1.7 .. 2.4 % of the samples went over 0.8 of full scale into the knee, a clip at audio rate. The limiter

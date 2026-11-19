@@ -21,7 +21,7 @@
 #include "host.h"
 
 /* ------------------------------------------------------------- limits --- */
-#define LIM_NEAR 30000            /* |sample| at or above: "near full scale" (the limiter holds ~18000) */
+#define LIM_NEAR 31500            /* |sample| at or above: "near full scale" (0.11.1: 31500, was 30000; the master has no limiter, the clip is at 32767) */
 #define LIM_DC 400                /* |mean| of the sounding part, 16-bit units */
 #define LIM_PEAK_MIN 250          /* quieter than this (-42 dBFS): something is missing */
 #define LIM_TAIL 6                /* AC peak of the last 0.25 s, after the voices are free and the FX rang out */
