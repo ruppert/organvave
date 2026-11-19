@@ -38,6 +38,10 @@ static void render_case(uint32_t floor_idx, uint32_t faint, float *dst, double *
         org_set(OP_UB + i, 8u);
     org_set(OP_VIB, 0u);
     org_set(OP_XTALK, 1u);
+    /* the patch bytes are offsets from the defaults (ORG_ADV: index = (byte + d) mod n): all zero is the device's default (the
+     * flash table); the floor's default is index 3 (-96 dB), so index 27 (-48 dB) is byte 24 */
+    for (i = OP_XT_COMP; i <= OP_XT_MIN; i++)
+        org_set(i, 0u);
     org_set(OP_XT_FLOOR, floor_idx);
     org_faint = faint ? (1 << 30) : 0;
     org_block(0);
@@ -63,20 +67,22 @@ static void render_case(uint32_t floor_idx, uint32_t faint, float *dst, double *
 
 int main(void)
 {
-    static const uint32_t FL[] = {3, 9, 15, 21, 27, 33, 39};
+    static const uint32_t FL[] = {6, 12, 18, 24, 30, 36};   /* bytes: index 9 .. 39 (-84 .. -24 dB) */
     uint32_t nsamp = (uint32_t)(SECS * 44100.0 / CTL) * CTL, n, c;
     float *ref = malloc(sizeof(float) * nsamp), *cur = malloc(sizeof(float) * nsamp);
     double ref_rms = 0.0, act;
-    render_case(3u, 0u, ref, &act);
+    render_case(0u, 0u, ref, &act);                       /* the device's default: all advanced bytes zero (the flash table) */
+    printf("flash table (device default): active wheels %.1f\n", act);
     for (n = 0; n < nsamp; n++)
         ref_rms += (double)ref[n] * ref[n];
     ref_rms = sqrt(ref_rms / nsamp);
-    printf("reference: floor -96 dB (index 3), interpolation everywhere: RMS %.5f, active wheels %.1f\n", ref_rms, act);
+    printf("reference RMS %.5f\n", ref_rms);
     for (c = 0; c < sizeof FL / sizeof FL[0] + 1u; c++) {
         double d2 = 0.0, a = 0.0;
-        int idx = c < sizeof FL / sizeof FL[0] ? (int)FL[c] : 3;
+        int byte = c < sizeof FL / sizeof FL[0] ? (int)FL[c] : 0;
+        int idx = (byte + 3) % 52;
         int faint = c == sizeof FL / sizeof FL[0];
-        render_case((uint32_t)idx, (uint32_t)faint, cur, &a);
+        render_case((uint32_t)byte, (uint32_t)faint, cur, &a);
         for (n = 0; n < nsamp; n++) {
             double dd = (double)cur[n] - ref[n];
             d2 += dd * dd;
@@ -85,8 +91,8 @@ int main(void)
             printf("plain sine, every wheel (no interpolation): active wheels %.1f, difference %.1f dB re the reference\n",
                    a, 20.0 * log10(sqrt(d2 / nsamp) / ref_rms + 1e-12));
         else
-            printf("floor %3d dB (index %2d): active wheels %.1f, difference %.1f dB re the reference\n",
-                   -2 * (51 - idx), idx, a, 20.0 * log10(sqrt(d2 / nsamp) / ref_rms + 1e-12));
+            printf("floor %3d dB (byte %2d, index %2d): active wheels %.1f, difference %.1f dB re the reference\n",
+                   -2 * (51 - idx), byte, idx, a, 20.0 * log10(sqrt(d2 / nsamp) / ref_rms + 1e-12));
     }
     free(ref);
     free(cur);
