@@ -1,7 +1,8 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Guilherme Ruppert (OrganVave-1) */
-/* BENCHMARK (0.11.0, GLOBAL > BENCHMARK): the runner. Nine kernels (kernel 8: the organ played, 25 keys changing each block,
- * the crosstalk on and the scanner on the upper manual; the patch is saved and restored), each the work of one second of audio: the wheels,
+/* BENCHMARK (0.11.0, GLOBAL > BENCHMARK): the runner. Ten kernels (kernel 8: the organ played, 25 keys changing each block,
+ * the crosstalk on and the scanner on the upper manual; the patch is saved and restored; kernel 9: the rotary as
+ * CLASSIC 5, the same input as kernel 7), each the work of one second of audio: the wheels,
  * the FIR and the DRIVE in integers and in single precision, the organ itself (float, ten keys held), and the rotary
  * (the Leslie's float engine, 400 / 340 rpm, no integer partner: 0.11.0 WIP). While it runs
  * the audio is muted (audio.c: the ISR writes silence and keeps its own time apart, bench_isr_ticks), the watchdog is fed
@@ -10,7 +11,7 @@
 #include "bench_kernels.h"
 #include "bench_state.h"                        /* bench_mute, bench_isr_ticks (also in audio.c: the guard keeps one) */
 
-#define BENCH_KERNELS 9u
+#define BENCH_KERNELS 10u
 #define BENCH_REPS 2u
 
 static uint32_t bench_ticks[BENCH_KERNELS];     /* ticks of one second of audio, the faster of the repeats */
@@ -84,9 +85,11 @@ static void bench_setup(uint32_t k)             /* not timed: the states the ker
         org_all_off();
         for (i = 0; i < 25u; i++)
             org_key(36u + i, 1u);
-    } else if (k == 7u) {
+    } else if (k == 7u || k == 9u) {
         rot_init(&brot);                        /* the cabinet at rest, the rotors at 400 / 340 rpm (649277 / 551885 per sample) */
         rot_target(&brot, 649277u, 551885u);
+        if (k == 9u)
+            rotary_model(&brot, 4u);            /* CLASSIC 5 */
     } else if (k == 4u || k == 5u) {
         dr_init(&bdr);
         dr_user(&bdr, k == 4u ? 2u : 8u, 40u, 4u);  /* TUBE DRIVE (2) or ORIGINAL (8), GAIN 4.0 */
@@ -139,6 +142,7 @@ static void bench_body(uint32_t k)              /* one second: BENCH_BLOCKS bloc
             bench_sink += (uint32_t)byi[BENCH_BLK - 1u];
             break;
         case 7u:
+        case 9u:
             rot_block(&brot, bx, byi, bout, BENCH_BLK);
             bench_sink += (uint32_t)bout[BENCH_BLK - 1u];
             break;
@@ -189,9 +193,9 @@ static uint32_t bench_one(uint32_t k)
 
 static void bench_show(uint32_t k)              /* "BENCHMARK 3/7", over the whole screen while it runs */
 {
-    char s[] = "BENCHMARK 0/9";
-    s[10] = (char)('1' + k);
-    s[12] = (char)('0' + BENCH_KERNELS);
+    char s[] = "BENCHMARK 00/10";
+    s[10] = (char)('0' + (k + 1u) / 10u);
+    s[11] = (char)('0' + (k + 1u) % 10u);
     lcd_fill(0, 0, 240, 240, T_BG);
     draw_text_box(0, 110, 240, &AF_M, s, T_THEME, 1);
 }
