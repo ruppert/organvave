@@ -22,6 +22,11 @@ OUT = os.path.join(HERE, "..", "firmware", "src", "eng_organ_presets.h")
 DUMP = os.path.join(HERE, "setbfree_ref", "tonegen_dump.txt")
 PSIZE = 96
 OP_UB, OP_LB, OP_PB, OP_TEMP, OP_XTALK = 0, 9, 18, 27, 28
+OP_XT_FLOOR = 68                                      # osc.contribution-floor (eng_organ.c): a byte offset from the default
+# 0.11.0 (owner): the crosstalk floor at -32 dB (ladder index 35) in the factory presets with the crosstalk on. The byte is an
+# offset from the default index 3 (-96 dB): (35 - 3) % 52 = 32. Measured with tests/xt_floor_probe.c: 81 -> 57 active wheels
+# (half of the crosstalk's extra wheels gone), -2.3 dB difference, -0.6 dB level. Off (the flash table) at -96 dB.
+XT_FLOOR_BYTE = 32
 OP_ROT, OP_ROT_MODEL, OP_ROT_SPEED, OP_ROT_HORN, OP_ROT_MIC, OP_ROT_BAL = 34, 35, 36, 37, 38, 39
 OP_DRV, OP_DRV_GAIN = 40, 41
 OP_DRV_TYPE, OP_DRV_TONE, OP_DRV_OUT = 48, 49, 50     # 0.9.2: the type, the tone and the output (9 steps, "zero is the default")
@@ -115,6 +120,8 @@ def main():
         p[OP_PB:OP_PB + 9] = bars(pe)
         p[OP_TEMP] = TEMPS[tun]
         p[OP_XTALK] = 1 if xt else 0
+        if xt:
+            p[OP_XT_FLOOR] = XT_FLOOR_BYTE
         effects(p, fx)
         db = 20 * math.log10(ref / chord_rms(contrib, bars(up), xt))
         lv = max(1, min(127, 112 + int(round(2 * db)) + PEAK_TRIM.get(name, 0)))
