@@ -626,9 +626,9 @@ int main(int argc, char **argv)
             bad += check("  .. KNOB 2 steps through the six types (0.9.41): TUBE DRIVE, DISTORTION, SOFT TUBE, MID DRIVE, HARD CLIP, TIGHT TUBE", ok);
         }
         turn(EN_K2, 9);
-        bad += check("  .. the top is TIGHT TUBE (7)", org_patch[OP_DRV_TYPE] == 7);
+        bad += check("  .. the top is ORIGINAL (8, 0.11.0)", org_patch[OP_DRV_TYPE] == 8);
         turn(EN_K2, -4);
-        bad += check("  .. and four down, DISTORTION (3)", org_patch[OP_DRV_TYPE] == 3);
+        bad += check("  .. and four down, SOFT TUBE (4)", org_patch[OP_DRV_TYPE] == 4);
         {   /* the GAIN row's meter: nine cells as the other rows (0.9.31; it was 101, off the screen) */
             oa_val_t gv;
             int ok = 1;

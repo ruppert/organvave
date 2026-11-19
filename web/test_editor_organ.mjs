@@ -161,6 +161,11 @@ ok(byId("dtype").value === "3" && Number(byId("dtreb").value) === 2 && Number(by
   P.patch = old; P.showPatch();
   ok(Number(byId("dtreb").value) === 5 && P.patch[P.OP_DRV_TONE] === 0 && P.patch[P.OP_DRV_TREB] === 5, "an old patch's TONE (brightest) shows as TREBLE +5, TONE written 0");
 }
+{ // 0.11.0: ORIGINAL is byte 8 of the drive type; the page shows it (it is not Tube Drive) and the list has it
+  const orig = P.patch.slice(); orig[P.OP_DRV_TYPE] = 8;
+  P.patch = orig; P.showPatch();
+  ok(byId("dtype").value === "8", "drive type 8 (ORIGINAL) shows as ORIGINAL in the page");
+}
 
 
 // ---- 3d: ADVANCED EDIT (0.9.4): the bytes 57..83 go to the instrument (the second frame carries bytes 48..83; 0.9.5 adds the split, 82 and 83), and read back

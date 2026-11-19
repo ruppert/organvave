@@ -783,7 +783,7 @@ static uint32_t org_pmax(uint32_t i)
     if (i == OP_ROT_BAL || i == OP_DRV_FAT || (i > OP_DRV_TONE && i <= OP_ROT_DRAMP))
         return 8u;
     if (i == OP_DRV_TYPE)
-        return 7u;                      /* (0.9.41: six types, the bytes 2 .. 7; 3 before) */
+        return 8u;                      /* (0.11.0: seven types, the bytes 2 .. 8, ORIGINAL last; 0.9.41: 2 .. 7) */
     if (i == OP_DRV_GAIN)
         return 100u;
     if (i == OP_EQ)
