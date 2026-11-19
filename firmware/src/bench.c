@@ -1,8 +1,9 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Guilherme Ruppert (OrganVave-1) */
-/* BENCHMARK (0.11.0, GLOBAL > BENCHMARK): the runner. Twelve kernels (kernel 8: the organ played, 25 keys changing each block,
+/* BENCHMARK (0.11.0, GLOBAL > BENCHMARK): the runner. Thirteen kernels (kernel 8: the organ played, 25 keys changing each block,
  * the crosstalk on and the scanner on the upper manual; the patch is saved and restored; kernel 9: the rotary as
- * CLASSIC 5, the same input as kernel 7; kernels 10 and 11: kernel 8 with the crosstalk only, and with the scanner only), each the work of one second of audio: the wheels,
+ * CLASSIC 5, the same input as kernel 7; kernels 10 and 11: kernel 8 with the crosstalk only, and with the scanner only;
+ * kernel 12: kernel 8 with neither, the base for the three), each the work of one second of audio: the wheels,
  * the FIR and the DRIVE in integers and in single precision, the organ itself (float, ten keys held), and the rotary
  * (the Leslie's float engine, 400 / 340 rpm, no integer partner: 0.11.0 WIP). While it runs
  * the audio is muted (audio.c: the ISR writes silence and keeps its own time apart, bench_isr_ticks), the watchdog is fed
@@ -11,7 +12,7 @@
 #include "bench_kernels.h"
 #include "bench_state.h"                        /* bench_mute, bench_isr_ticks (also in audio.c: the guard keeps one) */
 
-#define BENCH_KERNELS 12u
+#define BENCH_KERNELS 13u
 #define BENCH_REPS 2u
 
 static uint32_t bench_ticks[BENCH_KERNELS];     /* ticks of one second of audio, the faster of the repeats */
@@ -73,11 +74,11 @@ static void bench_setup(uint32_t k)             /* not timed: the states the ker
         org_all_off();
         for (i = 0; i < 10u; i++)
             org_key(BENCH_KEYS[i], 1u);
-    } else if (k == 8u || k == 10u || k == 11u) {
+    } else if (k == 8u || k == 10u || k == 11u || k == 12u) {
         uint32_t i;
         memcpy(bsave, org_patch, sizeof bsave);
-        org_patch[OP_XTALK] = (uint8_t)(k != 11u);   /* kernel 11: the scanner only */
-        org_patch[OP_VIB] = (uint8_t)(k != 10u);     /* the scanner: VIB 1 (kernel 10: the crosstalk only) */
+        org_patch[OP_XTALK] = (uint8_t)(k != 11u && k != 12u);   /* kernel 11: the scanner only; 12: neither */
+        org_patch[OP_VIB] = (uint8_t)(k != 10u && k != 12u);     /* the scanner: VIB 1 (kernel 10: the crosstalk only) */
         org_patch[OP_VIB_ROUTE] = 1;
         org_patch[OP_VIB_UP] = 1;               /* the upper manual through it, the lower dry */
         org_patch[OP_VIB_LO] = 0;
@@ -108,7 +109,7 @@ static void bench_teardown(uint32_t k)
 {
     if (k == 6u)
         org_all_off();
-    else if (k == 8u || k == 10u || k == 11u) {
+    else if (k == 8u || k == 10u || k == 11u || k == 12u) {
         org_all_off();
         memcpy(org_patch, bsave, sizeof bsave);
         org_adv_poll();
@@ -149,6 +150,7 @@ static void bench_body(uint32_t k)              /* one second: BENCH_BLOCKS bloc
         case 8u:                                /* played: one key up and one down each block, as the host probe */
         case 10u:
         case 11u:
+        case 12u:
             {
                 uint32_t i;
                 org_key(36u + b % 25u, 0u);
@@ -195,7 +197,7 @@ static uint32_t bench_one(uint32_t k)
 
 static void bench_show(uint32_t k)              /* "BENCHMARK 3/7", over the whole screen while it runs */
 {
-    char s[] = "BENCHMARK 00/12";
+    char s[] = "BENCHMARK 00/13";
     s[10] = (char)('0' + (k + 1u) / 10u);
     s[11] = (char)('0' + (k + 1u) % 10u);
     lcd_fill(0, 0, 240, 240, T_BG);
