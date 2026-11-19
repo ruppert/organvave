@@ -64,8 +64,34 @@ python3 tools/fm1pkg_make.py "$OUT/old_app.bin" build/loader/ota.bin "$OUT/old.f
 $CC -o "$OUT/ldr_test" tests/ldr_test.c
 run "update loader: other app -> this build" "$OUT/ldr_test" "$OUT/old.fwsc" build/felucca.fwsc
 
+# SMK-37 Pro (BOARD_SMK37, the port of genkigenki/fm1-to-smk37): the flash map, the store's owner tag, the OTA staging and
+# the loader windows on SMK-layout packages (made here from the FM-1 binaries: only the layout and the protocol are under test)
+$CC -DBOARD_SMK37=1 -Ifirmware/hal -o "$OUT/smk_flash_test" tests/smk_flash_test.c
+run "SMK-37 Pro flash map: allow-lists never reach the head, BTIF/USRTRIM, USR, key_mac; store layout" "$OUT/smk_flash_test"
+$CC -DBOARD_SMK37=1 -Ifirmware/hal -o "$OUT/smk_owner_test" tests/smk_owner_test.c
+run "SMK-37 Pro store owner tag (ORGVAVE): another firmware's store cleared, ours kept, nothing else written" "$OUT/smk_owner_test"
+python3 tools/fm1pkg_make.py --board smk37 build/felucca.bin build/loader/ota.bin "$OUT/smk_new.fwsc" >/dev/null
+python3 tools/fm1pkg_make.py --board smk37 "$OUT/old_app.bin" build/loader/ota.bin "$OUT/smk_old.fwsc" >/dev/null
+run "SMK-37 Pro package layout (fm1pkg_make --board smk37): PRCT 0x9D000, stock region table" python3 tests/smk_pkg_test.py "$OUT/smk_new.fwsc"
+$CC -DBOARD_SMK37=1 -DOWN_PKG=1 -o "$OUT/ota_test_smk" tests/ota_test.c
+run "M-UPGRADE entry, SMK-37 Pro build (staging 0xBB000, parm ota-SMK-37 Pro_016)" "$OUT/ota_test_smk" "$OUT/smk_new.fwsc"
+for m in 1 2; do                         # the MODEL=elite / mke builds of ota.c
+    $CC -DBOARD_SMK37=1 -DT_MODEL=$m -o "$OUT/ota_test_smk_m$m" tests/ota_test.c
+    run "M-UPGRADE entry, SMK model $m build (MODEL=elite / mke: its own parm identity)" "$OUT/ota_test_smk_m$m" "$OUT/smk_new.fwsc"
+done
+for m in pro elite mke; do               # the packages build.sh made (BOARD=smk37 MODEL=...), when present
+    f=build/organvave-1-smk37.fwsc; id="SMK-37 Pro_800"
+    [ $m = elite ] && f=build/organvave-1-smk37-elite.fwsc && id="SMK-37 Elite_800"
+    [ $m = mke ] && f=build/organvave-1-smk37-mke.fwsc && id="MKE-P37_800"
+    [ -f $f ] && run "SMK package $f: identity $id, stock region table" python3 tests/smk_pkg_test.py $f "$id"
+done
+$CC -DBOARD_SMK37=1 -o "$OUT/ldr_test_smk" tests/ldr_test.c
+run "update loader, SMK-37 Pro: app area 0x4000-0x9CFFF, protected ranges untouched" "$OUT/ldr_test_smk" "$OUT/smk_old.fwsc" "$OUT/smk_new.fwsc"
+
 $HC -o "$OUT/organ_app_test" tests/organ_app_test.c -lm
 run "the organ's app: HOME and DRAWBARS (the knobs, SELECT, a knob on HOME), PRESETS over the factory and the user presets, SAVE, GLO, octave, keys and MIDI to the organ" "$OUT/organ_app_test" "$OUT/oa"
+$HC -DBOARD_SMK37=1 -Ifirmware/hal -o "$OUT/smk_organ_test" tests/smk_organ_test.c -lm
+run "SMK-37 port: the organ's mapping (smk37-port.yaml): the outer keys, the pads (drawbar sets, switches, their lights), the faders (banks, soft takeover), the mod wheel, the pedal, < >, the diagnostics page, the knobs" "$OUT/smk_organ_test"
 $HC -O2 -o "$OUT/organ_test" tests/organ_test.c -lm
 run "the organ's tone generator against setBfree: the temperaments' wheels, the footages, the drawbar law, nine cases' levels and attacks (clicks, crosstalk, key compression, swell), bounds, silence" "$OUT/organ_test"
 $HC -O2 -o "$OUT/organ_adv_test" tests/organ_adv_test.c -lm
@@ -151,6 +177,12 @@ if command -v node >/dev/null 2>&1; then
     run "organ patch editor against the firmware's editor: the INFO tag, ORG_GET / ORG_PUT, a refusal" node web/test_editor_organ.mjs "$OUT/editor_bridge"
     python3 web/make_site.py build/felucca.fwsc "$OUT/site" "$(sed -n 's/^#define ORGANVAVE_VERSION "v\(.*\)"/\1/p' firmware/src/core.h)" >/dev/null
     run "site: the installer page (markers, scripts, the embedded package)" node web/test_site.mjs "$OUT/site/index.html"
+    for m in "SMK-37 Pro" "SMK-37 Elite" "MKE-P37"; do   # the SMK-37 page's three packages (the layout and the identity under test)
+        python3 tools/fm1pkg_make.py --board smk37 --product "${m}_800" build/felucca.bin build/loader/ota.bin "$OUT/smk_site_$(echo "$m" | tr -d ' ').fwsc" >/dev/null
+    done
+    python3 web/make_smk_site.py "$OUT/site" "$(sed -n 's/^#define ORGANVAVE_VERSION "v\(.*\)"/\1/p' firmware/src/core.h)" \
+        "$OUT/smk_site_SMK-37Pro.fwsc" "$OUT/smk_site_SMK-37Elite.fwsc" "$OUT/smk_site_MKE-P37.fwsc" >/dev/null
+    run "site: the SMK-37 installer page (smk.html: the three packages, the backup box, each model its own package, an FM-1 refused)" node web/test_smk_site.mjs "$OUT/site/smk.html"
 else
     echo "== skip web tests (no node)"
 fi

@@ -23,6 +23,12 @@
 #define C_PANEL  RGB565(0x14, 0x11, 0x10)
 #define C_PANEL2 RGB565(0x22, 0x1d, 0x1a)
 #define C_SLOT   RGB565(0x08, 0x07, 0x06)
+#if BOARD_SMK37
+static uint32_t smk_buttons(uint32_t pressed);           /* (the SMK-37 port: smk_organ.c, after this file) */
+static void smk_draw(void);
+static uint32_t smk_sig(void);
+static void smk_btn_leds(void);
+#endif
 #define C_CREAM  RGB565(0xef, 0xe6, 0xd2)
 #define C_DIM    RGB565(0x8c, 0x82, 0x72)
 #define C_ORANGE RGB565(0xff, 0x6a, 0x13)
@@ -1844,6 +1850,9 @@ static void oa_scene(void)
         cv_rect(120 - w / 2, 104, w, 32, C_POP);
         ctext(120, 111, &AF_M, oa_fl, C_AMBER, C_POP);
     }
+#if BOARD_SMK37
+    smk_draw();                                           /* the SMK's diagnostics page (smk_organ.c) */
+#endif
     if (cpu_pop) {                                        /* overload (audio.c): the popup, on top of every page */
         cv_rect(12, 92, 216, 40, C_ORANGE);
         cv_rect(14, 94, 212, 36, C_POP);
@@ -1871,6 +1880,9 @@ static uint32_t oa_signature(void)
          (uint32_t)song.g[G_DFDBK] << 21) * 16777619u;
     h = (h ^ (uint32_t)song.g[G_DCOLOR] ^ (uint32_t)song.g[G_DMIX] << 7 ^ (uint32_t)(cpu_pop != 0u) << 15 ^ (uint32_t)oa_dbp << 16 ^ (uint32_t)oa_dbp_sv << 18 ^ (uint32_t)oa_dbp_slot << 20) * 16777619u;
     h = (h ^ (oa_fl_on() ? oa_fl_until : 0u)) * 16777619u;   /* a quick message: drawn, then gone */
+#if BOARD_SMK37
+    h = (h ^ smk_sig()) * 16777619u;                      /* the diagnostics page: every frame while it is open */
+#endif
     return h;
 }
 
@@ -2303,6 +2315,9 @@ static void oa_input(void)
         apply_preset_to(TSEL, 0);
     }
     song.sel = 0;
+#if BOARD_SMK37
+    pressed = smk_buttons(pressed);                       /* the SMK's KNOB BANK, FADER BANK, < and > (smk_organ.c) */
+#endif
     oa_buttons(pressed);
     if (oa_dbp && (k = org_dbp_key) != 0u) {              /* DRAWBAR PRESET MODE: a key (key + 1) */
         org_dbp_key = 0;
@@ -2487,6 +2502,30 @@ static int oa_dbp_on(uint32_t k)
     }
 }
 
+#if BOARD_SMK37
+/* the SMK-37 (smk_organ.c draws the pads): its button LEDs are on / off, one per button (smk_input.h fm1_led) and
+ * show what the FM-1's lit buttons show; it has no key LEDs. KNOB BANK and FADER BANK: smk_organ.c */
+static void oa_leds(void)
+{
+    uint32_t k;
+    if (idle_leds())
+        return;
+    for (k = 0; k < SMK_NLED; k++)
+        fm1_led[k] = 0;
+    fm1_led_key(panel.btn[B_HOME], oa_page == 0u);
+    fm1_led_key(panel.btn[B_EDIT], oa_page == 1u || oa_page == 8u);
+    fm1_led_key(panel.btn[B_FX], oa_page >= 2u && oa_page <= 7u);
+    fm1_led_key(panel.btn[B_SCL], org_patch[OP_ROT] != 0 && org_patch[OP_ROT_SPEED] != 0);
+    fm1_led_key(panel.btn[B_ENV], org_patch[OP_PERC] != 0);
+    fm1_led_key(panel.btn[B_LFO], org_patch[OP_VIB] != 0u && vib_up());   /* NOTE REPEAT (LFO): the UP tab (0.9.46) */
+    fm1_led_key(panel.btn[B_SAVE], oa_sv);
+    fm1_led_key(panel.btn[B_GLO], oa_gl != 0u);
+    fm1_led_key(panel.btn[B_ARP], oa_dbp != 0u);
+    fm1_led_key(panel.btn[B_OCTDN], song.octave < 0);
+    fm1_led_key(panel.btn[B_OCTUP], song.octave > 0);
+    smk_btn_leds();
+}
+#else
 static void oa_leds(void)
 {
     uint8_t nl[FM1_NCOL] = {0}, nd[FM1_NCOL] = {0}, nb[FM1_NCOL] = {0}, nm[FM1_NCOL] = {0};
@@ -2529,6 +2568,7 @@ static void oa_leds(void)
         fm1_led[k] = nl[k];
     }
 }
+#endif
 
 /* power-on, after the autosave: the instrument is the organ (an autosave of another engine: the first preset) */
 static void oa_init(void)
