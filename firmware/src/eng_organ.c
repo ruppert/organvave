@@ -653,10 +653,10 @@ enum {
     OP_ROT_HORN = 37,           /* the horn's character: 0 normal, 1 sharp */
     OP_ROT_MIC = 38,            /* the mics' angle (the stereo width): 0 wide (180 degrees) .. 6 mono (0), 30 degrees a step */
     OP_ROT_BAL = 39,            /* horn level against the drum: 0..8, 4 even (1.5 dB a step, -6 .. +6 dB) */
-    OP_DRV = 40,                /* drive (the preamp): 0 off, 1 on */
+    OP_DRV = 40,                /* (0.11.1: no switch; unused, kept in the layout: GAIN 0 is the drive's bypass) */
     OP_DRV_GAIN = 41,           /* its gain in tenths: 0..100 (0.9.25; 0.9.24 was 0..10): 0 bypasses the drive, more saturates (the level is compensated) */
     OP_DRV_FAT = 42,            /* unused since 0.9.2 (the character went); stored 0..8 in older patches, ignored */
-    OP_EQ = 43,                 /* the equaliser (version 0.5.0; 0 in older patches): 0 off, 1 on */
+    OP_EQ = 43,                 /* (0.11.1: no switch; unused, kept in the layout: all three bands 0 dB is the bypass) */
     OP_EQ_LOW = 44,             /* LOW (120 Hz shelf), -12 .. +12 dB: 0 flat, 1..12 dB up, 13..24 dB down (s - 25) */
     OP_EQ_MID = 45,             /* MID (the peak), the same coding */
     OP_EQ_FREQ = 46,            /* the peak's frequency, 0..11: 0 900 Hz, then 1280 Hz .. 7.2 kHz, 7 is 160 Hz .. 11 is 640 Hz */

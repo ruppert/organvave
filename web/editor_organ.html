@@ -150,7 +150,6 @@
 
     <div class="set"><h3>Drive (0.3.0, types and tone 0.9.2)</h3></div>
     <div class="set row">
-      <label class="chk"><input type="checkbox" id="drv"> Drive on</label>
       <label>Type
         <select id="dtype"><option value="2">Tube Drive (warm)</option><option value="3">Distortion (JCM900 style)</option><option value="4">Soft Tube (gentle valve)</option><option value="5">Screamer (mid boost, no diodes)</option><option value="6">Hard Clip</option><option value="7">Tight Tube (12AX7 stage model, tight bass)</option><option value="8">Extreme (setBfree overdrive, float)</option></select>
       </label>
@@ -173,7 +172,6 @@
 
     <div class="set"><h3>Equaliser (0.5.0)</h3></div>
     <div class="set row">
-      <label class="chk"><input type="checkbox" id="eq"> EQ on</label>
       <label>Low (120 Hz shelf)
         <input type="range" id="eqlow" min="-12" max="12" step="1"> <output id="eqlowo"></output>
       </label>
@@ -452,7 +450,6 @@ function showPatch() {
   $("rhorn").value = String(patch[OP_ROT_HORN] ?? 0);
   $("rmic").value = String(patch[OP_ROT_MIC] ?? 0);
   $("rbal").value = patch[OP_ROT_BAL] ?? 0; $("rbalo").textContent = balText(patch[OP_ROT_BAL] ?? 0);
-  $("drv").checked = !!patch[OP_DRV];
   $("dgain").value = patch[OP_DRV_GAIN] ?? 0; $("dgaino").textContent = gainText(patch[OP_DRV_GAIN] ?? 0);
   { const t = patch[OP_DRV_TYPE] ?? 2; $("dtype").value = t >= 3 && t <= 8 ? String(t) : "2"; }   // 0.11.0: bytes 2 .. 8 (8 EXTREME); 0, 1 (removed types) and others play as Tube Drive
   toneMigrate(patch);
@@ -461,7 +458,6 @@ function showPatch() {
   for (const [id, op, base] of SPEEDS) $(id).value = c9(patch[op] ?? 0);
   for (const [id, op] of RAMPS) $(id).value = c9(patch[op] ?? 0);
   words();
-  $("eq").checked = !!patch[OP_EQ];
   for (const [id, op] of [["eqlow", OP_EQ_LOW], ["eqmid", OP_EQ_MID], ["eqhigh", OP_EQ_HIGH]]) {
     const db = eqDb(patch[op] ?? 0);
     $(id).value = db; $(id + "o").textContent = dbText(db);
@@ -502,7 +498,6 @@ function fromControls() {
   patch[OP_ROT_HORN] = Number($("rhorn").value);
   patch[OP_ROT_MIC] = Number($("rmic").value);
   patch[OP_ROT_BAL] = Number($("rbal").value);
-  patch[OP_DRV] = $("drv").checked ? 1 : 0;
   patch[OP_DRV_GAIN] = Number($("dgain").value);
   patch[OP_DRV_TYPE] = Number($("dtype").value);
   patch[OP_DRV_TONE] = 0;
@@ -510,7 +505,6 @@ function fromControls() {
   patch[OP_DRV_OUT] = b9(Number($("dout").value));
   for (const [id, op] of SPEEDS.concat(RAMPS)) patch[op] = b9(Number($(id).value));
   words();
-  patch[OP_EQ] = $("eq").checked ? 1 : 0;
   patch[OP_EQ_LOW] = eqByte(Number($("eqlow").value));
   patch[OP_EQ_MID] = eqByte(Number($("eqmid").value));
   patch[OP_EQ_HIGH] = eqByte(Number($("eqhigh").value));
@@ -549,7 +543,7 @@ $("send").onclick = sendPatch;
 $("source").onchange = readPatch;
 $("temp").onchange = () => { fromControls(); };
 $("xtalk").onchange = () => { fromControls(); };
-for (const id of ["perc", "psoft", "pfast", "psel", "vib", "vibUp", "vibLo", "rot", "rmodel", "rspeed", "rhorn", "rmic", "drv", "dtype", "eq", "eqfreq"]) $(id).onchange = () => { fromControls(); };
+for (const id of ["perc", "psoft", "pfast", "psel", "vib", "vibUp", "vibLo", "rot", "rmodel", "rspeed", "rhorn", "rmic", "dtype", "eqfreq"]) $(id).onchange = () => { fromControls(); };
 for (const id of ["rbal", "dgain", "dtreb", "dmid", "dbass", "dout", "rhs", "rhf", "rds", "rdf", "rhr", "rdr", "eqlow", "eqmid", "eqhigh"]) $(id).oninput = () => { fromControls(); };
 if (!navigator.requestMIDIAccess) say("This browser has no Web MIDI. Use Chrome or Edge.", "bad");
 </script>

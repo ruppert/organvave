@@ -63,7 +63,7 @@ static void boot(void)
     memset(P, 0, sizeof P);
     P[OP_UB + 2] = 8;                    /* 8' */
     P[OP_UB + 3] = 6;                    /* 4' */
-    P[OP_DRV_GAIN] = 60;
+    P[OP_DRV_GAIN] = 0;                  /* (0.11.1: GAIN 0 is the bypass: the drive is off unless a test sets it) */
     patch_set(P);
 }
 static double db(double x) { return 20 * log10(x > 1e-9 ? x : 1e-9); }
@@ -145,7 +145,7 @@ int main(void)
     chord_on();
     blocks(44100);
     d0 = maxjump(oL, 22050, 44100);
-    P[OP_DRV] = 1;
+    P[OP_DRV_GAIN] = 60;
     patch_set(P);
     blocks(44100 / 2);
     {
@@ -159,7 +159,7 @@ int main(void)
     boot();
     memset(P, 0, sizeof P);
     P[OP_UB + 2] = 8;
-    P[OP_DRV_GAIN] = 60;
+    P[OP_DRV_GAIN] = 0;
     P[OP_DRV_TYPE] = 3;
     patch_set(P);
     input_on(&trk[0], 48, 100);          /* C3, 130.81 Hz at the equal temperament; the 60 Hz gear is near it */
@@ -169,7 +169,7 @@ int main(void)
         uint32_t a = 44100;
         a1 = tone(oL, a, 44100, f0);
         a3 = tone(oL, a, 44100, 3 * f0);
-        P[OP_DRV] = 1;
+        P[OP_DRV_GAIN] = 60;
         patch_set(P);
         blocks(44100 * 2);
         b1 = tone(oL, pos - 44100, 44100, f0);
@@ -187,7 +187,7 @@ int main(void)
         for (c = 0; c < 2; c++) {
             int32_t pk = 0;
             boot();
-            P[OP_DRV] = C[c].drv;
+            P[OP_DRV_GAIN] = C[c].drv ? 60 : 0;
             patch_set(P);
             blocks(44100);
             for (i = 22050; i < pos; i++) {
@@ -207,7 +207,7 @@ int main(void)
         for (c = 0; c < 2; c++) {
             int32_t pk = 0;
             boot();
-            P[OP_DRV] = C[c].drv;
+            P[OP_DRV_GAIN] = C[c].drv ? 60 : 0;
             patch_set(P);
             chord_on();
             blocks(44100);
@@ -222,7 +222,7 @@ int main(void)
             check("  .. the output is quiet again (peak at most 1)", pk <= 1);
         }
         boot();
-        P[OP_DRV] = 1;
+        P[OP_DRV_GAIN] = 60;
         patch_set(P);
         song.master_q12 = 0;
         chord_on();
@@ -244,9 +244,9 @@ int main(void)
         double lo0, lo1, hi0, hi1;
         boot();
         memset(P, 0, sizeof P);
-        P[OP_EQ] = 5; P[OP_EQ_LOW] = 30; P[OP_EQ_MID] = 99; P[OP_EQ_FREQ] = 99; P[OP_EQ_HIGH] = 25;
+        P[OP_EQ_LOW] = 30; P[OP_EQ_MID] = 99; P[OP_EQ_FREQ] = 99; P[OP_EQ_HIGH] = 25;
         org_set_patch(P);
-        check("the EQ bytes are clamped (ON 1, gains 24, FREQ 11)", org_patch[OP_EQ] == 1 && org_patch[OP_EQ_LOW] == 24 &&
+        check("the EQ bytes are clamped (gains 24, FREQ 11)", org_patch[OP_EQ_LOW] == 24 &&
               org_patch[OP_EQ_MID] == 24 && org_patch[OP_EQ_FREQ] == 11 && org_patch[OP_EQ_HIGH] == 24);
         /* flat: on with every byte at 0 is the dry mix within 3 */
         boot();
@@ -265,7 +265,6 @@ int main(void)
             input_off(&trk[0], 48); input_off(&trk[0], 55); input_off(&trk[0], 60);
             blocks(44100);
             boot();
-            P[OP_EQ] = 1;
             patch_set(P);
             chord_on();
             blocks(44100);
@@ -287,7 +286,7 @@ int main(void)
         input_on(&trk[0], 36, 100);
         blocks(44100);
         lo0 = tone(oL, 22050, 22050, 65.41);
-        P[OP_EQ] = 1; P[OP_EQ_LOW] = 12;
+        P[OP_EQ_LOW] = 12;
         patch_set(P);
         blocks(44100 * 2);
         lo1 = tone(oL, pos - 22050, 22050, 65.41);
@@ -301,7 +300,7 @@ int main(void)
         input_on(&trk[0], 84, 100);
         blocks(44100);
         hi0 = tone(oL, 22050, 22050, 4186.0);
-        P[OP_EQ] = 1; P[OP_EQ_HIGH] = 13;
+        P[OP_EQ_HIGH] = 13;
         patch_set(P);
         blocks(44100 * 2);
         hi1 = tone(oL, pos - 22050, 22050, 4186.0);
@@ -317,7 +316,7 @@ int main(void)
         {
             int32_t d0 = maxjump(oL, 22050, pos), dj;
             a = pos;
-            P[OP_EQ] = 1; P[OP_EQ_LOW] = 12; P[OP_EQ_MID] = 12; P[OP_EQ_HIGH] = 12;
+            P[OP_EQ_LOW] = 12; P[OP_EQ_MID] = 12; P[OP_EQ_HIGH] = 12;
             patch_set(P);
             blocks(22050);
             dj = maxjump(oL, a, pos);
@@ -327,7 +326,7 @@ int main(void)
         chord_off();
         /* silence, and MASTER 0 */
         boot();
-        P[OP_EQ] = 1; P[OP_EQ_LOW] = 12; P[OP_EQ_MID] = 12; P[OP_EQ_HIGH] = 12; P[OP_DRV] = 1;
+        P[OP_EQ_LOW] = 12; P[OP_EQ_MID] = 12; P[OP_EQ_HIGH] = 12; P[OP_DRV_GAIN] = 60;
         patch_set(P);
         chord_on();
         blocks(22050);
@@ -344,7 +343,7 @@ int main(void)
             check("the EQ on with the drive, long after the keys: silent (peak at most 1)", pk <= 1);
         }
         boot();
-        P[OP_EQ] = 1; P[OP_EQ_LOW] = 12; P[OP_EQ_MID] = 12; P[OP_EQ_HIGH] = 12;
+        P[OP_EQ_LOW] = 12; P[OP_EQ_MID] = 12; P[OP_EQ_HIGH] = 12;
         patch_set(P);
         song.master_q12 = 0;
         chord_on();
@@ -364,7 +363,7 @@ int main(void)
     {
         boot();
         memset(P, 0, sizeof P);
-        P[OP_UB + 2] = 8; P[OP_DRV] = 1; P[OP_DRV_GAIN] = 60;
+        P[OP_UB + 2] = 8; P[OP_DRV_GAIN] = 60; P[OP_DRV_GAIN] = 60;
         patch_set(P);
         trk[0].p[P_DLY] = 60;
         org_key(10, 1); org_key(20, 1); org_key(30, 1);
@@ -401,8 +400,8 @@ int main(void)
         memset(P, 0, sizeof P);
         for (i = 0; i < 27u; i++)
             P[i] = 8;                                    /* every drawbar of every manual at 8 */
-        P[OP_PERC] = 1; P[OP_VIB] = 5; P[OP_DRV] = 1; P[OP_DRV_GAIN] = 100;
-        P[OP_EQ] = 1; P[OP_EQ_LOW] = 12; P[OP_EQ_MID] = 12; P[OP_EQ_HIGH] = 12;
+        P[OP_PERC] = 1; P[OP_VIB] = 5; P[OP_DRV_GAIN] = 60; P[OP_DRV_GAIN] = 100;
+        P[OP_EQ_LOW] = 12; P[OP_EQ_MID] = 12; P[OP_EQ_HIGH] = 12;
         patch_set(P);
         trk[0].p[P_REV] = 127; trk[0].p[P_DLY] = 127;
         for (k = 0; k < ORG_NKEY; k++) {                 /* (the key queue holds 64 messages a fragment: a block between each 32) */
@@ -440,7 +439,7 @@ int main(void)
         double f0 = 130.81, d1, d2, d3, t1, t2, t3, rd, rt, rt0, rt1;
         boot();
         memset(P, 0, sizeof P);
-        P[OP_UB + 2] = 8; P[OP_DRV] = 1; P[OP_DRV_GAIN] = 60; P[OP_DRV_TYPE] = 3;   /* DISTORTION (0.9.30: the byte 3; 0 is TUBE DRIVE) */
+        P[OP_UB + 2] = 8; P[OP_DRV_GAIN] = 60; P[OP_DRV_GAIN] = 60; P[OP_DRV_TYPE] = 3;   /* DISTORTION (0.9.30: the byte 3; 0 is TUBE DRIVE) */
         patch_set(P);
         input_on(&trk[0], 48, 100);
         blocks(44100 * 2);

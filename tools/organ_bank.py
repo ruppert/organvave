@@ -16,7 +16,7 @@ From 0.3.0 a preset may carry a last field, a dict of effects (absent: both off)
   "drv": (gain_db, type, tone, out_db)   gain_db re setBfree's default (2 dB steps, -12 .. +12); type "distortion" (setBfree's
          preamp) | "tube" (a valve's soft saturation); tone -4 (dark) .. +4 (bright), 0 flat; out_db -8 .. +8 in 2 dB steps
 The rotary or the drive switched on in the panel starts from the neutral values the generator writes for a preset without it
-(width 180, horn level even, gain 0 dB). The rotary costs CPU: CLASSIC is the heavy model; CLASSIC 2 (the same sound family, the horn's geometry every 8 samples)
+(width 180, horn level even, drive GAIN 0: the bypass). The rotary costs CPU: CLASSIC is the heavy model; CLASSIC 2 (the same sound family, the horn's geometry every 8 samples)
 is the cheaper one, so most presets use CLASSIC 2 until the instrument's CPU meter says otherwise.
 """
 

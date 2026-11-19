@@ -113,6 +113,8 @@ The packed integer table still decides which entries exist and their wheel and b
 The budget lines of `org_msg` and `org_fragment` are counted in full: they run per key and per 128-sample block, not per
 sample. The image grows about 46 KB in flash (the two float level tables); the RAM pool is 343384 B of 368640 B.
 
+**0.11.1, no ON/OFF for the drive and the equaliser (owner).** The drive is on when its GAIN is above 0.0 (0.0 is the bypass); the equaliser is on when LOW, MID or HIGH is away from 0 dB. The bytes 40 and 43 are ignored (kept in the layout, `web/EDITOR_PROTOCOL.md`). The factory bank has GAIN 0 where the drive was off.
+
 **0.11.0, the drive's EXTREME type (byte 8, owner: setBfree's overdrive).** setBfree's `b_overdrive/overdrive.c` as a drive
 type, in single precision: the input gain x the input (3.5675 at GAIN 4.0, linear in the knob), the sag, the effective 9-tap
 interpolation FIR (setBfree's four polyphase rows summed per tap), setBfree's transfer curve with its feedback and one-poles,

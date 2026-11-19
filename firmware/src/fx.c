@@ -1110,9 +1110,9 @@ static void fx_organ_apply(void)
         dr_clear(&dr_st);               /* (another type starts from silence) */
     dr_user(&dr_st, org_patch[OP_DRV_TYPE], g, org_c9(org_patch[OP_DRV_OUT]));
     dr_tone(&dr_st, org_c11(org_patch[OP_DRV_TREB]), org_c11(org_patch[OP_DRV_MID]), org_c11(org_patch[OP_DRV_BASS]));   /* (0.9.44) */
-    dr_on = org_patch[OP_DRV] && g > 0u;
+    dr_on = g > 0u;                                 /* (0.11.1: no ON/OFF byte: GAIN 0 is the bypass) */
     eq_set(&eq_st, org_patch[OP_EQ_LOW], org_patch[OP_EQ_MID], org_patch[OP_EQ_FREQ], org_patch[OP_EQ_HIGH]);
-    eq_on = org_patch[OP_EQ];
+    eq_on = org_patch[OP_EQ_LOW] != 0u || org_patch[OP_EQ_MID] != 0u || org_patch[OP_EQ_HIGH] != 0u;   /* (0.11.1: all three flat, 0 dB, is the bypass) */
 }
 
 /* the effects come in and out over about 20 ms (FX_FADE a block, Q15) */

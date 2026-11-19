@@ -127,7 +127,7 @@ int main(int argc, char **argv)
         bad += check("  .. SELECT +1: the four knobs", oa_home_reg == 5);
         v0 = org_patch[OP_DRV_GAIN];
         turn(EN_K1, 1);
-        bad += check("  .. the knobs: K1 is DRIVE, and turns it on", org_patch[OP_DRV_GAIN] == v0 + 1 && org_patch[OP_DRV] == 1 && oa_page == 0);
+        bad += check("  .. the knobs: K1 is DRIVE, and turns its GAIN up (0.11.1: no switch)", org_patch[OP_DRV_GAIN] == v0 + 1 && oa_page == 0);
         turn(EN_K1 + 3, 1);
         bad += check("  .. EXPR (K4): clockwise at full stays at full (0 dB down)", org_patch[OP_EXPR] == 0);
         turn(EN_K1 + 3, -2);
@@ -604,16 +604,14 @@ int main(int argc, char **argv)
         press(B_FX);
         bad += check("FX: the DRIVE page", oa_page == 4);
         h_d = frame_hash();
+        org_set(OP_DRV_TYPE, 2u);
         turn(EN_K1, 1);
-        bad += check("DRIVE: KNOB 1 switches it on", org_patch[OP_DRV] == 1);
-        bad += check("  .. seven rows (0.9.44: TREBLE, MIDDLE, BASS in place of TONE)", OA_NR[4] == 7 && !strcmp(OA_LB[4][1], "TYPE") &&
-                     !strcmp(OA_LB[4][2], "GAIN") && !strcmp(OA_LB[4][3], "TREBLE") && !strcmp(OA_LB[4][4], "MIDDLE") &&
-                     !strcmp(OA_LB[4][5], "BASS") && !strcmp(OA_LB[4][6], "OUTPUT"));
-        turn(EN_K2, 1);
-        bad += check("  .. KNOB 2: from the patch's 0 (played as TUBE DRIVE) to DISTORTION (0.9.30: two types, bytes 2 and 3)", org_patch[OP_DRV_TYPE] == 3);
-        turn(EN_K2, -1);
-        bad += check("  .. and back to TUBE DRIVE (2)", org_patch[OP_DRV_TYPE] == 2);
-        turn(EN_K2, -1);
+        bad += check("DRIVE: KNOB 1 is the TYPE (0.11.1: no switch; the rows are TYPE, GAIN, TREBLE, MIDDLE, BASS, OUTPUT)", org_patch[OP_DRV_TYPE] == 3);
+        bad += check("  .. six rows (0.11.1: the switch is gone)", OA_NR[4] == 6 && !strcmp(OA_LB[4][0], "TYPE") && !strcmp(OA_LB[4][1], "GAIN") &&
+                     !strcmp(OA_LB[4][2], "TREBLE") && !strcmp(OA_LB[4][3], "MIDDLE") && !strcmp(OA_LB[4][4], "BASS") && !strcmp(OA_LB[4][5], "OUTPUT"));
+        turn(EN_K1, -1);
+        bad += check("  .. KNOB 1 back to TUBE DRIVE (2)", org_patch[OP_DRV_TYPE] == 2);
+        turn(EN_K1, -1);
         bad += check("  .. the bottom stays TUBE DRIVE", org_patch[OP_DRV_TYPE] == 2);
         {   /* 0.9.41: six types, the bytes 2 .. 7 in order, each with its name */
             static const char *const NM[6] = {"TUBE DRIVE", "DISTORTION", "SOFT TUBE", "SCREAMER", "HARD CLIP", "TIGHT TUBE"};
@@ -621,13 +619,13 @@ int main(int argc, char **argv)
             for (k = 0; k < 6; k++) {
                 if (org_patch[OP_DRV_TYPE] != 2 + k || strcmp(OA_DRV_NAME[dr_type_of(org_patch[OP_DRV_TYPE])], NM[k]))
                     ok = 0;
-                turn(EN_K2, 1);
+                turn(EN_K1, 1);
             }
-            bad += check("  .. KNOB 2 steps through the six types (0.9.41): TUBE DRIVE, DISTORTION, SOFT TUBE, SCREAMER, HARD CLIP, TIGHT TUBE", ok);
+            bad += check("  .. KNOB 1 steps through the six types (0.9.41): TUBE DRIVE, DISTORTION, SOFT TUBE, SCREAMER, HARD CLIP, TIGHT TUBE", ok);
         }
-        turn(EN_K2, 9);
+        turn(EN_K1, 9);
         bad += check("  .. the top is EXTREME (8, 0.11.0)", org_patch[OP_DRV_TYPE] == 8);
-        turn(EN_K2, -4);
+        turn(EN_K1, -4);
         bad += check("  .. and four down, SOFT TUBE (4)", org_patch[OP_DRV_TYPE] == 4);
         {   /* the GAIN row's meter: nine cells as the other rows (0.9.31; it was 101, off the screen) */
             oa_val_t gv;
@@ -635,50 +633,50 @@ int main(int argc, char **argv)
             static const uint8_t G[5] = {0, 1, 50, 99, 100}, L[5] = {0, 1, 5, 9, 9};
             for (i = 0; i < 5u; i++) {
                 org_set(OP_DRV_GAIN, G[i]);
-                oa_val(4, 2, &gv);
+                oa_val(4, 1, &gv);
                 ok &= gv.mn == 9 && gv.mv == (int8_t)L[i];
             }
             bad += check("  .. the GAIN meter has nine cells: 0.0 none, 0.1 one, 5.0 five, 9.9 and 10.0 all", ok);
         }
         org_set(OP_DRV_GAIN, 60);
-        turn(EN_K3, 1);
-        bad += check("  .. KNOB 3: the gain up a tenth (6.0 to 6.1)", org_patch[OP_DRV_GAIN] == 61);
+        turn(EN_K2, 1);
+        bad += check("  .. KNOB 2 is the GAIN: up a tenth (6.0 to 6.1)", org_patch[OP_DRV_GAIN] == 61);
         org_set(OP_DRV_GAIN, 3);
         for (i = 0; i < 5u; i++)
-            turn(EN_K3, -1);
+            turn(EN_K2, -1);
         bad += check("  .. and down to the bottom (0: the bypass)", org_patch[OP_DRV_GAIN] == 0);
-        turn(EN_K3, -1);
+        turn(EN_K2, -1);
         bad += check("  .. the bottom stays at 0", org_patch[OP_DRV_GAIN] == 0);
-        turn(EN_K4, 1);
-        bad += check("  .. KNOB 4: the TREBLE up a step (+1, byte 1)", org_patch[OP_DRV_TREB] == 1 && org_c11(org_patch[OP_DRV_TREB]) == 1);
+        turn(EN_K3, 1);
+        bad += check("  .. KNOB 3: the TREBLE up a step (+1, byte 1)", org_patch[OP_DRV_TREB] == 1 && org_c11(org_patch[OP_DRV_TREB]) == 1);
         {   /* TREBLE, MIDDLE, BASS: -5 .. +5, the ends hold, the value as "+3" / "-5" / "0", an 11-cell meter */
             oa_val_t tv;
             int ok = 1;
             for (i = 0; i < 9u; i++)
-                turn(EN_K4, 1);
+                turn(EN_K3, 1);
             ok &= org_c11(org_patch[OP_DRV_TREB]) == 5;
-            oa_val(4, 3, &tv);
+            oa_val(4, 2, &tv);
             ok &= !strcmp(tv.t, "+5") && tv.mn == 11 && tv.mv == 11;
             for (i = 0; i < 14u; i++)
-                turn(EN_K4, -1);
+                turn(EN_K3, -1);
             ok &= org_c11(org_patch[OP_DRV_TREB]) == -5 && org_patch[OP_DRV_TREB] == 6;
-            oa_val(4, 3, &tv);
+            oa_val(4, 2, &tv);
             ok &= !strcmp(tv.t, "-5") && tv.mv == 1;
             org_set(OP_DRV_TREB, 0);
-            oa_val(4, 3, &tv);
+            oa_val(4, 2, &tv);
             ok &= !strcmp(tv.t, "0") && tv.mv == 6;
             bad += check("  .. TREBLE -5 .. +5: the ends hold, shown \"+5\", \"-5\", \"0\", an 11-cell meter", ok);
         }
-        for (i = 0; i < 4u; i++)
+        for (i = 0; i < 3u; i++)
             turn(EN_SELECT, 1);
-        bad += check("  .. SELECT picks the fifth row, MIDDLE", oa_row[4] == 4);
+        bad += check("  .. SELECT picks the fourth row, MIDDLE", oa_row[4] == 3);
         turn(EN_ALGO, 2);
         bad += check("  .. ALGORITHM: MIDDLE up two (+2)", org_c11(org_patch[OP_DRV_MID]) == 2);
         turn(EN_SELECT, 1);
         turn(EN_ALGO, -3);
-        bad += check("  .. the sixth, BASS: down three (-3, byte 8)", org_c11(org_patch[OP_DRV_BASS]) == -3 && org_patch[OP_DRV_BASS] == 8);
+        bad += check("  .. the fifth, BASS: down three (-3, byte 8)", org_c11(org_patch[OP_DRV_BASS]) == -3 && org_patch[OP_DRV_BASS] == 8);
         turn(EN_SELECT, 1);
-        bad += check("  .. SELECT picks the seventh row, the output", oa_row[4] == 6);
+        bad += check("  .. SELECT picks the sixth row, the output", oa_row[4] == 5);
         turn(EN_ALGO, -2);
         bad += check("  .. ALGORITHM: the output down two steps (-4 dB, index 2)", org_c9(org_patch[OP_DRV_OUT]) == 2);
         bad += check("  .. a different picture", frame_hash() != h_d);
@@ -872,28 +870,26 @@ int main(int argc, char **argv)
         /* EQ (0.5.0): on, LOW, MID, HIGH in 1 dB steps (0 is flat), the MID's frequency on ALGORITHM */
         {
             uint32_t h_eq, i;
-            org_set(OP_EQ, 0); org_set(OP_EQ_LOW, 0); org_set(OP_EQ_MID, 0); org_set(OP_EQ_HIGH, 0); org_set(OP_EQ_FREQ, 0);
+            org_set(OP_EQ_LOW, 0); org_set(OP_EQ_MID, 0); org_set(OP_EQ_HIGH, 0); org_set(OP_EQ_FREQ, 0);
             oa_page = 6;
             press(B_FX);
             bad += check("DELAY: FX goes on to the EQ page", oa_page == 7);
             h_eq = frame_hash();
             turn(EN_K1, 1);
-            bad += check("EQ: KNOB 1 switches it on", org_patch[OP_EQ] == 1);
-            turn(EN_K2, 1);
-            bad += check("  .. KNOB 2: LOW up 1 dB (byte 1)", eq_db(org_patch[OP_EQ_LOW]) == 1 && org_patch[OP_EQ_LOW] == 1);
-            turn(EN_K2, -1); turn(EN_K2, -1);
+            bad += check("EQ: KNOB 1 is LOW, up 1 dB (byte 1; 0.11.1: no switch, all three flat is the bypass)", eq_db(org_patch[OP_EQ_LOW]) == 1 && org_patch[OP_EQ_LOW] == 1);
+            turn(EN_K1, -1); turn(EN_K1, -1);
             bad += check("  .. and below flat: -1 dB is byte 24", eq_db(org_patch[OP_EQ_LOW]) == -1 && org_patch[OP_EQ_LOW] == 24);
             for (i = 0; i < 20u; i++)
-                turn(EN_K2, -1);
+                turn(EN_K1, -1);
             bad += check("  .. stops at -12 dB", eq_db(org_patch[OP_EQ_LOW]) == -12);
             for (i = 0; i < 30u; i++)
-                turn(EN_K3, 1);
-            bad += check("  .. KNOB 3: MID stops at +12 dB", eq_db(org_patch[OP_EQ_MID]) == 12);
-            turn(EN_K4, 1);
-            bad += check("  .. KNOB 4: HIGH up 1 dB", eq_db(org_patch[OP_EQ_HIGH]) == 1);
-            for (i = 0; i < 4u; i++)
+                turn(EN_K2, 1);
+            bad += check("  .. KNOB 2: MID stops at +12 dB", eq_db(org_patch[OP_EQ_MID]) == 12);
+            turn(EN_K3, 1);
+            bad += check("  .. KNOB 3: HIGH up 1 dB", eq_db(org_patch[OP_EQ_HIGH]) == 1);
+            for (i = 0; i < 3u; i++)
                 turn(EN_SELECT, 1);
-            bad += check("  .. SELECT picks the fifth row, the MID's frequency", oa_row[7] == 4);
+            bad += check("  .. SELECT picks the fourth row, the MID's frequency", oa_row[7] == 3);
             turn(EN_ALGO, 1);
             bad += check("  .. ALGORITHM: the MID's frequency 900 -> 1280 Hz", EQ_FREQ_HZ[eq_fidx(org_patch[OP_EQ_FREQ])] == 1280);
             for (i = 0; i < 20u; i++)
@@ -903,21 +899,21 @@ int main(int argc, char **argv)
                 turn(EN_ALGO, -1);
             bad += check("  .. down to 160 Hz and stops", EQ_FREQ_HZ[eq_fidx(org_patch[OP_EQ_FREQ])] == 160);
             bad += check("  .. a different picture", frame_hash() != h_eq);
-            org_set(OP_EQ, 0); org_set(OP_EQ_LOW, 0); org_set(OP_EQ_MID, 0); org_set(OP_EQ_HIGH, 0); org_set(OP_EQ_FREQ, 0);
+            org_set(OP_EQ_LOW, 0); org_set(OP_EQ_MID, 0); org_set(OP_EQ_HIGH, 0); org_set(OP_EQ_FREQ, 0);
             oa_page = 4;
         }
         if (shot_dir) {
             static const char *const N[11] = {"home", "drawbars", "perc", "rotary", "drive", "reverb", "delay", "eq", "lower", "advanced", "home2"};
             uint32_t pg;
             org_set(OP_ROT, 1);
-            org_set(OP_DRV, 1);
+            org_set(OP_DRV_GAIN, 60);
             oa_msg_until = 0;
             oa_pp_until = 0;
             for (pg = 0; pg < 11u; pg++) {
                 char path[200];
                 FILE *f;
                 if (pg == 7u) {                               /* (the EQ's shot shows something set) */
-                    org_set(OP_EQ, 1); org_set(OP_EQ_LOW, eq_byte(5)); org_set(OP_EQ_MID, eq_byte(-3)); org_set(OP_EQ_FREQ, eq_fbyte(7));
+                    org_set(OP_EQ_LOW, eq_byte(5)); org_set(OP_EQ_MID, eq_byte(-3)); org_set(OP_EQ_FREQ, eq_fbyte(7));
                     org_set(OP_EQ_HIGH, eq_byte(2));
                 }
                 oa_page = (uint8_t)(pg == 10u ? 9u : pg == 9u ? 8u : pg == 8u ? 1u : pg);
@@ -1005,7 +1001,7 @@ int main(int argc, char **argv)
             uint32_t n;
             uint8_t perc0 = org_patch[OP_PERC], soft0 = org_patch[OP_PERC_SOFT], fast0 = org_patch[OP_PERC_FAST], sel0 = org_patch[OP_PERC_SEL];
             uint32_t up0 = vib_up(), lo0 = vib_lo(), rev0 = TSEL->p[P_REV];
-            org_set(OP_ROT, 1); org_set(OP_ROT_SPEED, 1); org_set(OP_DRV, 0);
+            org_set(OP_ROT, 1); org_set(OP_ROT_SPEED, 1); org_set(OP_DRV_GAIN, 0);
             for (n = 0; n < sizeof SW / sizeof SW[0]; n++) {
                 uint32_t r;
                 for (r = 0; r < 2u; r++) {
@@ -1026,8 +1022,8 @@ int main(int argc, char **argv)
                     case 26: good = org_patch[OP_PERC_SEL] == (r ? sel0 : !sel0) && !strcmp(oa_fl, org_patch[OP_PERC_SEL] ? "Percussion 3rd" : "Percussion 2nd"); break;
                     case 25: good = (TSEL->p[P_REV] != 0) == (r ? rev0 != 0 : rev0 == 0) && !strcmp(oa_fl, TSEL->p[P_REV] ? "Reverb ON" : "Reverb OFF") &&
                                     (!r || TSEL->p[P_REV] == rev0 || !rev0); break;
-                    case 20: good = r ? !org_patch[OP_DRV] : org_patch[OP_DRV] && org_patch[OP_DRV_TYPE] == 2u && org_patch[OP_DRV_GAIN] == 25u; break;
-                    case 22: good = r ? !org_patch[OP_DRV] : org_patch[OP_DRV] && org_patch[OP_DRV_TYPE] == 2u && org_patch[OP_DRV_GAIN] == 80u; break;
+                    case 20: good = r ? org_patch[OP_DRV_GAIN] == 0u : org_patch[OP_DRV_TYPE] == 2u && org_patch[OP_DRV_GAIN] == 25u; break;
+                    case 22: good = r ? org_patch[OP_DRV_GAIN] == 0u : org_patch[OP_DRV_TYPE] == 2u && org_patch[OP_DRV_GAIN] == 80u; break;
                     }
                     if (SW[n].msg1)
                         good &= !strcmp(oa_fl, r ? SW[n].msg2 : SW[n].msg1);
@@ -1110,7 +1106,6 @@ int main(int argc, char **argv)
 
     {   /* HOME's DRIVE and REVERB knobs keep to their travel (0.9.37: the DRIVE knob was on the old 0..12 scale, REVERB over 100) */
         int32_t a0, a1, a2, r0, r1;
-        org_set(OP_DRV, 1);
         org_set(OP_DRV_GAIN, 0);   a0 = home_ang_drv();
         org_set(OP_DRV_GAIN, 50);  a1 = home_ang_drv();
         org_set(OP_DRV_GAIN, 100); a2 = home_ang_drv();
@@ -1119,7 +1114,6 @@ int main(int argc, char **argv)
         printf("organ app: HOME knobs: DRIVE %d / %d / %d degrees, REVERB %d / %d\n", a0, a1, a2, r0, r1);
         bad += check("HOME: the DRIVE knob runs -135 .. +135 over GAIN 0.0 .. 10.0 (0 at 5.0), REVERB over its send 0 .. 127",
                      a0 == -135 && a1 == 0 && a2 == 135 && r0 == -135 && r1 == 135);
-        org_set(OP_DRV, 0);
         org_set(OP_DRV_GAIN, 0);
         TSEL->p[P_REV] = 0;
     }

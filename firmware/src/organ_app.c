@@ -994,16 +994,16 @@ static int32_t oa_step(int32_t v, int32_t s, int32_t mx)   /* one detent: 8 on t
  * and the knobs 1 to 4 go straight to the first four rows. A list longer than the screen scrolls with the pick. The rows of a page
  * are what oa_val shows and oa_adj1 changes (one detent). */
 #define OA_VIS 8u                                       /* rows on the screen (AF_M, 24 px apart: 34 .. 202, down to the foot rule) */
-static const uint8_t OA_NR[9] = {0, 0, 5, 12, 7, 4, 6, 5, 30};   /* (DRIVE 7 rows since 0.9.44: the tone stack) */
+static const uint8_t OA_NR[9] = {0, 0, 5, 12, 6, 4, 6, 4, 30};   /* (DRIVE 6 rows: the tone stack since 0.9.44; no switch since 0.11.1) */
 static const char *const OA_LB[9][30] = {
     {0},
     {0},
     {"PERCUSSION", "VOLUME", "DECAY", "HARMONIC", "VIBRATO"},
     {"ROTARY", "MODEL", "HORN", "SPEED", "WIDTH", "HORN LEVEL", "HORN SLOW", "HORN FAST", "DRUM SLOW", "DRUM FAST", "HORN RAMP", "DRUM RAMP"},
-    {"DRIVE", "TYPE", "GAIN", "TREBLE", "MIDDLE", "BASS", "OUTPUT"},
+    {"TYPE", "GAIN", "TREBLE", "MIDDLE", "BASS", "OUTPUT"},
     {"SEND", "TYPE", "SIZE", "TONE"},
     {"SEND", "TYPE", "TIME", "FEEDBACK", "COLOUR", "MIX"},
-    {"EQ", "LOW", "MID", "HIGH", "MID FREQ"},
+    {"LOW", "MID", "HIGH", "MID FREQ"},
     {"VOLUME", "SPLIT", "SPLIT POINT", "ATTACK CLICK", "RELEASE CLICK", "ATTACK MODEL", "CLICK LEN MIN", "CLICK LEN MAX", "RELEASE MODEL",
      "CROSSTALK", "COMPARTMENT", "TRANSFORMER", "TERMINAL STRIP", "WIRING", "XT FLOOR", "XT MIN",
      "PERC FAST", "PERC SLOW", "PERC NORMAL", "PERC SOFT", "PERC GAIN", "PERC BUS A", "PERC BUS B", "PERC TRIGGER",
@@ -1208,12 +1208,10 @@ static void oa_val(uint32_t pg, uint32_t r, oa_val_t *v)
         else
             oa_vramp(v, OP_ROT_DRAMP, 4127000u, 0);
     } else if (pg == 4u) {
-        if (r == 0u)
-            oa_vsw(v, OP_DRV, "OFF", "ON");
-        else if (r == 1u) {
+        if (r == 0u) {
             oa_vt(v, OA_DRV_NAME[dr_type_of(org_patch[OP_DRV_TYPE])]);
-            v->on = org_patch[OP_DRV] != 0;
-        } else if (r == 2u) {
+            v->on = 1;
+        } else if (r == 1u) {
             i = oa_u(OP_DRV_GAIN, 100u);                 /* 0.9.25: tenths, 0.0 .. 10.0; 0 bypasses the drive */
             if (i == 0)
                 oa_vt(v, "OFF");
@@ -1222,8 +1220,8 @@ static void oa_val(uint32_t pg, uint32_t r, oa_val_t *v)
             v->mn = 9;                                   /* nine segments, as the other rows: 0 none, 10.0 all (0.9.31) */
             v->mv = (int8_t)((i * 9 + 99) / 100);
             v->on = i != 0;
-        } else if (r >= 3u && r <= 5u) {                 /* TREBLE, MIDDLE, BASS (0.9.44): -5 .. +5, 0 flat */
-            i = org_c11(org_patch[OP_DRV_TREB + r - 3u]);
+        } else if (r >= 2u && r <= 4u) {                 /* TREBLE, MIDDLE, BASS (0.9.44): -5 .. +5, 0 flat */
+            i = org_c11(org_patch[OP_DRV_TREB + r - 2u]);
             if (i > 0) {
                 v->t[0] = '+';
                 fmt_fix(v->t + 1, i, 0u);
@@ -1264,14 +1262,12 @@ static void oa_val(uint32_t pg, uint32_t r, oa_val_t *v)
         else
             oa_vpct(v, song.g[G_DMIX]);
     } else if (pg == 7u) {
-        if (r == 0u)
-            oa_vsw(v, OP_EQ, "OFF", "ON");
-        else if (r == 4u) {
+        if (r == 3u) {
             oa_vnum(v, (int32_t)EQ_FREQ_HZ[eq_fidx(org_patch[OP_EQ_FREQ] <= 11u ? org_patch[OP_EQ_FREQ] : 0u)], 0, " HZ");
             v->on = 1;
         } else {
-            i = eq_db(org_patch[r == 1u ? OP_EQ_LOW : r == 2u ? OP_EQ_MID : OP_EQ_HIGH] <= 24u ?
-                      org_patch[r == 1u ? OP_EQ_LOW : r == 2u ? OP_EQ_MID : OP_EQ_HIGH] : 0u);
+            i = eq_db(org_patch[r == 0u ? OP_EQ_LOW : r == 1u ? OP_EQ_MID : OP_EQ_HIGH] <= 24u ?
+                      org_patch[r == 0u ? OP_EQ_LOW : r == 1u ? OP_EQ_MID : OP_EQ_HIGH] : 0u);
             oa_vdb(v, i * 10);
             v->mn = 13;
             v->mv = (int8_t)((i + 13) / 2);
@@ -1341,13 +1337,11 @@ static void oa_adj1(uint32_t pg, uint32_t r, int32_t d)
             oa_c9(OP_ROT_HSLOW + r - 6u, d);
     } else if (pg == 4u) {
         if (r == 0u)
-            org_set(OP_DRV, on);
+            org_set(OP_DRV_TYPE, 2u + (uint32_t)clamp((int32_t)dr_type_of(org_patch[OP_DRV_TYPE]) + d, 0, DR_NAMES - 1));   /* the bytes 2 .. 8 (0.11.0) */
         else if (r == 1u)
-            org_set(OP_DRV_TYPE, 2u + (uint32_t)clamp((int32_t)dr_type_of(org_patch[OP_DRV_TYPE]) + d, 0, DR_NAMES - 1));   /* the bytes 2 .. 7 (0.9.41) */
-        else if (r == 2u)
             org_set(OP_DRV_GAIN, (uint32_t)clamp(oa_u(OP_DRV_GAIN, 100u) + d, 0, 100));  /* tenths; 0 is the bypass */
-        else if (r >= 3u && r <= 5u)                    /* TREBLE, MIDDLE, BASS */
-            org_set(OP_DRV_TREB + r - 3u, org_b11(clamp(org_c11(org_patch[OP_DRV_TREB + r - 3u]) + d, -5, 5)));
+        else if (r >= 2u && r <= 4u)                    /* TREBLE, MIDDLE, BASS */
+            org_set(OP_DRV_TREB + r - 2u, org_b11(clamp(org_c11(org_patch[OP_DRV_TREB + r - 2u]) + d, -5, 5)));
         else
             oa_c9(OP_DRV_OUT, d);
     } else if (pg == 5u) {
@@ -1373,12 +1367,10 @@ static void oa_adj1(uint32_t pg, uint32_t r, int32_t d)
         else
             song.g[G_DMIX] = (int16_t)oa_step(song.g[G_DMIX], d, 127);
     } else if (pg == 7u) {
-        if (r == 0u)
-            org_set(OP_EQ, on);
-        else if (r == 4u)
+        if (r == 3u)
             org_set(OP_EQ_FREQ, eq_fbyte((uint32_t)clamp((int32_t)eq_fidx(org_patch[OP_EQ_FREQ] <= 11u ? org_patch[OP_EQ_FREQ] : 0u) + d, 0, 11)));
         else
-            oa_eqs(r == 1u ? OP_EQ_LOW : r == 2u ? OP_EQ_MID : OP_EQ_HIGH, d);
+            oa_eqs(r == 0u ? OP_EQ_LOW : r == 1u ? OP_EQ_MID : OP_EQ_HIGH, d);
     }
 }
 static void oa_adj(uint32_t pg, uint32_t r, int32_t s)  /* s detents, either way */
@@ -1525,7 +1517,7 @@ static void oa_upper_bars(int32_t dy)
  * the 0..12 scale), and the reverb's send, 0 .. 127 (it was over 100; 0.9.37) */
 static int32_t home_ang_drv(void)
 {
-    int32_t g = org_patch[OP_DRV] ? (int32_t)org_patch[OP_DRV_GAIN] : 0;
+    int32_t g = (int32_t)org_patch[OP_DRV_GAIN];
     return -135 + (g > 100 ? 100 : g) * 270 / 100;
 }
 static int32_t home_ang_rev(void)
@@ -1801,10 +1793,10 @@ static void oa_scene(void)
         scr_drawbars();
     else if (oa_page >= 2u && oa_page <= 8u)
         oa_rows(oa_page, oa_page == 2u || oa_page == 8u ? "" : oa_page == 3u ? (org_patch[OP_ROT] ? ROT_SPD[oa_u(OP_ROT_SPEED, 2u)] : "OFF") :
-                         oa_page == 4u ? (org_patch[OP_DRV] && org_patch[OP_DRV_GAIN] ? OA_DRV_NAME[dr_type_of(org_patch[OP_DRV_TYPE])] : "OFF") :
+                         oa_page == 4u ? (org_patch[OP_DRV_GAIN] ? OA_DRV_NAME[dr_type_of(org_patch[OP_DRV_TYPE])] : "OFF") :
                          oa_page == 5u ? (TSEL->p[P_REV] ? N_RTYPE[clamp(song.g[G_RTYPE], 0, 4)] : "OFF") :
                          oa_page == 6u ? (TSEL->p[P_DLY] ? N_DLYTYPE[clamp(song.g[G_DTIME], 0, 6)] : "OFF") :
-                         (org_patch[OP_EQ] ? "ON" : "OFF"));
+                         (org_patch[OP_EQ_LOW] || org_patch[OP_EQ_MID] || org_patch[OP_EQ_HIGH] ? "ON" : "OFF"));
     else
         scr_home();
     if (oa_gl == 2u)
@@ -1944,12 +1936,12 @@ static uint8_t oa_rev_last = 36;                          /* the reverb's send w
 static void oa_drv_toggle(uint32_t gain, const char *name)    /* TUBE DRIVE at a fixed GAIN, or off if it is already that */
 {
     char t[24];
-    int on = !(org_patch[OP_DRV] && dr_type_of(org_patch[OP_DRV_TYPE]) == 0u && org_patch[OP_DRV_GAIN] == gain);
+    int on = !(dr_type_of(org_patch[OP_DRV_TYPE]) == 0u && org_patch[OP_DRV_GAIN] == gain);
     if (on) {
         org_set(OP_DRV_TYPE, 2u);
         org_set(OP_DRV_GAIN, gain);
-    }
-    org_set(OP_DRV, (uint32_t)on);
+    } else
+        org_set(OP_DRV_GAIN, 0u);                        /* (0.11.1: no switch; GAIN 0 is the bypass) */
     str_cpy(t, name, 14);
     str_cpy(t + str_len(t), on ? " ON" : " OFF", 5);
     oa_flash(t);
@@ -2287,8 +2279,7 @@ static void home_knobs(void)
         break;
     default:                                              /* DRIVE, REVERB, CLICK, EXPR */
         if ((s = panel_enc(EN_K1)) != 0) {
-            oa_adj(4u, 2u, s);
-            org_set(OP_DRV, org_patch[OP_DRV_GAIN] > 0u ? 1u : 0u);
+            oa_adj(4u, 1u, s);                          /* the GAIN row */
         }
         if ((s = panel_enc(EN_K1 + 1)) != 0)
             oa_adj(5u, 0u, s);
@@ -2485,9 +2476,9 @@ static int oa_dbp_on(uint32_t k)
     case 0:  return org_patch[OP_ROT] != 0 && org_patch[OP_ROT_SPEED] == 2u;
     case 1:  return vib_up();
     case 3:  return vib_lo();
-    case 20: return org_patch[OP_DRV] && dr_type_of(org_patch[OP_DRV_TYPE]) == 0u && org_patch[OP_DRV_GAIN] == 25u;
+    case 20: return dr_type_of(org_patch[OP_DRV_TYPE]) == 0u && org_patch[OP_DRV_GAIN] == 25u;
     case 21: return org_patch[OP_PERC] != 0;
-    case 22: return org_patch[OP_DRV] && dr_type_of(org_patch[OP_DRV_TYPE]) == 0u && org_patch[OP_DRV_GAIN] == 80u;
+    case 22: return dr_type_of(org_patch[OP_DRV_TYPE]) == 0u && org_patch[OP_DRV_GAIN] == 80u;
     case 23: return org_patch[OP_PERC_SOFT] != 0;
     case 24: return org_patch[OP_PERC_FAST] != 0;
     case 25: return TSEL->p[P_REV] != 0;

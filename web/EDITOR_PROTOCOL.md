@@ -1420,3 +1420,9 @@ pre-gain (+22.6 dB, 39.9 % THD). The other types and their GAIN are unchanged. A
 TUBE DRIVE with GAIN 4.0 or more sounds more driven than before (the most at the top); nothing is migrated (the bytes are the same).
 
 Version 0.11.1 renames two drive types for the panel and the editor: byte 5 MID DRIVE is SCREAMER, byte 8 ORIGINAL is EXTREME. The bytes and their sounds are the same.
+
+Version 0.11.1 removes the ON/OFF switches of the drive and the equaliser (owner). The drive is on when its GAIN is above 0.0 (0.0 is the
+bypass, as OFF was); the equaliser is on when LOW, MID or HIGH is not 0 dB (all three flat is the bypass). The bytes `OP_DRV` (40) and
+`OP_EQ` (43) stay in the layout and are ignored: a patch with OFF and a GAIN above 0 (or a band away from 0 dB) sounds on now. The
+factory bank has GAIN 0 where the drive was off, so its sounds are the same. The drive's rows are TYPE, GAIN, TREBLE, MIDDLE, BASS, OUTPUT
+(the knobs 1-4 go to the first four) and the equaliser's LOW, MID, HIGH, MID FREQ.
