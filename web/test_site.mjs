@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // The built site (web/make_site.py's index.html): every marker filled, both scripts compile and run to the first status
 // without Web MIDI, the embedded package is the FM-1 package of the version. Node only (no browser, no hardware).
-//   python3 web/make_site.py build/felucca.fwsc SITE 0.1.0 && node web/test_site.mjs SITE/index.html
+//   python3 web/make_site.py build/felucca.fwsc SITE 0.11.1 && node web/test_site.mjs SITE/installer/index.html
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
 
-const file = process.argv[2] || "SITE/index.html";
+const file = process.argv[2] || "SITE/installer/index.html";
 const html = readFileSync(file, "utf8");
 let failed = 0;
 const ok = (cond, what) => { console.log(`${what.padEnd(70)} ${cond ? "ok" : "FAIL"}`); if (!cond) failed++; };

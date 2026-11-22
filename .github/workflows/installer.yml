@@ -47,10 +47,11 @@ jobs:
         run: |
           VERSION=$(sed -n 's/^#define ORGANVAVE_VERSION "v\(.*\)"/\1/p' firmware/src/core.h)
           python3 web/make_site.py build/felucca.fwsc _site "$VERSION"
-          python3 -c "from PIL import Image; Image.open('docs/organvave-splash.png').convert('RGB').resize((900, 900), Image.LANCZOS).save('_site/splash.webp', quality=86)"
+          mkdir -p _site/img && cp docs/mockups/*.png docs/controls.jpg _site/img/
+          python3 -c "from PIL import Image; Image.open('docs/organvave-splash.png').convert('RGB').resize((900, 900), Image.LANCZOS).save('_site/img/splash.webp', quality=86)"
           mkdir -p _site/editor && cp web/editor_organ.html _site/editor/index.html
           cp -r docs/emu _site/emu
-          echo "OrganVave-1 v$VERSION: the installer, the patch editor and the emulator" >> "$GITHUB_STEP_SUMMARY"
+          echo "OrganVave-1 v$VERSION: the home page, the installer (installer/), the patch editor and the FM-1 emulator" >> "$GITHUB_STEP_SUMMARY"
 
       # the SMK-37 port lives on the branch organvave-37 (SMK37.md there): its three packages (SMK-37 Pro, Elite, MKE-P37)
       # and its installer page, smk.html (web/make_smk_site.py there). A failure here leaves the FM-1 site as it is.
@@ -69,7 +70,8 @@ jobs:
           SMKV=$(sed -n 's/^#define ORGANVAVE_VERSION "v\(.*\)"/\1/p' firmware/src/core.h)
           python3 web/make_smk_site.py ../_site "$SMKV" build/organvave-1-smk37.fwsc build/organvave-1-smk37-elite.fwsc \
               build/organvave-1-smk37-mke.fwsc
-          echo "SMK-37 v$SMKV (organvave-37 $(git rev-parse --short HEAD)): smk.html" >> "$GITHUB_STEP_SUMMARY"
+          mkdir -p ../_site/smk && cp -r docs/emu ../_site/smk/emu     # the SMK-37 emulator (the branch's docs/emu)
+          echo "SMK-37 v$SMKV (organvave-37 $(git rev-parse --short HEAD)): smk.html and smk/emu/" >> "$GITHUB_STEP_SUMMARY"
 
       - uses: actions/upload-pages-artifact@v3
         with:

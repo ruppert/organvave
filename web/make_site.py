@@ -3,7 +3,8 @@
 # OrganVave-1's site with the installer: one self-contained page (site_organ.html, with the package embedded) and the
 # package itself for the download. The installer's JS is fm1pkg.js and fm1ota.js (the FMini-1 site's, GPL-3.0-only).
 #   python3 web/make_site.py build/felucca.fwsc OUTDIR VERSION
-# writes OUTDIR/index.html and OUTDIR/organvave-1-vVERSION.fwsc. VERSION must be ORGANVAVE_VERSION in firmware/src/core.h.
+# writes OUTDIR/index.html (the home page, site_landing.html) and OUTDIR/installer/index.html with the package beside it
+# as installer/organvave-1-vVERSION.fwsc. VERSION must be ORGANVAVE_VERSION in firmware/src/core.h.
 # Serve it over https or http://localhost: Web MIDI with SysEx needs a secure context (Chrome or Edge).
 import base64
 import json
@@ -44,11 +45,17 @@ def main(pkg, outdir, version):
         if html.count(mark) != 1:
             raise SystemExit(f"site_organ.html must contain {mark} once")
     html = html.replace("/*LIB*/", lib).replace("/*META*/{}", meta + ";").replace("/*VERSION*/", version)
+    landing = (HERE / "site_landing.html").read_text(encoding="utf-8")
+    if "/*VERSION*/" not in landing:
+        raise SystemExit("site_landing.html must contain /*VERSION*/")
+    landing = landing.replace("/*VERSION*/", version)
     out = Path(outdir)
-    out.mkdir(parents=True, exist_ok=True)
-    (out / "index.html").write_text(html, encoding="utf-8")
-    shutil.copyfile(pkg, out / file)
-    print(f"{out}/index.html: {len(html)} B, {product}, package {len(raw)} B embedded; {file} beside it")
+    (out / "installer").mkdir(parents=True, exist_ok=True)
+    (out / "index.html").write_text(landing, encoding="utf-8")                  # the home page (site_landing.html)
+    (out / "installer" / "index.html").write_text(html, encoding="utf-8")       # the installer, the package embedded
+    shutil.copyfile(pkg, out / "installer" / file)
+    print(f"{out}/index.html ({len(landing)} B) and {out}/installer/index.html ({len(html)} B, {product}, "
+          f"package {len(raw)} B embedded; {file} beside it)")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,284 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: GPL-3.0-only -->
+<html lang="en" data-lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OrganVave-1 by Ruppert</title>
+<meta name="description" content="A tonewheel organ for the M-VAVE FM-1 and SMK-37: nine drawbars, percussion, vibrato and chorus, a rotary speaker and drive. Free software (GPL-3.0).">
+<link rel="icon" href="img/splash.webp">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=Montserrat:ital,wght@1,900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0c10; --surface: #15131a; --surface2: #1c1922; --line: #2a2631; --fg: #f4f0ea; --dim: #a29cab; --mute: #6f6a78;
+    --or: #ff7a1a; --or2: #ff9a4d; --ok: #7bd88f; --bad: #ff7a6a; --cream: #efe6d2;
+    --sans: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) { color-scheme: dark; } }
+  * { box-sizing: border-box; }
+  html { background: var(--bg); scroll-behavior: smooth; scroll-padding-top: 72px; }
+  body { margin: 0; color: var(--fg); font: 17px/1.65 var(--sans); background: var(--bg); -webkit-font-smoothing: antialiased; }
+  a { color: var(--or2); }
+  img { max-width: 100%; display: block; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+  .en, .pt { }
+  html[data-lang="en"] .pt, html[data-lang="pt"] .en { display: none !important; }
+
+  .announce { background: var(--or); color: #1a0e05; text-align: center; font-size: 13.5px; font-weight: 600; padding: 9px 16px; }
+  .announce .ver { display: inline-block; font: 700 12px/1 var(--mono); background: #1a0e05; color: var(--or2); border-radius: 4px; padding: 3px 6px; margin-left: 6px; }
+
+  header.nav { position: sticky; top: 0; z-index: 20; background: rgba(13,12,16,.86); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); }
+  header.nav .wrap { display: flex; align-items: center; gap: 18px; height: 60px; }
+  .brand { font-weight: 900; font-style: italic; letter-spacing: -.04em; font-size: 23px; color: var(--fg); text-decoration: none; font-family: "Montserrat", "Inter", Arial, sans-serif; }
+  .brand i { color: var(--or); font-style: italic; }
+  header.nav nav { display: flex; gap: 2px; margin-left: auto; align-items: center; }
+  header.nav nav a, header.nav nav button { color: var(--dim); text-decoration: none; font: 500 14px/1.65 var(--sans); padding: 8px 12px; border-radius: 8px; background: transparent; border: 0; cursor: pointer; }
+  header.nav nav a:hover, header.nav nav button:hover { color: var(--fg); background: var(--surface2); }
+  header.nav nav a.keep { color: #1a0e05; background: var(--or); font-weight: 700; margin-left: 6px; }
+  header.nav nav a.keep:hover { background: var(--or2); }
+  .trywrap { position: relative; }
+  .trymenu { position: absolute; right: 0; top: calc(100% + 6px); min-width: 230px; padding: 6px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 16px 40px rgba(0,0,0,.5); }
+  .trymenu[hidden] { display: none; }
+  .trymenu a { display: flex; align-items: baseline; gap: 10px; color: var(--fg); padding: 10px 12px; border-radius: 8px; font-weight: 600; white-space: nowrap; }
+  .trymenu a small { color: var(--mute); font: 500 11.5px/1 var(--mono); }
+  .trymenu a:hover { background: var(--surface2); }
+  .lang { font: 600 12px/1 var(--mono); color: var(--dim); background: transparent; border: 1px solid var(--line); border-radius: 8px; padding: 9px 11px; cursor: pointer; margin-left: 6px; }
+  .lang:hover { color: var(--fg); border-color: var(--mute); }
+  @media (max-width: 720px) {
+    header.nav nav > a:not(.keep):not(.try) { display: none; }
+    header.nav nav a, header.nav nav button { padding: 8px 9px; font-size: 13px; }
+  }
+
+  section.s { padding: 88px 0 0; }
+  .kick { margin: 0; font: 600 12.5px/1.4 var(--mono); color: var(--or2); letter-spacing: .08em; text-transform: uppercase; }
+  h1, h2, h3 { letter-spacing: -.02em; }
+  h2 { margin: 12px 0 0; font-size: clamp(30px, 4.6vw, 46px); line-height: 1.1; font-weight: 800; }
+  .lead { margin: 16px 0 0; max-width: 680px; color: var(--dim); font-size: 18px; }
+
+  /* hero */
+  .hero { padding: 64px 0 0; display: grid; grid-template-columns: 1.05fr .95fr; gap: 40px; align-items: center; }
+  .logo { margin: 0; font-weight: 900; font-style: italic; letter-spacing: -.05em; line-height: .92; font-size: clamp(56px, 10vw, 112px); font-family: "Montserrat", "Inter", Arial, sans-serif; }
+  .logo .o { color: var(--or); }
+  .tag { margin: 24px 0 0; max-width: 620px; font-size: clamp(21px, 2.8vw, 28px); line-height: 1.25; font-weight: 600; letter-spacing: -.015em; }
+  .sub { margin: 16px 0 0; max-width: 600px; color: var(--dim); }
+  .cta { display: flex; flex-wrap: wrap; gap: 12px; margin: 30px 0 0; }
+  .btn { display: inline-block; text-decoration: none; font: 700 15px/1 var(--sans); border-radius: 10px; padding: 16px 24px; cursor: pointer; border: 0; }
+  .btn.pri { color: #1a0e05; background: var(--or); }
+  .btn.pri:hover { background: var(--or2); }
+  .btn.sec2 { color: var(--fg); background: var(--surface2); border: 1px solid var(--line); }
+  .btn.sec2:hover { border-color: var(--mute); }
+  .tags { display: flex; flex-wrap: wrap; gap: 8px; margin: 22px 0 0; padding: 0; list-style: none; }
+  .tags li { font: 500 12.5px/1 var(--mono); color: var(--dim); border: 1px solid var(--line); border-radius: 999px; padding: 7px 12px; }
+  .warn { margin: 22px 0 0; padding: 12px 14px; border: 1px solid #5a3d1f; background: #1e160d; border-radius: 10px; color: #f0c48a; font-size: 14.5px; max-width: 600px; }
+  .shot { border-radius: 20px; overflow: hidden; background: #000; border: 1px solid var(--line); }
+  .shot img { width: 100%; height: auto; }
+  .shot figcaption { padding: 12px 16px; background: var(--surface); color: var(--dim); font: 500 12.5px/1.4 var(--mono); }
+  @media (max-width: 820px) { .hero { grid-template-columns: 1fr; padding-top: 40px; } }
+
+  /* features */
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 40px 0 0; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 22px; }
+  .card h3 { margin: 0; font-size: 18px; font-weight: 700; }
+  .card p { margin: 10px 0 0; color: var(--dim); font-size: 15.5px; }
+  .card .n { font: 700 12px/1 var(--mono); color: var(--or); }
+  @media (max-width: 860px) { .grid3 { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 560px) { .grid3 { grid-template-columns: 1fr; } }
+
+  /* screens */
+  .screens { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 40px 0 0; }
+  @media (max-width: 860px) { .screens { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 560px) { .screens { grid-template-columns: 1fr; } }
+
+  /* split blocks (editor, emulators) */
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 40px 0 0; }
+  .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 28px; }
+  .panel h3 { margin: 0; font-size: 22px; font-weight: 800; }
+  .panel p { margin: 12px 0 0; color: var(--dim); }
+  .panel .cta { margin-top: 20px; }
+  .panel .row { font: 500 12.5px/1.5 var(--mono); color: var(--mute); margin-top: 16px; }
+  @media (max-width: 760px) { .split { grid-template-columns: 1fr; } }
+
+  /* support */
+  table.sup { width: 100%; border-collapse: collapse; margin: 36px 0 0; font-size: 15.5px; }
+  table.sup th, table.sup td { text-align: left; padding: 14px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.sup th { color: var(--dim); font: 600 12.5px/1.3 var(--mono); text-transform: uppercase; letter-spacing: .06em; }
+  table.sup td:first-child { font-weight: 700; white-space: nowrap; }
+  .ok { color: var(--ok); font-weight: 700; }
+  .beta { color: var(--or2); font-weight: 700; }
+  @media (max-width: 620px) { table.sup td:first-child { white-space: normal; } }
+
+  /* install steps */
+  ol.steps { margin: 36px 0 0; padding: 0; list-style: none; counter-reset: st; display: grid; gap: 12px; }
+  ol.steps li { counter-increment: st; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px 18px 62px; position: relative; color: var(--dim); }
+  ol.steps li::before { content: counter(st); position: absolute; left: 18px; top: 16px; width: 30px; height: 30px; border-radius: 50%; background: var(--or); color: #1a0e05; font: 800 14px/30px var(--mono); text-align: center; }
+  ol.steps li b { color: var(--fg); }
+
+  footer { margin-top: 110px; border-top: 1px solid var(--line); padding: 36px 0 60px; color: var(--mute); font-size: 14px; }
+  footer .wrap { display: grid; gap: 10px; }
+  footer a { color: var(--dim); }
+  footer p { margin: 0; }
+</style>
+</head>
+<body>
+
+<div class="announce">
+  <span class="en">Not yet tested on a real FM-1: read the status before you install.</span>
+  <span class="pt">Ainda não testado num FM-1 real: leia o estado antes de instalar.</span>
+  <span class="ver">v/*VERSION*/</span>
+</div>
+
+<header class="nav">
+  <div class="wrap">
+    <a class="brand" href="#top">Organ<i>Vave</i>-1</a>
+    <nav>
+      <a href="#features"><span class="en">Features</span><span class="pt">Recursos</span></a>
+      <a href="#screens"><span class="en">Screens</span><span class="pt">Telas</span></a>
+      <a href="#emulators"><span class="en">Emulators</span><span class="pt">Emuladores</span></a>
+      <a href="#support"><span class="en">Support</span><span class="pt">Suporte</span></a>
+      <div class="trywrap">
+        <button type="button" class="try" aria-expanded="false" aria-controls="trymenu" id="trybtn">
+          <span class="en">Try in browser ▾</span><span class="pt">Testar no navegador ▾</span>
+        </button>
+        <div class="trymenu" id="trymenu" hidden>
+          <a href="emu/"><span>FM-1 emulator</span> <small>emu/</small></a>
+          <a href="smk/emu/"><span>SMK-37 emulator</span> <small>smk/emu/</small></a>
+          <a href="editor/"><span class="en">Patch editor</span><span class="pt">Editor de patches</span> <small>editor/</small></a>
+        </div>
+      </div>
+      <a class="keep" href="installer/"><span class="en">Install</span><span class="pt">Instalar</span></a>
+      <button type="button" class="lang" id="langbtn" aria-label="Language">PT</button>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+  <section class="wrap hero">
+    <div>
+      <p class="kick"><span class="en">Tonewheel organ · M-VAVE FM-1 and SMK-37</span><span class="pt">Órgão de rodas fônicas · M-VAVE FM-1 e SMK-37</span></p>
+      <h1 class="logo" style="margin-top:14px">Organ<span class="o">Vave</span>-1</h1>
+      <p class="tag"><span class="en">Nine drawbars, percussion, scanner vibrato and a rotary speaker, on the instrument you already have.</span><span class="pt">Nove drawbars, percussão, vibrato de scanner e alto-falante rotativo, no instrumento que você já tem.</span></p>
+      <p class="sub"><span class="en">A firmware in the style of the classic electromechanical consoles, ported from setBfree to integer C for the FM-1's chip. Free software under the GPL-3.0.</span><span class="pt">Um firmware no estilo dos órgãos eletromecânicos clássicos, portado do setBfree para C inteiro no chip do FM-1. Software livre sob a GPL-3.0.</span></p>
+      <div class="cta">
+        <a class="btn pri" href="installer/"><span class="en">Install on the FM-1</span><span class="pt">Instalar no FM-1</span></a>
+        <a class="btn sec2" href="emu/"><span class="en">Try in browser</span><span class="pt">Testar no navegador</span></a>
+      </div>
+      <ul class="tags">
+        <li>v/*VERSION*/</li><li>GPL-3.0</li><li>FM-1 · SMK-37</li><li>setBfree</li>
+      </ul>
+      <p class="warn"><span class="en">Status: the firmware has not been tested on a real instrument yet. Install it only if you know how to recover an FM-1 (see the installer and BUILDING.md).</span><span class="pt">Estado: o firmware ainda não foi testado num instrumento real. Instale só se souber recuperar um FM-1 (veja o instalador e o BUILDING.md).</span></p>
+    </div>
+    <figure class="shot" style="margin:0">
+      <img src="img/splash.webp" alt="OrganVave-1 splash screen" width="900" height="900">
+      <figcaption><span class="en">The splash screen of the instrument</span><span class="pt">A tela de abertura do instrumento</span></figcaption>
+    </figure>
+  </section>
+
+  <section class="wrap s" id="features">
+    <p class="kick"><span class="en">Features</span><span class="pt">Recursos</span></p>
+    <h2><span class="en">An organ with the parts you can hear</span><span class="pt">Um órgão com as partes que você ouve</span></h2>
+    <p class="lead"><span class="en">Every part is ported from setBfree or drawn after the real console's panel: the drawbars, the percussion, the scanner, the rotary and the drive.</span><span class="pt">Cada parte é portada do setBfree ou desenhada conforme o painel do console real: as drawbars, a percussão, o scanner, o rotativo e o drive.</span></p>
+    <div class="grid3">
+      <div class="card"><span class="n">01</span><h3><span class="en">Nine drawbars</span><span class="pt">Nove drawbars</span></h3><p><span class="en">Tonewheel tone generator with the key click, crosstalk and temperaments of setBfree. Upper, lower and pedal manuals.</span><span class="pt">Gerador de tom de rodas fônicas com o clique de tecla, o crosstalk e as afinações do setBfree. Manuais superior, inferior e pedaleira.</span></p></div>
+      <div class="card"><span class="n">02</span><h3><span class="en">Percussion</span><span class="pt">Percussão</span></h3><p><span class="en">The percussion page, drawn after the console's panel, with its own key-triggered voice.</span><span class="pt">A página de percussão, desenhada conforme o painel do console, com voz própria disparada pelas teclas.</span></p></div>
+      <div class="card"><span class="n">03</span><h3><span class="en">Vibrato and chorus</span><span class="pt">Vibrato e chorus</span></h3><p><span class="en">The scanner in three depths, with a rate you set in hertz. The vibrato selector sits on the panel as on the console.</span><span class="pt">O scanner em três profundidades, com uma taxa ajustada em hertz. O seletor de vibrato fica no painel, como no console.</span></p></div>
+      <div class="card"><span class="n">04</span><h3><span class="en">Rotary speaker</span><span class="pt">Alto-falante rotativo</span></h3><p><span class="en">Two rotary models: CLASSIC (setBfree's whirl, reduced) and LIGHT (a minimal physical model), chosen per preset. Horn and rotor speeds, ramps and mic.</span><span class="pt">Dois modelos rotativos: CLASSIC (o whirl do setBfree, reduzido) e LIGHT (um modelo físico mínimo), escolhidos por preset. Velocidades de corneta e rotor, rampas e microfone.</span></p></div>
+      <div class="card"><span class="n">05</span><h3><span class="en">Drive and EQ</span><span class="pt">Drive e EQ</span></h3><p><span class="en">Seven drive types, from a clean tube to the setBfree overdrive. Tone controls and a three-band equaliser. Drive is on above GAIN 0.0.</span><span class="pt">Sete tipos de drive, de um tubo limpo ao overdrive do setBfree. Controles de tom e um equalizador de três bandas. O drive liga acima do GAIN 0.0.</span></p></div>
+      <div class="card"><span class="n">06</span><h3><span class="en">Presets and effects</span><span class="pt">Presets e efeitos</span></h3><p><span class="en">Sixty-four factory presets with reverb and delay sends, user presets, and the editor to change any of them.</span><span class="pt">Sessenta e quatro presets de fábrica com envios de reverb e delay, presets do usuário e o editor para alterar qualquer um deles.</span></p></div>
+    </div>
+  </section>
+
+  <section class="wrap s" id="screens">
+    <p class="kick"><span class="en">Screens</span><span class="pt">Telas</span></p>
+    <h2><span class="en">The panel pages</span><span class="pt">As páginas do painel</span></h2>
+    <p class="lead"><span class="en">Mock-ups of the instrument's screens, drawn for the FM-1's display.</span><span class="pt">Maquetes das telas do instrumento, desenhadas para o display do FM-1.</span></p>
+    <div class="screens">
+      <figure class="shot" style="margin:0"><img src="img/mock_1_home.png" alt="HOME page" loading="lazy"><figcaption>HOME</figcaption></figure>
+      <figure class="shot" style="margin:0"><img src="img/mock_2_drawbars.png" alt="DRAWBARS page" loading="lazy"><figcaption>DRAWBARS</figcaption></figure>
+      <figure class="shot" style="margin:0"><img src="img/mock_3_percvib.png" alt="PERC and VIB page" loading="lazy"><figcaption>PERC · VIB</figcaption></figure>
+      <figure class="shot" style="margin:0"><img src="img/mock_4_rotary.png" alt="ROTARY page" loading="lazy"><figcaption>ROTARY</figcaption></figure>
+      <figure class="shot" style="margin:0"><img src="img/mock_5_rotary_speeds.png" alt="ROTARY speeds" loading="lazy"><figcaption><span class="en">ROTARY speeds</span><span class="pt">Velocidades do rotativo</span></figcaption></figure>
+    </div>
+  </section>
+
+  <section class="wrap s" id="emulators">
+    <p class="kick"><span class="en">Browser tools</span><span class="pt">Ferramentas no navegador</span></p>
+    <h2><span class="en">Try it, and edit it, in the browser</span><span class="pt">Teste e edite no navegador</span></h2>
+    <div class="split">
+      <div class="panel">
+        <h3><span class="en">Emulators</span><span class="pt">Emuladores</span></h3>
+        <p><span class="en">The same firmware runs in your browser: the FM-1 at <a href="emu/">emu/</a>, the SMK-37 at <a href="smk/emu/">smk/emu/</a>. Play it right in the page.</span><span class="pt">O mesmo firmware roda no navegador: o FM-1 em <a href="emu/">emu/</a>, o SMK-37 em <a href="smk/emu/">smk/emu/</a>. Toque direto na página.</span></p>
+        <div class="cta"><a class="btn pri" href="emu/"><span class="en">FM-1 emulator</span><span class="pt">Emulador do FM-1</span></a><a class="btn sec2" href="smk/emu/"><span class="en">SMK-37 emulator</span><span class="pt">Emulador do SMK-37</span></a></div>
+      </div>
+      <div class="panel">
+        <h3><span class="en">Patch editor</span><span class="pt">Editor de patches</span></h3>
+        <p><span class="en">Edit the patches and presets in a page, with the drawbars, the Leslie, the drive and the EQ laid out as on the instrument. The editor speaks the protocol described in web/EDITOR_PROTOCOL.md.</span><span class="pt">Edite os patches e presets numa página, com as drawbars, o Leslie, o drive e o EQ dispostos como no instrumento. O editor fala o protocolo descrito em web/EDITOR_PROTOCOL.md.</span></p>
+        <div class="cta"><a class="btn pri" href="editor/"><span class="en">Open the editor</span><span class="pt">Abrir o editor</span></a></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap s" id="support">
+    <p class="kick"><span class="en">Support</span><span class="pt">Suporte</span></p>
+    <h2><span class="en">Which instrument, which state</span><span class="pt">Qual instrumento, qual estado</span></h2>
+    <p class="lead"><span class="en">The firmware is built as a package for each instrument. Nothing here has run on a real unit yet.</span><span class="pt">O firmware é gerado como um pacote para cada instrumento. Nada disto rodou ainda numa unidade real.</span></p>
+    <table class="sup">
+      <tr><th><span class="en">Instrument</span><span class="pt">Instrumento</span></th><th><span class="en">Package</span><span class="pt">Pacote</span></th><th><span class="en">State</span><span class="pt">Estado</span></th></tr>
+      <tr><td>M-VAVE FM-1</td><td>FM-1_8XY</td><td><span class="beta"><span class="en">Current version, not yet tested on hardware</span><span class="pt">Versão atual, ainda não testada no hardware</span></span></td></tr>
+      <tr><td>M-VAVE SMK-37</td><td>SMK-37 Pro · Elite · MKE-P37</td><td><span class="beta"><span class="en">Beta, branch organvave-37 (SMK37.md)</span><span class="pt">Beta, branch organvave-37 (SMK37.md)</span></span> · <a href="smk.html"><span class="en">installer</span><span class="pt">instalador</span></a></td></tr>
+      <tr><td><span class="en">Browser</span><span class="pt">Navegador</span></td><td>emu/, smk/emu/, editor/</td><td><span class="ok"><span class="en">Available</span><span class="pt">Disponível</span></span></td></tr>
+    </table>
+  </section>
+
+  <section class="wrap s" id="install">
+    <p class="kick"><span class="en">Install</span><span class="pt">Instalar</span></p>
+    <h2><span class="en">Put it on the instrument</span><span class="pt">Coloque no instrumento</span></h2>
+    <p class="lead"><span class="en">The installer runs in Chrome or Edge, with the instrument connected over USB. It checks the package before it writes anything.</span><span class="pt">O instalador roda no Chrome ou no Edge, com o instrumento conectado por USB. Ele confere o pacote antes de gravar qualquer coisa.</span></p>
+    <ol class="steps">
+      <li><b><span class="en">Open the installer.</span><span class="pt">Abra o instalador.</span></b> <span class="en">It is on the <a href="installer/">installer page</a>, with the package inside.</span><span class="pt">Ele está na <a href="installer/">página do instalador</a>, com o pacote dentro.</span></li>
+      <li><b><span class="en">Connect the instrument.</span><span class="pt">Conecte o instrumento.</span></b> <span class="en">Use a USB cable with data lines, and keep the instrument on the desk.</span><span class="pt">Use um cabo USB com linhas de dados e deixe o instrumento sobre a mesa.</span></li>
+      <li><b><span class="en">Install and restart.</span><span class="pt">Instale e reinicie.</span></b> <span class="en">The page reports the package and the version the instrument answers with.</span><span class="pt">A página mostra o pacote e a versão que o instrumento responde.</span></li>
+    </ol>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p><span class="en">OrganVave-1 by Guilherme Ruppert, a fork of FMini-1 (Guilherme Ruppert), itself a fork of Felucca by Leo Kuroshita (Hügelton Instruments). The organ and the rotary are ported from setBfree.</span><span class="pt">OrganVave-1 por Guilherme Ruppert, um fork do FMini-1 (Guilherme Ruppert), que por sua vez é um fork do Felucca de Leo Kuroshita (Hügelton Instruments). O órgão e o rotativo são portados do setBfree.</span></p>
+    <p><span class="en">Free software under the GNU GPL version 3 only. "M-VAVE", "FM-1" and "SMK-37" are trademarks of their owners; OrganVave-1 is independent firmware.</span><span class="pt">Software livre sob a GNU GPL versão 3 apenas. "M-VAVE", "FM-1" e "SMK-37" são marcas de seus donos; o OrganVave-1 é um firmware independente.</span></p>
+    <p><a href="https://github.com/ruppert/organvave-1">GitHub</a> · <a href="https://github.com/ruppert/organvave-1/blob/main/CREDITS.md">CREDITS</a> · <a href="https://github.com/ruppert/organvave-1/blob/main/ORGAN.md">ORGAN.md</a></p>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  var KEY = "organvave-lang";
+  function setLang(l) {
+    root.setAttribute("data-lang", l);
+    document.getElementById("langbtn").textContent = l === "en" ? "PT" : "EN";
+    try { localStorage.setItem(KEY, l); } catch (e) {}
+  }
+  var saved = null;
+  try { saved = localStorage.getItem(KEY); } catch (e) {}
+  setLang(saved === "pt" ? "pt" : "en");
+  document.getElementById("langbtn").addEventListener("click", function () {
+    setLang(root.getAttribute("data-lang") === "en" ? "pt" : "en");
+  });
+  var btn = document.getElementById("trybtn"), menu = document.getElementById("trymenu");
+  btn.addEventListener("click", function (e) {
+    e.stopPropagation();
+    var open = menu.hidden;
+    menu.hidden = !open;
+    btn.setAttribute("aria-expanded", String(open));
+  });
+  document.addEventListener("click", function () {
+    menu.hidden = true;
+    btn.setAttribute("aria-expanded", "false");
+  });
+})();
+</script>
+</body>
+</html>
