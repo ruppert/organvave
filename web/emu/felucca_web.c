@@ -40,7 +40,9 @@
 #undef memset
 #undef memcpy
 #undef memcmp
+#if !BOARD_SMK37
 static struct { volatile uint32_t notes, buttons; } fm1_in;
+#endif
 static uint8_t nor[0x100000];            /* the SPI NOR (erased: 0xFF) */
 static void fm1_delay_ms(uint32_t ms) { (void)ms; }
 static void fm1_irq_off(void) {}
@@ -63,6 +65,13 @@ static void fm1_audio_init(int32_t *buf, uint32_t words, void (*isr)(void), uint
 static void fm1_audio_stop(void) {}
 void isr_alnk0(void) {}
 
+#if BOARD_SMK37
+/* the SMK-37 (web/emu/build_wasi.sh SMK=1): the input the page hands over, without the hardware */
+#include "smk_web_input.h"
+#include "../../firmware/hal/smk_compat.h"   /* the FM-1 LED glow and sweep: no-ops on the SMK (as the firmware) */
+#endif
+
+#if !BOARD_SMK37
 /* ------------------------------------------------------------ the panel --- */
 #define FM1_NCOL 11u
 static const int8_t FM1_KEYMAP[6][FM1_NCOL] = {      /* as hal/fm1_input.h: key id at (column, row bit) */
@@ -130,6 +139,11 @@ static int32_t fm1_enc_take(uint32_t e) { int32_t s = web_enc_steps[e % 7u]; web
 static void fm1_input_init(void) {}
 static void fm1_input_tick(void) {}
 static void fm1_wdt_feed(void) {}
+
+#endif /* !BOARD_SMK37 */
+#if BOARD_SMK37
+static void fm1_wdt_feed(void) {}              /* (the watchdog: none in the page) */
+#endif
 
 /* ----------------------------------------------------------- the screen --- */
 static uint16_t web_fb[240 * 240];       /* RGB565 as the panel gets it (high byte first) */
@@ -206,8 +220,16 @@ static uint32_t irq_save(void) { return 0; }
 static void irq_restore(uint32_t f) { (void)f; }
 static uint32_t fl_jedec_ram(void) { return 0x856014u; }             /* the FM-1's part (settings.c persist_boot) */
 #define FL_FAR(fn) (fn)
-#define FL_JEDEC_OK(id) ((id) == 0x856014u)                          /* as hal/fm1_flash_map.h (FM-1; the SMK-37 port) */
-#define FM1_OCT_BOTH 3u                                              /* OCT- + OCT+, as hal/fm1_input.h (FM-1; the SMK-37 port) */
+#if BOARD_SMK37
+#define FL_JEDEC_OK(id) ((id) == 0xEB6014u || (id) == 0x856014u || (id) == 0xB36014u)   /* (SMK) */
+#define FL_SMP_LO 0x000C2000u            /* as hal/fm1_flash_map.h (SMK): the preset slots live there */
+#define FL_SMP_HI 0x000EA000u
+#define FL_STOCKTAG_LO 0x000EA000u
+#define FL_STOCKTAG_OFF 0x000EAFF8u
+#else
+#define FL_JEDEC_OK(id) ((id) == 0x856014u)                          /* as hal/fm1_flash_map.h (FM-1) */
+#define FM1_OCT_BOTH 3u                                              /* OCT- + OCT+, as hal/fm1_input.h (FM-1) */
+#endif
 #include "../../firmware/src/storage.c"
 #include "../../firmware/src/ui.c"
 #include "../../firmware/src/upreset.c"
@@ -221,9 +243,11 @@ static struct { uint8_t p3_rst, wdt_con; uint32_t rst_src; } fm1_boot;
 uint32_t _data_start[1], _data_end[1], _data_load[1], _bss_start[1], _bss_end[1];
 uint32_t _pool_start[1], _pool_end[1], _rt_start[1], _rt_end[1], _rt_load[1];
 static uint32_t web_master_adc = 700;   /* MASTER, 0..1023 as the ADC reads it */
+#if !BOARD_SMK37
 enum { FM1_ADC_BATT = 3, FM1_ADC_MASTER = 4 };
 static int32_t fm1_adc_read(uint32_t ch) { return ch == FM1_ADC_MASTER ? (int32_t)web_master_adc : 620; }
 static void fm1_adc_init(void) {}
+#endif
 static void fm1_timer5_ack(void) {}
 static void fm1_timer5_start(void (*isr)(void), uint32_t prio) { (void)isr; (void)prio; }
 void isr_timer5(void) {}
@@ -246,6 +270,18 @@ enum { FM1_GUARD_STACK = 1, FM1_GUARD_WRITE = 2, FM1_GUARD_BUS = 4, FM1_GUARD_PC
 #include "../../firmware/src/master.c"
 #include "../../firmware/src/bench.c"
 #include "../../firmware/src/organ_app.c"
+#if BOARD_SMK37
+/* the SMK's pads (lcd.c's chain, which the emulator does not build): the colours are kept for the page to draw */
+#define PADLED_N 16u
+static uint32_t padled_rgb[PADLED_N];
+static void padled_set(uint32_t pad, uint8_t r, uint8_t g, uint8_t b)
+{
+    if (pad < PADLED_N)
+        padled_rgb[pad] = (uint32_t)g << 16 | (uint32_t)r << 8 | b;
+}
+static void padled_flush(void) {}          /* (the chain goes to the page, from padled_rgb) */
+#include "../../firmware/src/smk_organ.c"        /* the SMK-37 port: pads, faders, wheels, outer keys (as felucca.c) */
+#endif
 #include "../../firmware/src/main.c"
 #undef usb_poll
 #undef usb_start
@@ -365,6 +401,7 @@ EXPORT void web_boot(void)
         web_power_on();
 }
 
+#if !BOARD_SMK37
 /* input, by the printed labels: buttons bit b = B_FX .. B_OCTUP (panel.c), keys bit k = key k (F3 .. G5),
  * encoders by role (EN_SELECT .. EN_K4), MASTER 0..1023 */
 static uint32_t web_btn_labels, web_key_mask;
@@ -393,6 +430,25 @@ EXPORT void web_enc(uint32_t role, int32_t n)
         web_enc_steps[panel.enc[role] % 7u] += n * panel.dir[role];
 }
 EXPORT void web_master(uint32_t v) { web_master_adc = v > 1023u ? 1023u : v; }
+#else
+/* the SMK-37's input (web/emu/smk_web_input.h, firmware/hal/smk_input.h's logic): the page hands over what the scan
+ * would find, one call per event */
+EXPORT void web_smk_key(uint32_t k, uint32_t vel) { if (k < FM1_NKEY) smk__key_event(k, vel > 127u ? 127u : vel); }
+EXPORT void web_smk_pad(uint32_t p, uint32_t vel) { if (p < SMK_NPAD) smk__padq(p, vel > 127u ? 127u : vel); }
+EXPORT void web_smk_buttons(uint32_t m)              /* bit i = button i (0..17) */
+{
+    uint32_t old = fm1_in.buttons;
+    m &= (1u << FM1_NBTN) - 1u;
+    fm1_in.pressed |= m & ~old;
+    fm1_in.released |= old & ~m;
+    fm1_in.buttons = m;
+}
+EXPORT void web_smk_enc(uint32_t e, int32_t n) { if (e < FM1_NENC) fm1_in.enc_steps[e] = (int16_t)(fm1_in.enc_steps[e] + n); }
+EXPORT void web_smk_fader(uint32_t i, uint32_t v) { if (i < 4u) fm1_in.fader[i] = (uint8_t)(v > 127u ? 127u : v); }
+EXPORT void web_smk_wheel(uint32_t i, uint32_t raw) { if (i < 2u) fm1_in.wheel[i] = (uint16_t)(raw > 1023u ? 1023u : raw); }
+EXPORT uint32_t web_smk_master(void) { return (uint32_t)smk_master; }
+EXPORT uint32_t web_smk_notes(void) { return fm1_in.notes; }   /* the note keys held (bit n = key n from F3): smk_web_input.h's */
+#endif /* !BOARD_SMK37 */
 /* a channel message from Web MIDI, as a USB-MIDI packet arrives (usb.c midi_enqueue): 0 = the ring was full */
 EXPORT uint32_t web_midi(uint32_t status, uint32_t d1, uint32_t d2)
 {
@@ -401,6 +457,7 @@ EXPORT uint32_t web_midi(uint32_t status, uint32_t d1, uint32_t d2)
     return (uint32_t)midi_enqueue((status >> 4) | status << 8 | (d1 & 127u) << 16 | (d2 & 127u) << 24, 1);
 }
 
+#if !BOARD_SMK37
 /* the LEDs: bit b = the button labelled b lit, keys bit k; the dim glow and the breath alike */
 static uint32_t led_on(const uint8_t *l, uint32_t id)
 {
@@ -446,6 +503,18 @@ EXPORT uint8_t *web_anim_levels(void)
                                                                           web_anim_glow);
     return lv;
 }
+#else
+/* the SMK's LEDs: bit i = button LED i lit; the pads' colour as lcd.c's padled_rgb (0xRRGGBB) */
+EXPORT uint32_t web_smk_leds(void)
+{
+    uint32_t i, m = 0;
+    for (i = 0; i < SMK_NLED; i++)
+        if (fm1_led[i])
+            m |= 1u << i;
+    return m;
+}
+EXPORT uint32_t web_smk_pad_rgb(uint32_t p) { return p < PADLED_N ? padled_rgb[p] : 0u; }
+#endif /* !BOARD_SMK37 */
 
 /* for the test and the bench (web/emu/emu_test.mjs): a heavy song straight into the instrument: POLY, 4-note chords
  * on all 16 steps, held, every FX on. PLAY is the page's (or the test's) to press */
