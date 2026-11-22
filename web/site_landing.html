@@ -508,9 +508,10 @@ function renderSite() {
     }
     fm.style.width = fmW + "px"; fm.style.left = fmX + "px"; fm.style.top = fmY + "px";
     smk.style.width = smW + "px"; smk.style.left = smX + "px"; smk.style.top = smY + "px";
-    mmW0 = mob ? W * 1.5 : Math.min(W * 0.98, 1500);
-    mmX0 = mob ? -W * 0.2 : Math.max(W * 0.5, W - 1.0 * mmW0 * 0.62);
-    mmY0 = mob ? H * 0.52 : (H - mmW0 * MR) / 2;
+    /* where the organ starts: a picture at its own size, not filling the screen (the film makes it big) */
+    mmW0 = mob ? W * 0.82 : Math.min(W * 0.44, 620);
+    mmX0 = mob ? (W - mmW0) / 2 : W - mmW0 - Math.max(24, W * 0.03);
+    mmY0 = mob ? Math.max(H * 0.08, (H * 0.5 - mmW0 * MR / 2)) : (H - mmW0 * MR) / 2;
     p = -1; draw(prog);
   }
   /* the organ picture from where it starts to the screen of a figure (x, y, w its box; L the screen in it; sc its scale) */
