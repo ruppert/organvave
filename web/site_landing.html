@@ -270,7 +270,7 @@
   <section class="s wrap" id="screens">
     <p class="eyebrow"><span class="en">Screens</span><span class="pt">Telas</span></p>
     <h2><span class="en">The panel pages</span><span class="pt">As páginas do painel</span></h2>
-    <p class="lead"><span class="en">Mock-ups of the instrument's screens, drawn for the FM-1's display.</span><span class="pt">Maquetes das telas do instrumento, desenhadas para o display do FM-1.</span></p>
+    <p class="lead"><span class="en">The instrument's screens, as the firmware draws them on the FM-1's display.</span><span class="pt">As telas do instrumento, como o firmware as desenha no display do FM-1.</span></p>
     <div class="viewer">
       <div class="glass"><img id="v-img" alt=""></div>
       <div>
@@ -393,29 +393,34 @@ addEventListener("keydown", (e) => { if (e.key === "Escape") closeMenus(); });
 /* ---- the pictures ---- */
 const IMG = {
   fm1: "img/fm1.webp", smk37: "img/smk37.webp", splash: "img/splash.webp", organ: "img/organ.webp",
-  drawbars: "img/mock_2_drawbars.png", home: "img/mock_1_home.png", perc: "img/mock_3_percvib.png", rotary: "img/mock_4_rotary.png",
-  speeds: "img/mock_5_rotary_speeds.png", voice: "img/mock_7_voice.png", pedal: "img/mock_8_lower_pedal.png",
+  home: "img/screen_home.png", drawbars: "img/screen_drawbars.png", perc: "img/screen_perc_vib.png", rotary: "img/screen_rotary.png",
+  drive: "img/screen_drive.png", reverb: "img/screen_reverb.png", delay: "img/screen_delay.png", eq: "img/screen_eq.png",
+  pedal: "img/screen_lower_pedal.png",
 };
 
 /* ---- the screens viewer and the three pictures under it ---- */
 const VIEWS = {
   en: [
-    { tab: "HOME", t: "Home", d: "The home page: the organ's patch, the preset and the tone at a glance.", l: ["The patch name and the preset", "The drawbar summary", "The rotary and the tuning"], i: "home" },
-    { tab: "DRAWBARS", t: "Drawbars", d: "The nine drawbars, as on the console: the first is the 16' and the last is the 1 1/3'.", l: ["Nine drawbars, 0 to 8", "Each one is a footage of the organ", "The keys play the drawbars' mix"], i: "drawbars" },
-    { tab: "PERC / VIB", t: "Percussion and vibrato", d: "The percussion page and the vibrato selector, drawn after the console's panel.", l: ["Percussion: harmonic, decay and volume", "Vibrato and chorus in three depths", "The vibrato selector of the panel"], i: "perc" },
-    { tab: "ROTARY", t: "Rotary", d: "The rotary speaker: the models, the speeds and the ramps.", l: ["Two rotary models", "Slow and fast speeds", "The ramps between them"], i: "rotary" },
-    { tab: "SPEEDS", t: "Rotary speeds", d: "The rotary's speeds, in the same page as the ramps.", l: ["The slow and the fast speed", "The ramp time of each", "The horn and the bass drum turn apart"], i: "speeds" },
-    { tab: "VOICE", t: "Voice", d: "The voice page: the sound's setup and the tone it reaches.", l: ["The organ's voice settings", "The drive, the EQ and the send", "The presets of the panel"], i: "voice" },
-    { tab: "PEDAL", t: "Lower and pedal", d: "The pedal bars of the lower keyboard.", l: ["The pedal bars on the panel", "The lower keyboard's volume", "The bass with its own bars"], i: "pedal" },
+    { tab: "HOME", t: "Home", d: "The home page: the preset's number and name, the upper drawbars and the tabs at a glance.", l: ["The preset's number and name", "The upper drawbars and their registration", "The percussion and vibrato tabs"], i: "home" },
+    { tab: "DRAWBARS", t: "Drawbars", d: "The nine upper drawbars, as on the console: the 16' is the first and the 1' the last.", l: ["Nine drawbars, 0 to 8", "KNOB 1 to 4 pull the four marked bars", "SELECT moves the four along"], i: "drawbars" },
+    { tab: "PERC / VIB", t: "Percussion and vibrato", d: "The percussion switches and the vibrato selector, drawn after the console's panel.", l: ["On or off, with its volume and decay", "Harmonic: the 2 2/3' third", "Vibrato: off, VIB 1-3 or CHO 1-3"], i: "perc" },
+    { tab: "ROTARY", t: "Rotary", d: "The rotary speaker: the model, the horn and the speeds of horn and drum.", l: ["The model and the horn's voicing", "Slow or fast, each with its ramp", "The horn and drum speeds in RPM"], i: "rotary" },
+    { tab: "DRIVE", t: "Drive", d: "The drive: its type, the gain, the tone and the output.", l: ["The drive's type, from tube to hard clip", "Gain, then treble, middle and bass", "The output level in dB"], i: "drive" },
+    { tab: "REVERB", t: "Reverb", d: "The reverb: its send, type, size and tone.", l: ["The send level", "The type and the size", "The tone"], i: "reverb" },
+    { tab: "DELAY", t: "Delay", d: "The delay: its send, type, time, feedback, colour and mix.", l: ["The send and the type", "Time and feedback", "Colour and mix"], i: "delay" },
+    { tab: "EQ", t: "Equaliser", d: "A three-band equaliser on the organ's voice, with the mid band's frequency.", l: ["Low, mid and high in dB", "The mid band's frequency", "All three at 0 dB: no change"], i: "eq" },
+    { tab: "LOWER / PEDAL", t: "Lower and pedal", d: "The pedal's bars and the lower keyboard's, on the same page.", l: ["The pedal's bars on the left", "The lower keyboard's bars on the right", "The percussion and the rotary's speed below"], i: "pedal" },
   ],
   pt: [
-    { tab: "INÍCIO", t: "Início", d: "A página inicial: o patch do órgão, o preset e o tom num relance.", l: ["O nome do patch e o preset", "O resumo dos drawbars", "O rotativo e a afinação"], i: "home" },
-    { tab: "DRAWBARS", t: "Drawbars", d: "Os nove drawbars, como no console: o primeiro é o 16' e o último é o 1 1/3'.", l: ["Nove drawbars, de 0 a 8", "Cada um é um pé do órgão", "As teclas tocam a mistura dos drawbars"], i: "drawbars" },
-    { tab: "PERC / VIB", t: "Percussão e vibrato", d: "A página de percussão e o seletor de vibrato, desenhados conforme o painel do console.", l: ["Percussão: harmônica, decay e volume", "Vibrato e chorus em três profundidades", "O seletor de vibrato do painel"], i: "perc" },
-    { tab: "ROTATIVO", t: "Rotativo", d: "O alto-falante rotativo: os modelos, as velocidades e as rampas.", l: ["Dois modelos de rotativo", "Velocidades lenta e rápida", "As rampas entre elas"], i: "rotary" },
-    { tab: "VELOCIDADES", t: "Velocidades do rotativo", d: "As velocidades do rotativo, na mesma página das rampas.", l: ["A velocidade lenta e a rápida", "O tempo da rampa de cada uma", "A corneta e o bumbo giram separados"], i: "speeds" },
-    { tab: "VOZ", t: "Voz", d: "A página de voz: a configuração do som e o tom que ele alcança.", l: ["As configurações de voz do órgão", "O drive, o EQ e o send", "Os presets do painel"], i: "voice" },
-    { tab: "PEDAL", t: "Teclado inferior e pedal", d: "As barras do pedal do teclado inferior.", l: ["As barras do pedal no painel", "O volume do teclado inferior", "O baixo com as suas próprias barras"], i: "pedal" },
+    { tab: "INÍCIO", t: "Início", d: "A página inicial: o número e o nome do preset, os drawbars superiores e as abas num relance.", l: ["O número e o nome do preset", "Os drawbars superiores e a sua registração", "As abas de percussão e vibrato"], i: "home" },
+    { tab: "DRAWBARS", t: "Drawbars", d: "Os nove drawbars superiores, como no console: o 16' é o primeiro e o 1' é o último.", l: ["Nove drawbars, de 0 a 8", "KNOB 1 a 4 puxam as quatro barras marcadas", "SELECT move as quatro"], i: "drawbars" },
+    { tab: "PERC / VIB", t: "Percussão e vibrato", d: "Os interruptores de percussão e o seletor de vibrato, desenhados conforme o painel do console.", l: ["Ligada ou desligada, com volume e decay", "Harmônico: o terço de 2 2/3'", "Vibrato: desligado, VIB 1-3 ou CHO 1-3"], i: "perc" },
+    { tab: "ROTATIVO", t: "Rotativo", d: "O alto-falante rotativo: o modelo, a corneta e as velocidades da corneta e do bumbo.", l: ["O modelo e a voz da corneta", "Lenta ou rápida, cada uma com a sua rampa", "As velocidades da corneta e do bumbo em RPM"], i: "rotary" },
+    { tab: "DRIVE", t: "Drive", d: "O drive: o tipo, o ganho, o tom e a saída.", l: ["O tipo de drive, do tubo ao hard clip", "Ganho, depois agudos, médios e graves", "O nível de saída em dB"], i: "drive" },
+    { tab: "REVERB", t: "Reverb", d: "A reverberação: o send, o tipo, o tamanho e o tom.", l: ["O nível do send", "O tipo e o tamanho", "O tom"], i: "reverb" },
+    { tab: "DELAY", t: "Delay", d: "O delay: o send, o tipo, o tempo, o feedback, a cor e o mix.", l: ["O send e o tipo", "Tempo e feedback", "Cor e mix"], i: "delay" },
+    { tab: "EQ", t: "Equalizador", d: "Um equalizador de três bandas sobre a voz do órgão, com a frequência da banda média.", l: ["Graves, médios e agudos em dB", "A frequência da banda média", "As três em 0 dB: sem alteração"], i: "eq" },
+    { tab: "TECLADO INF. / PEDAL", t: "Teclado inferior e pedal", d: "As barras do pedal e as do teclado inferior, na mesma página.", l: ["As barras do pedal à esquerda", "As barras do teclado inferior à direita", "A percussão e a velocidade do rotativo embaixo"], i: "pedal" },
   ],
 };
 const POPS = {
@@ -474,7 +479,7 @@ function renderSite() {
   $("fm-body").src = IMG.fm1;
   $("smk-body").src = IMG.smk37;
   mm2.src = mm.src;
-  const ROT = ["splash", "drawbars", "perc", "rotary", "speeds", "voice", "pedal"];
+  const ROT = ["splash", "drawbars", "perc", "rotary", "drive", "reverb", "delay", "eq", "pedal"];
   const rm = matchMedia("(prefers-reduced-motion: reduce)").matches;
   if (rm) document.body.classList.add("rm");
   A.src = IMG.splash; A.style.opacity = 1; B.style.opacity = 0;
