@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
-# Copyright (C) 2026 Guilherme Ruppert (OrganVave-1)
+# Copyright (C) 2026 Guilherme Ruppert (Organvave)
 """The reference numbers of tests/organ_adv_test.c: setBfree's tone generator (tools/setbfree_ref/sbf_ref.c, `adv`) run with
 the ADVANCED EDIT settings below; per key the contributions' count and sums, and the eight attack / release envelopes.
 

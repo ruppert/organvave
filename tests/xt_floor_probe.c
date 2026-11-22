@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Guilherme Ruppert (OrganVave-1) */
+ * Copyright (C) 2026 Guilherme Ruppert (Organvave) */
 /* DIAGNOSTIC (not in the suite): the sound and the cost of the crosstalk floor (OP_XT_FLOOR, the ladder of eng_organ.c,
  * -2 dB steps, index 3 is -96 dB, the default) and of the plain sine for every wheel (org_faint high: sine_n, no
  * interpolation). Factory bank 1 with the upper drawbars at 8, the benchmark's churn (25 keys, one released and one

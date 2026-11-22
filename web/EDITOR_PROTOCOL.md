@@ -1,8 +1,8 @@
 # Felucca editor protocol (SysEx over USB-MIDI)
 
-## organvave-1: what this firmware answers (0.1.0)
+## organvave: what this firmware answers (0.1.0)
 
-organvave-1 answers the commands an editor needs and no others: every other command gets no reply (an editor sees a timeout,
+organvave answers the commands an editor needs and no others: every other command gets no reply (an editor sees a timeout,
 as with older firmware). Answered: `INFO` 1, `GET` 2, `SET` 3, `DUMP` 4, `DESC` 5, `PRESET` 8, `NAMES` 10, `UP_LIST` 16,
 `UP_GET` 17, `UP_STORE` 19, `UP_LOAD` 20, `UP_ERASE` 21, `WATCH` 22 (with `CHANGED` 23, `RELOAD` 24 pushes), `PING` 25,
 `TRACK` 27, `ORG_GET` 85, `ORG_PUT` 86 (the organ patch, below). Gone: the steps (6, 7, 26, 28-30), projects (9), user

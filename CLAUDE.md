@@ -1,8 +1,8 @@
 # CLAUDE.md
 
-OrganVave-1: a tonewheel-organ firmware for the M-VAVE FM-1 by Guilherme Ruppert, seeded from his FMini-1 (a fork of
-[Felucca](https://github.com/hugelton/Felucca), GPL-3.0-only, by Leo Kuroshita). Repository: <https://github.com/ruppert/organvave-1>
-(the repository and file names are lower case; the product name is written OrganVave-1). The plan is [ORGAN.md](ORGAN.md): the
+Organvave: a tonewheel-organ firmware for the M-VAVE FM-1 by Guilherme Ruppert, seeded from his FMini-1 (a fork of
+[Felucca](https://github.com/hugelton/Felucca), GPL-3.0-only, by Leo Kuroshita). Repository: <https://github.com/ruppert/organvave>
+(the repository and file names are lower case; the product name is written Organvave). The plan is [ORGAN.md](ORGAN.md): the
 organ and the rotary are ported from setBfree; Felucca's `eng_wheel.c` is not used. Until 0.1.0 the firmware still runs
 FMini-1's instrument (FMUG) as a scaffold; since 0.1.0 FMUG is gone. Package identity `FM-1_800` (releases `FM-1_8XY`). GitHub
 Pages is on, source GitHub Actions: the Installer workflow publishes the site (installer page with the package, patch editor,
@@ -19,7 +19,7 @@ toolchain setup.
 - When something ships, remind the owner: the site publishes the firmware package the Installer workflow builds, so a push
   to `main` puts the new package on the site; GitHub Releases are created by the owner by hand (the session's API returns 403).
 - Commit trailers, on every commit: the `Co-Authored-By` and `Claude-Session` lines the session's reminder gives.
-- organvave-1 has one branch, `main`: `git push origin main`. A stop hook refuses to end a session with unpushed commits.
+- organvave has one branch, `main`: `git push origin main`. A stop hook refuses to end a session with unpushed commits.
 - Do not change the project when the owner only asks a question.
 
 ## Commands (from the repository root)
@@ -36,7 +36,7 @@ python3 tools/gen_splash.py                 # firmware/src/organvave_splash.h fr
 ```
 
 The SMK-37 port (branch `organvave-37`, [SMK37.md](SMK37.md), the owner's decisions in `smk37-port.yaml`): `BOARD=smk37
-[MODEL=pro|elite|mke] ./build.sh` builds `build/organvave-1-smk37[-elite|-mke].fwsc`; build the FM-1 last (the tests
+[MODEL=pro|elite|mke] ./build.sh` builds `build/organvave-smk37[-elite|-mke].fwsc`; build the FM-1 last (the tests
 use its files) and check that the FM-1 app, package and loader are byte-identical to the build before the change (same
 day: `__DATE__`). Everything SMK sits behind `BOARD_SMK37`; the organ's mapping is `firmware/src/smk_organ.c`
 (tests/smk_organ_test.c). Never widen the flash allow-list (`hal/fm1_flash_map.h`): the SMK's calibration, pairing and

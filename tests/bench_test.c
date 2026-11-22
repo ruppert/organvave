@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Guilherme Ruppert (OrganVave-1) */
+ * Copyright (C) 2026 Guilherme Ruppert (Organvave) */
 /* BENCHMARK kernels (0.11.0): firmware/src/bench_kernels.h on the host. The times come only from the device; this checks
  * that the two arithmetics compute the same thing, and that the clock's arithmetic is right with a fake clock.
  * 1. wheels: the integer and the float kernel, the same phases, sine and gains, agree within BENCH_N LSB over a second

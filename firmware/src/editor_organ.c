@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Guilherme Ruppert (OrganVave-1) */
+ * Copyright (C) 2026 Guilherme Ruppert (Organvave) */
 /* Editor protocol: the organ patch (EDITOR_PROTOCOL.md "Organ patches", cmds 85, 86). The patch is eng_organ.c's
  * ORG_PSIZE bytes (OP_*: the drawbars of the three manuals, the tuning, the crosstalk; the rest reserved), each 0..127.
  * Targets: 0 the instrument's own patch (index 0), 2 a factory patch (0..ORG_NFACTORY-1, read only), 3 a user preset's

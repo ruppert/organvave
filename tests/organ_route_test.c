@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Guilherme Ruppert (OrganVave-1) */
+ * Copyright (C) 2026 Guilherme Ruppert (Organvave) */
 /* ORGAN's scanner routing (0.10.2, setBfree's RT_UPPRVIB / RT_LOWRVIB in tonegen.c): the upper and the lower manual
  * go through the one scanner by their own switch, the pedals never, the sum of the manuals that are not routed stays
  * dry. The checks are exact (the same events in each run, a fresh engine each time):

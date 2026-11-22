@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Guilherme Ruppert (OrganVave-1) */
+ * Copyright (C) 2026 Guilherme Ruppert (Organvave) */
 /* ADVANCED EDIT (eng_organ.c, the tables built in the main loop: org_env_build, org_xt_build, org_tuning_build, org_adv_poll) on the
  * host, against setBfree's own tonegen.c (tests/organ_adv_ref.txt: tools/gen_organ_adv_ref.py).
  * 1. the defaults: the builders given a patch of zeros give the flash tables (the click envelopes within 2 LSB, the crosstalk

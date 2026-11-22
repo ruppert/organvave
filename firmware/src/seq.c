@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments; Guilherme Ruppert (FMini-1, organvave-1) */
+ * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments; Guilherme Ruppert (FMini-1, organvave) */
 /* Keyboard, arpeggiator, sequencer and transport (Felucca's seq.c, cut down to what the one instrument uses: the SEQ
  * pop-up's 16 steps, the ARP pop-up, the keys and MIDI IN).
  * Everything here runs in the audio ISR, once per CTL-sample block, and ends in trk_note_on / trk_note_off: engines

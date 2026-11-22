@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments; Guilherme Ruppert (FMini-1, organvave-1) */
-/* Engine table. organvave-1 builds one engine, ORGAN (eng_organ.c). The numbers are stored (user presets, the
+ * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments; Guilherme Ruppert (FMini-1, organvave) */
+/* Engine table. organvave builds one engine, ORGAN (eng_organ.c). The numbers are stored (user presets, the
  * autosave, the editor protocol): append, never reorder. Felucca's engines 0..13 and FMini-1's FMUG (14) are gone;
  * their numbers are kept as silent reserved entries (ENG_GONE: no presets, never selectable, eng_ok) so that ORGAN
  * stays 15 and a stored sound of a retired engine reads (it loads as the organ). */

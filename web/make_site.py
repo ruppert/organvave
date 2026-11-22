@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
-# OrganVave-1's site with the installer: one self-contained page (site_organ.html, with the package embedded) and the
+# Organvave's site with the installer: one self-contained page (site_landing.html, with the installer and the package embedded) and the
 # package itself for the download. The installer's JS is fm1pkg.js and fm1ota.js (the FMini-1 site's, GPL-3.0-only).
 #   python3 web/make_site.py build/felucca.fwsc OUTDIR VERSION
-# writes OUTDIR/index.html (the home page, site_landing.html) and OUTDIR/installer/index.html with the package beside it
-# as installer/organvave-1-vVERSION.fwsc. VERSION must be ORGANVAVE_VERSION in firmware/src/core.h.
+# writes OUTDIR/index.html (the home page, site_landing.html: the installer is in it, the package embedded) and the package
+# beside it as organvave-vVERSION.fwsc. VERSION must be ORGANVAVE_VERSION in firmware/src/core.h.
 # Serve it over https or http://localhost: Web MIDI with SysEx needs a secure context (Chrome or Edge).
 import base64
 import json
@@ -36,26 +36,23 @@ def main(pkg, outdir, version):
     product = product_of(raw)
     if not re.fullmatch(r"FM-1_8\d\d", product) or b"FELUCCA-LOADER-1" not in raw:
         raise SystemExit(f"{pkg}: not a Felucca-loader package (identity {product!r})")
-    html = (HERE / "site_organ.html").read_text(encoding="utf-8")
+    html = (HERE / "site_landing.html").read_text(encoding="utf-8")
     lib = "\n".join(strip_module((HERE / f).read_text(encoding="utf-8")) for f in ("fm1pkg.js", "fm1ota.js"))
     url = "data:application/octet-stream;base64," + base64.b64encode(raw).decode()
-    file = f"organvave-1-v{version}.fwsc"
+    file = f"organvave-v{version}.fwsc"
     meta = json.dumps({"version": version, "product": product, "pkg": url, "file": file})
+    for mark in ("/*LIB*/", "/*META*/{}", "/*VERSION*/"):
+        if mark not in html:
+            raise SystemExit(f"site_landing.html must contain {mark}")
     for mark in ("/*LIB*/", "/*META*/{}"):
         if html.count(mark) != 1:
-            raise SystemExit(f"site_organ.html must contain {mark} once")
+            raise SystemExit(f"site_landing.html must contain {mark} once")
     html = html.replace("/*LIB*/", lib).replace("/*META*/{}", meta + ";").replace("/*VERSION*/", version)
-    landing = (HERE / "site_landing.html").read_text(encoding="utf-8")
-    if "/*VERSION*/" not in landing:
-        raise SystemExit("site_landing.html must contain /*VERSION*/")
-    landing = landing.replace("/*VERSION*/", version)
     out = Path(outdir)
-    (out / "installer").mkdir(parents=True, exist_ok=True)
-    (out / "index.html").write_text(landing, encoding="utf-8")                  # the home page (site_landing.html)
-    (out / "installer" / "index.html").write_text(html, encoding="utf-8")       # the installer, the package embedded
-    shutil.copyfile(pkg, out / "installer" / file)
-    print(f"{out}/index.html ({len(landing)} B) and {out}/installer/index.html ({len(html)} B, {product}, "
-          f"package {len(raw)} B embedded; {file} beside it)")
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "index.html").write_text(html, encoding="utf-8")       # the home page: the installer is in it, the package embedded
+    shutil.copyfile(pkg, out / file)                               # the download, beside it
+    print(f"{out}/index.html ({len(html)} B, {product}, package {len(raw)} B embedded; {file} beside it)")
 
 
 if __name__ == "__main__":

@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Guilherme Ruppert (OrganVave-1) */
+ * Copyright (C) 2026 Guilherme Ruppert (Organvave) */
 /* setBfree's tone generator (src/tonegen.c, GPL-2.0-or-later, Fredrik Kilander, Robin Gareus, Ken Restivo, Will Panther)
- * built as it is on the host: OrganVave-1's floating-point reference (ORGAN.md). Built by build.sh against a setBfree
+ * built as it is on the host: Organvave's floating-point reference (ORGAN.md). Built by build.sh against a setBfree
  * checkout; nothing of setBfree is copied into this tree.
  *   sbf_ref dump OUT.txt                    the data the firmware's tables are generated from (gen_organ_tables.py)
  *   sbf_ref render OUT.f32 BARS SECS EVENTS  mono float32 at 44.1 kHz; BARS "888000000"; EVENTS "t:+key,t:-key,..."

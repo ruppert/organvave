@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
-# Copyright (C) 2026 Guilherme Ruppert (OrganVave-1)
+# Copyright (C) 2026 Guilherme Ruppert (Organvave)
 """Art of the HOME screen (firmware/src/organ_home_art.h), generated: do not edit the header by hand.
 
   python3 tools/gen_home_art.py          (reads docs/drawbar-heads-ref.png and assets/fonts/InterTight[wght].ttf)

@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Guilherme Ruppert (OrganVave-1) */
+ * Copyright (C) 2026 Guilherme Ruppert (Organvave) */
 /* The organ's effects section end to end on the host: the drive's patch bytes (OP_DRV .. OP_DRV_OUT) through mix_block, with the
  * whole firmware (organ_app.c) and a chord held on the organ. Since 0.11.0 the Leslie is gone (its controls are dummies): its
  * checks went with it. The master limiter's checks come back with the port's limiter removal (0.11.0).

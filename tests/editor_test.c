@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments; Guilherme Ruppert (organvave-1) */
+ * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments; Guilherme Ruppert (organvave) */
 /* The firmware's editor handler, the USB and UART MIDI framing and the user presets over SysEx, against a RAM NOR
  * (editor_host.h). The organ's patch (cmds 85, 86: editor_organ.c) and the user presets that hold one. */
 #include "editor_host.h"

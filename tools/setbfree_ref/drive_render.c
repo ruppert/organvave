@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Guilherme Ruppert (OrganVave-1) */
+ * Copyright (C) 2026 Guilherme Ruppert (Organvave) */
 /* The drive's floating-point reference: setBfree's own overdrive.c (b_overdrive/overdrive.c, GPL-2.0-or-later) at its
  * default constants, run on a mono input file.
  *

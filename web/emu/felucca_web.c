@@ -3,7 +3,7 @@
  * The design (the device clock driven by the audio the worklet asks for, the exports below, the saved
  * flash handed back before boot) follows X0X's browser build, web/emu/x0x_web.c of charlesvestal/fm1-x0x
  * (GPL-3.0), a Felucca fork. */
-/* organvave-1 (the organ's screen and sound) in the browser: the firmware's sources in src/felucca.c's order, with
+/* organvave (the organ's screen and sound) in the browser: the firmware's sources in src/felucca.c's order, with
  * this file as the HAL, compiled to WebAssembly and run in an AudioWorklet against a simulated FM-1:
  *   - the device clock: TIMER4 ticks (24 MHz) and fm1_ms advance with the audio the worklet asks for; the
  *     audio ISR (audio.c fm1_alnk0_irq, the real one) renders each I2S half (HALF_FRAMES) as the DMA would

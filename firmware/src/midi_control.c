@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Adapted from MIDI control contribution by ChanceTheMaker (2026).
- * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments; Guilherme Ruppert (FMini-1, organvave-1) */
+ * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments; Guilherme Ruppert (FMini-1, organvave) */
 /* MIDI IN's channel messages for the one instrument (track 1), included by seq.c after its input helpers. USB and TRS
  * share the channels' state. Each channel keeps its bend, its sustain pedal and the notes it holds (a bit per note, and
  * a bit per note held only by the pedal); the bend of the channel that played last is the instrument's (GLO > PITCH

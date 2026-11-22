@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments; Guilherme Ruppert (organvave-1) */
+ * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments; Guilherme Ruppert (organvave) */
 /* The editor's host harness (editor_test.c, editor_bridge.c, fuzz_ed.c): host.h with the SysEx plumbing (FELUCCA_OTA),
  * the editor and the instrument's screen code; the replies are collected in host_wire.
  *   reset()                  power-on state: the globals, track 1 on the first factory patch, empty stores

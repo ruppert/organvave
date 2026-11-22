@@ -1,6 +1,6 @@
 #!/bin/sh
 # SPDX-License-Identifier: GPL-3.0-only
-# Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments; Guilherme Ruppert (FMini-1, organvave-1)
+# Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments; Guilherme Ruppert (FMini-1, organvave)
 # Host tests of the firmware's sources (no hardware). Run from the repo root after ./build.sh:
 #   tests/run_tests.sh                      (a failing section prints "SECTION FAILED: <name>")
 # Most tests include tests/host.h (the firmware in src/felucca.c's order, with HAL stubs, a RAM NOR, a screen); the
@@ -80,9 +80,9 @@ for m in 1 2; do                         # the MODEL=elite / mke builds of ota.c
     run "M-UPGRADE entry, SMK model $m build (MODEL=elite / mke: its own parm identity)" "$OUT/ota_test_smk_m$m" "$OUT/smk_new.fwsc"
 done
 for m in pro elite mke; do               # the packages build.sh made (BOARD=smk37 MODEL=...), when present
-    f=build/organvave-1-smk37.fwsc; id="SMK-37 Pro_800"
-    [ $m = elite ] && f=build/organvave-1-smk37-elite.fwsc && id="SMK-37 Elite_800"
-    [ $m = mke ] && f=build/organvave-1-smk37-mke.fwsc && id="MKE-P37_800"
+    f=build/organvave-smk37.fwsc; id="SMK-37 Pro_800"
+    [ $m = elite ] && f=build/organvave-smk37-elite.fwsc && id="SMK-37 Elite_800"
+    [ $m = mke ] && f=build/organvave-smk37-mke.fwsc && id="MKE-P37_800"
     [ -f $f ] && run "SMK package $f: identity $id, stock region table" python3 tests/smk_pkg_test.py $f "$id"
 done
 $CC -DBOARD_SMK37=1 -o "$OUT/ldr_test_smk" tests/ldr_test.c
@@ -176,7 +176,7 @@ if command -v node >/dev/null 2>&1; then
     $HC -o "$OUT/editor_bridge" tests/editor_bridge.c -lm
     run "organ patch editor against the firmware's editor: the INFO tag, ORG_GET / ORG_PUT, a refusal" node web/test_editor_organ.mjs "$OUT/editor_bridge"
     python3 web/make_site.py build/felucca.fwsc "$OUT/site" "$(sed -n 's/^#define ORGANVAVE_VERSION "v\(.*\)"/\1/p' firmware/src/core.h)" >/dev/null
-    run "site: the installer page (markers, scripts, the embedded package)" node web/test_site.mjs "$OUT/site/index.html"
+    run "site: the home page and its installer (markers, scripts, the embedded package)" node web/test_site.mjs "$OUT/site/index.html"
     for m in "SMK-37 Pro" "SMK-37 Elite" "MKE-P37"; do   # the SMK-37 page's three packages (the layout and the identity under test)
         python3 tools/fm1pkg_make.py --board smk37 --product "${m}_800" build/felucca.bin build/loader/ota.bin "$OUT/smk_site_$(echo "$m" | tr -d ' ').fwsc" >/dev/null
     done

@@ -1,6 +1,6 @@
-# Developing OrganVave-1
+# Developing Organvave
 
-OrganVave-1 (repository `organvave-1`) is a tonewheel-organ firmware for the M-VAVE FM-1. [ORGAN.md](ORGAN.md) is its plan
+Organvave (repository `organvave`) is a tonewheel-organ firmware for the M-VAVE FM-1. [ORGAN.md](ORGAN.md) is its plan
 (the map from setBfree, the budget, the milestones); this guide is how the code is laid out and how to change it. It was
 seeded from FMini-1 (Guilherme Ruppert), itself a fork of Felucca (Leo Kuroshita); what is left of those is named in
 [CREDITS.md](CREDITS.md). Since 0.1.0 the instrument is the organ alone: FMini-1's synthesizer engine, its UI and its
@@ -44,7 +44,7 @@ Budget (`./build.sh` prints these and fails when they do not fit): image 277,640
 | `tools/` | Python generators and the measuring tools (the host-side floating point lives here; `build.py` is what `build.sh` runs) |
 | `tools/setbfree_ref/` | setBfree's tone generator as the reference: `sbf_ref.c`, the dump the tables come from, `compare.py` |
 | `tests/` | host tests (`run_tests.sh`), the harnesses `host.h` and `editor_host.h`, goldens, budgets |
-| `web/` | the site (`site_organ.html`, `make_site.py`), the installer's JavaScript, the patch editor (`editor_organ.html`), `EDITOR_PROTOCOL.md`, `emu/` (the browser emulator) |
+| `web/` | the site (`site_landing.html`, `make_site.py`), the installer's JavaScript, the patch editor (`editor_organ.html`), `EDITOR_PROTOCOL.md`, `emu/` (the browser emulator) |
 | `docs/` | what the site serves that is checked in: `index.html` (generated), `emu/` (generated wasm), the splash |
 | `.github/workflows/installer.yml` | builds the firmware and publishes the site to GitHub Pages on a push to `main` |
 
@@ -130,7 +130,7 @@ repository.
 
 ## 6. Site, installer, emulator, release
 
-- The site is `web/make_site.py build/felucca.fwsc OUTDIR VERSION`: the installer page (`web/site_organ.html`, with the package
+- The site is `web/make_site.py build/felucca.fwsc OUTDIR VERSION`: the installer page (`web/site_landing.html`, with the installer and the package
   embedded and the installer's JavaScript from `fm1pkg.js` and `fm1ota.js`), the package beside it, and the patch editor
   (`web/editor_organ.html`, copied to `editor/`), the emulator (`docs/emu/`, copied to `emu/`) and the splash. The Installer
   workflow builds it on every push that touches what the site is made of and publishes it (Settings > Pages: Source = GitHub

@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments; Guilherme Ruppert (FMini-1, organvave-1) */
+ * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments; Guilherme Ruppert (FMini-1, organvave) */
 /* The UI's shared state and helpers (Felucca's ui.c and ui_input.c, cut down to what the instrument's screen,
  * main.c, the editor and the stores use): a full redraw pending, the UPDATE MODE countdown, the message line; the
  * sound loads (a preset, an engine, MIDI Program Change); the LED picture's helpers; the panel calibration.

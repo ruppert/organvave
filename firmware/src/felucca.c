@@ -32,11 +32,11 @@
 #if BOARD_SMK37
 #define FELUCCA_ID SMK_MODEL "_800"   /* package identity (build.py: the .fwsc marker string); the SMK-37: SMK-37 Pro_8XY */
 #else
-#define FELUCCA_ID "FM-1_800"    /* package identity (build.py: the .fwsc marker string); organvave-1 is FM-1_8XY */
+#define FELUCCA_ID "FM-1_800"    /* package identity (build.py: the .fwsc marker string); organvave is FM-1_8XY */
 #endif
 #endif
 #ifndef FELUCCA_VERSION
-#define FELUCCA_VERSION "v1.6.1" /* Felucca's version: the editor INFO ("FELUCCA ..."); organvave-1's is core.h's */
+#define FELUCCA_VERSION "v1.6.1" /* Felucca's version: the editor INFO ("FELUCCA ..."); organvave's is core.h's */
 #endif
 
 /* ------------------------------------------------------------- HAL --- */

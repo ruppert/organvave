@@ -1,6 +1,6 @@
 # setBfree reference
 
-OrganVave-1's organ is ported from [setBfree](https://github.com/pantherb/setBfree) (GPL-2.0-or-later), read at commit
+Organvave's organ is ported from [setBfree](https://github.com/pantherb/setBfree) (GPL-2.0-or-later), read at commit
 2f41983. This directory builds setBfree's own tone generator on the host, as the floating-point reference the firmware
 is measured against (ORGAN.md, DEVELOPING.md section 10). Nothing of setBfree is copied here: `build.sh` clones it.
 

@@ -44,7 +44,7 @@ static void fill(void)
 {
     memset(nor, 0xFF, sizeof nor);
     memset(nor + 0x9D000, 0x11, 0x12000);          /* objects */
-    memset(nor + 0xB0000, 0x22, 0x1000);           /* (spare in OrganVave-1: never touched) */
+    memset(nor + 0xB0000, 0x22, 0x1000);           /* (spare in Organvave: never touched) */
     memset(nor + 0xC1000, 0x33, 0x1000);           /* USRTRIM: never touched */
     memset(nor + 0xC2000, 0x44, 0x1000);           /* a user sample */
 }
@@ -52,7 +52,7 @@ static int store_erased(void)
 {
     uint32_t i;
     for (i = 0x9D000; i < 0xAF000; i++) if (nor[i] != 0xFF) return 0;
-    return nor[0xB0000] == 0x22;                   /* (OrganVave-1 clears 0x9D000..0xAEFFF only) */
+    return nor[0xB0000] == 0x22;                   /* (Organvave clears 0x9D000..0xAEFFF only) */
 }
 static int others_kept(void) { return nor[0xC1000] == 0x33 && nor[0xC1FFF] == 0x33 && nor[0xC2000] == 0x44; }
 

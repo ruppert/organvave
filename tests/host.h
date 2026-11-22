@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments; Guilherme Ruppert (FMini-1, organvave-1) */
+ * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments; Guilherme Ruppert (FMini-1, organvave) */
 /* The firmware on the host: the same sources as firmware/src/felucca.c, in its order, with the HAL stubbed (a screen
  * in RAM, the keys and knobs from the test, a 1 MiB RAM flash behind storage.c's hooks). The tests include this, then
  * what they test on top (organ_app.c, editor.c, audio.c ...).

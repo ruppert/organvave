@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Guilherme Ruppert (OrganVave-1) */
+ * Copyright (C) 2026 Guilherme Ruppert (Organvave) */
 /* BENCHMARK (0.11.0, GLOBAL > BENCHMARK): the runner. Fourteen kernels (kernel 8: the organ played, 25 keys changing each block,
  * the crosstalk on and the scanner on the upper manual; the patch is saved and restored; kernel 9: the rotary as
  * CLASSIC 5, the same input as kernel 7; kernels 10 and 11: kernel 8 with the crosstalk only, and with the scanner only;

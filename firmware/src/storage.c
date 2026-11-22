@@ -54,7 +54,7 @@ static uint32_t st_crc32_add(uint32_t c, const void *p, uint32_t n)   /* zlib CR
 static uint32_t st_crc32(const void *p, uint32_t n) { return ~st_crc32_add(0xFFFFFFFFu, p, n); }
 
 #if BOARD_SMK37
-/* SMK-37 Pro (OrganVave-1's objects; the layer's places were Felucca's): every object in FL_DATA 0x9D000..0xBAFFF (the
+/* SMK-37 Pro (Organvave's objects; the layer's places were Felucca's): every object in FL_DATA 0x9D000..0xBAFFF (the
  * stock VM), A/B neighbours: the user preset banks 0x9D000..0xA0FFF (OBJ_UPRESET0, +1), the user presets' patches
  * 0xA1000 / 0xA2000 (OBJ_UPFM6), the autosave 0xA3000 / 0xA4000, the settings 0xA5000 / 0xA6000; 0xA7000..0xAEFFF
  * spare (cleared with the rest on a foreign store); the store owner tag 0xAF000 (st_owner_check); 0xB0000..0xBAFFF
@@ -77,7 +77,7 @@ static uint32_t st_sector(uint32_t obj, uint32_t copy)  /* flash offset of copy 
 }
 
 /* The owner of the store. The store area is the stock firmware's VM, so after an install it may hold the stock
- * firmware's (or any other firmware's) data, which OrganVave-1 must never parse as its own. The sector 0xAF000 holds
+ * firmware's (or any other firmware's) data, which Organvave must never parse as its own. The sector 0xAF000 holds
  * the tag "SMK37DATAORGVAVE" (the data family, SMK_DATA_FAMILY in build.py). Tagged: load as ever. Anything else
  * (another tag, or none): clear 0x9D000..0xAEFFF, then write the tag. FELUCCA_DATA_UNTAGGED_OK 1 would keep a store
  * with an erased tag (0: the SMK build never wrote untagged data). Calibration, BT pairing and key_mac are outside

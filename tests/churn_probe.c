@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Guilherme Ruppert (OrganVave-1) */
+ * Copyright (C) 2026 Guilherme Ruppert (Organvave) */
 /* DIAGNOSTIC (not in the suite): what a key change costs in the organ engine, with and without the crosstalk, under the
  * benchmark's churn (25 keys held, one key released and one pressed per block). Counts per second of audio, read from the
  * engine's own state: key messages, table entries they walk (org_contrib), wheels they touch (each is recalculated in

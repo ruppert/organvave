@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Guilherme Ruppert (OrganVave-1) */
+ * Copyright (C) 2026 Guilherme Ruppert (Organvave) */
 /* The SMK-37 port's organ mapping (firmware/src/smk_organ.c, smk37-port.yaml) on the host: the UI built with
  * -DBOARD_SMK37=1 over host.h's SMK input (the test drives the 37 keys, the pads, the faders, the wheels, the pedal, the
  * buttons). What the board layer reads from the hardware (smk_input.h: the scan, the ADC, the pads' thresholds) is not

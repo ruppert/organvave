@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
-/* Copyright (C) 2026 Guilherme Ruppert (organvave-1) */
+/* Copyright (C) 2026 Guilherme Ruppert (organvave) */
 /* The organ's screens and controls (firmware/src/organ_app.c) on the host: HOME and DRAWBARS drawn and told apart, the
  * drawbar controls (SELECT picks a bar, ALGORITHM pulls it, the knobs 1-4 pull the picked bar and the next three, the range
  * clamped; LOWER shares its page with the pedal's two bars), PRESET over the factory and the user

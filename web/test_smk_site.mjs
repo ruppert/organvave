@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
-// Copyright (C) 2026 Guilherme Ruppert (OrganVave-1)
+// Copyright (C) 2026 Guilherme Ruppert (Organvave)
 // The SMK-37 installer page (web/make_smk_site.py's smk.html): every marker filled, both scripts compile, the three packages
 // beside it carry their models' identities; then the page itself runs (node, with a fake fetch, Web MIDI and Updater):
 // Install waits for the backup box, the keyboard's model picks its own package (SMK-37 Pro, Elite, MKE-P37, also when
@@ -27,7 +27,7 @@ const m = scripts[1].match(/const meta = (\{.*\});/);
 const meta = m ? JSON.parse(m[1]) : null;
 const want = [["SMK-37 Pro", ""], ["SMK-37 Elite", "-elite"], ["MKE-P37", "-mke"]];
 ok(meta && meta.pkgs.length === 3 && want.every(([mo, suf], i) => meta.pkgs[i].model === mo &&
-   new RegExp("^" + mo + "_8\\d\\d$").test(meta.pkgs[i].product) && meta.pkgs[i].file === `smk/organvave-1-smk37${suf}-v${meta.version}.fwsc`),
+   new RegExp("^" + mo + "_8\\d\\d$").test(meta.pkgs[i].product) && meta.pkgs[i].file === `smk/organvave-smk37${suf}-v${meta.version}.fwsc`),
    `meta: ${meta && meta.pkgs.map((p) => p.product).join(", ")}`);
 ok(meta && meta.pkgs.every((p) => existsSync(join(dir, p.file)) && readFileSync(join(dir, p.file)).includes(Buffer.from("FELUCCA-LOADER-1"))),
    "the three packages beside the page, each a Felucca-loader package");
@@ -73,7 +73,7 @@ const run = async (t) => { device = t; calls.length = 0; await vm.runInContext("
 let c = await run("SMK-37 Elite_016");
 ok(c.length === 1 && c[0][0] === "install" && /^SMK-37 Elite_8/.test(c[0][1]), `an SMK-37 Elite (stock): the Elite package (${c[0] && c[0][1]})`);
 c = await run("SMK-37 Pro_800");
-ok(c.length === 1 && c[0][0] === "install" && /^SMK-37 Pro_8/.test(c[0][1]), `an SMK-37 Pro running OrganVave-1: the Pro package (${c[0] && c[0][1]})`);
+ok(c.length === 1 && c[0][0] === "install" && /^SMK-37 Pro_8/.test(c[0][1]), `an SMK-37 Pro running Organvave: the Pro package (${c[0] && c[0][1]})`);
 c = await run("ota-MKE-P37_900");
 ok(c.length === 1 && c[0][0] === "resume" && /^MKE-P37_8/.test(c[0][1]), `an MKE-P37 in update mode: resume with the MKE package (${c[0] && c[0][1]})`);
 c = await run("FM-1_015");

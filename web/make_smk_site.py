@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
-# Copyright (C) 2026 Guilherme Ruppert (OrganVave-1)
-# OrganVave-1's installer page for the M-Vave SMK-37 (the SMK-37 port, SMK37.md): site_smk.html with the installer's JS
+# Copyright (C) 2026 Guilherme Ruppert (Organvave)
+# Organvave's installer page for the M-Vave SMK-37 (the SMK-37 port, SMK37.md): site_smk.html with the installer's JS
 # (fm1pkg.js, fm1ota.js) and the three packages beside it.
 #   python3 web/make_smk_site.py OUTDIR VERSION PRO.fwsc ELITE.fwsc MKE.fwsc
-# writes OUTDIR/smk.html, OUTDIR/smk/organvave-1-smk37[-elite|-mke]-vVERSION.fwsc and OUTDIR/smk/index.html (to smk.html).
+# writes OUTDIR/smk.html, OUTDIR/smk/organvave-smk37[-elite|-mke]-vVERSION.fwsc and OUTDIR/smk/index.html (to smk.html).
 # Each package must carry its model's identity (SMK-37 Pro_8XY, SMK-37 Elite_8XY, MKE-P37_8XY) and the Felucca loader.
 # VERSION must be ORGANVAVE_VERSION in firmware/src/core.h. (The site's index.html, the FM-1's: web/make_site.py.)
 import json
@@ -34,7 +34,7 @@ def main(outdir, version, *pkgs):
         product = product_of(raw)
         if not re.fullmatch(re.escape(model) + r"_8\d\d", product) or b"FELUCCA-LOADER-1" not in raw:
             raise SystemExit(f"{pkg}: not the {model} package of this firmware (identity {product!r})")
-        file = f"organvave-1-smk37{suffix}-v{version}.fwsc"
+        file = f"organvave-smk37{suffix}-v{version}.fwsc"
         shutil.copyfile(pkg, out / "smk" / file)
         entries.append({"model": model, "product": product, "file": "smk/" + file})
     html = (HERE / "site_smk.html").read_text(encoding="utf-8")
@@ -46,7 +46,7 @@ def main(outdir, version, *pkgs):
     html = html.replace("/*LIB*/", lib).replace("/*META*/{}", meta + ";").replace("/*VERSION*/", version)
     (out / "smk.html").write_text(html, encoding="utf-8")
     (out / "smk" / "index.html").write_text('<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=../smk.html">'
-                                            '<title>OrganVave-1 for the SMK-37</title><a href="../smk.html">OrganVave-1 for the SMK-37</a>\n',
+                                            '<title>Organvave for the SMK-37</title><a href="../smk.html">Organvave for the SMK-37</a>\n',
                                             encoding="utf-8")
     print(f"{out}/smk.html: {len(html)} B; " + ", ".join(e["product"] for e in entries) + " in smk/")
 

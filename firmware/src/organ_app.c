@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Guilherme Ruppert (OrganVave-1) */
-/* OrganVave-1: the user interface. main.c calls oa_input / oa_leds / oa_draw from its loop and oa_splash at power-on.
+ * Copyright (C) 2026 Guilherme Ruppert (Organvave) */
+/* Organvave: the user interface. main.c calls oa_input / oa_leds / oa_draw from its loop and oa_splash at power-on.
  * The screens are drawn after the real console's panel (owner, 2026-10-21; the approved mock-ups: tools/ui_mockups.c,
  * docs/mockups/): the wood lid with an engraved brass plate for the page's name, a chrome trim, the black control
  * rail, the drawbars as on the console (a dark stem with light rails and the numbers 8 .. 1, a block cap with a lit

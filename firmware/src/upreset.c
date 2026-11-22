@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments; Guilherme Ruppert (FMini-1, organvave-1) */
+ * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments; Guilherme Ruppert (FMini-1, organvave) */
 /* User presets (the SAVE dialog, the PRESETS list after the factory patches; editor protocol cmds 16..21): 32 slots
  * in two storage.c objects (OBJ_UPRESET0/1, A/B sectors at 0xDC000..0xDFFFF), 16 records each, mirrored in RAM so
  * browsing never reads flash. The format is FMini-1's (and Felucca's before it), so presets saved there read here.

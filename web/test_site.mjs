@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // The built site (web/make_site.py's index.html): every marker filled, both scripts compile and run to the first status
 // without Web MIDI, the embedded package is the FM-1 package of the version. Node only (no browser, no hardware).
-//   python3 web/make_site.py build/felucca.fwsc SITE 0.11.1 && node web/test_site.mjs SITE/installer/index.html
+//   python3 web/make_site.py build/felucca.fwsc SITE 0.11.1 && node web/test_site.mjs SITE/index.html
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
 
-const file = process.argv[2] || "SITE/installer/index.html";
+const file = process.argv[2] || "SITE/index.html";
 const html = readFileSync(file, "utf8");
 let failed = 0;
 const ok = (cond, what) => { console.log(`${what.padEnd(70)} ${cond ? "ok" : "FAIL"}`); if (!cond) failed++; };
@@ -22,7 +22,7 @@ for (const [i, s] of scripts.entries()) {
 // the page's meta: the package it carries, its identity and the file name of the download
 const m = scripts[1].match(/const meta = (\{.*\});/);
 const meta = m ? JSON.parse(m[1]) : null;
-ok(meta && /^FM-1_8\d\d$/.test(meta.product) && /^organvave-1-v\d+\.\d+\.\d+\.fwsc$/.test(meta.file), `meta: ${meta && meta.product}, ${meta && meta.file}`);
+ok(meta && /^FM-1_8\d\d$/.test(meta.product) && /^organvave-v\d+\.\d+\.\d+\.fwsc$/.test(meta.file), `meta: ${meta && meta.product}, ${meta && meta.file}`);
 const b64 = meta ? meta.pkg.split(",")[1] : "";
 const pkg = Buffer.from(b64, "base64");
 ok(pkg.includes(Buffer.from("FELUCCA-LOADER-1")), `the embedded package (${pkg.length} B) is a Felucca loader package`);
@@ -30,11 +30,16 @@ ok(pkg.includes(Buffer.from("FELUCCA-LOADER-1")), `the embedded package (${pkg.l
 // the page runs without Web MIDI: the first status says so, and nothing throws
 const status = { textContent: "", className: "", style: {} };
 const el = () => ({ textContent: "", value: "", style: {}, className: "", dataset: {}, children: [], hidden: false, disabled: false,
-  setAttribute() {}, appendChild() {}, append() {}, addEventListener() {}, showModal: null, close() {}, classList: { add() {} } });
+  setAttribute() {}, appendChild() {}, append() {}, addEventListener() {}, querySelector: () => el(), showModal: null, close() {}, classList: { add() {} } });
 const elements = new Map();
 const document = { getElementById: (id) => { if (id === "status") return status; if (!elements.has(id)) elements.set(id, el()); return elements.get(id); },
-  querySelector: () => el(), createElement: () => el(), body: { className: "" } };
-const ctx = { document, navigator: { language: "en-US" }, console, setTimeout, clearTimeout, fetch: undefined, TextEncoder, Uint8Array, Date, window: {} };
+  querySelector: () => el(), querySelectorAll: () => [], createElement: () => el(), addEventListener() {},
+  documentElement: { dataset: {}, lang: "" }, body: { className: "", classList: { add() {}, toggle() {} } } };
+// the page also reads the browser around the installer: the hero film and the viewer (no timers run here)
+const ctx = { document, navigator: { language: "en-US" }, console, setTimeout, clearTimeout, setInterval: () => 0, fetch: undefined,
+  TextEncoder, Uint8Array, Date, window: {}, addEventListener() {}, scrollTo() {}, scrollY: 0, location: { hash: "" },
+  performance: { now: () => 0 }, requestAnimationFrame: () => 0, matchMedia: () => ({ matches: false }),
+  IntersectionObserver: class { observe() {} } };
 vm.createContext(ctx);
 let threw = null;
 try { vm.runInContext(scripts[0] + "\n" + scripts[1], ctx); await new Promise((r) => setTimeout(r, 30)); }

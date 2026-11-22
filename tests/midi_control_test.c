@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Guilherme Ruppert (organvave-1) */
+ * Copyright (C) 2026 Guilherme Ruppert (organvave) */
 /* MIDI IN end to end (firmware/src/midi_control.c through seq.c events_block): notes on any channel (the organ's keys),
  * the manuals by channel, bend by GLO > PITCH BEND, CC120 / 123 / 121, the CC map's queue, Program Change through the main
  * loop, the source and channel filters, realtime ignored, a lost message (overflow) releasing everything. Since 0.4.0 the

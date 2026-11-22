@@ -1,6 +1,6 @@
-# ORGAN.md: the organvave-1 plan
+# ORGAN.md: the organvave plan
 
-organvave-1 turns the M-VAVE FM-1 into a tonewheel organ: one instrument, no sequencer, no arpeggiator, no other
+organvave turns the M-VAVE FM-1 into a tonewheel organ: one instrument, no sequencer, no arpeggiator, no other
 engines. The organ (tone generator, keys and buses, percussion, scanner vibrato / chorus, preamp) and the rotary speaker
 are ported from setBfree (<https://github.com/pantherb/setBfree>, GPL-2.0-or-later; read at commit 2f41983b5b): rewritten
 in integer C for the firmware, with the same algorithms and data; the floating-point original is the reference on the
@@ -399,7 +399,7 @@ designed one; the static budget of the new functions.
 ## Phase 1 findings
 
 - Identity: the loader always answers `ota-FM-1_900`; the installers compare only the model (text before `_`), never the
-  number, so any FM-1 package installs over any other, by design. organvave-1 takes `FM-1_8XY` and its installer accepts
+  number, so any FM-1 package installs over any other, by design. organvave takes `FM-1_8XY` and its installer accepts
   only `FM-1_8\d\d`.
 - The real overlap is the flash store: projects and user presets live in the same sectors with the same formats. New
   magics make each firmware see the other's data as empty (no corruption), but saving in one overwrites the other's.

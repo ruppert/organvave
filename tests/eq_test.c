@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Guilherme Ruppert (OrganVave-1) */
+ * Copyright (C) 2026 Guilherme Ruppert (Organvave) */
 /* The organ's equaliser (firmware/src/eng_eq.c) against its design (tools/gen_eq_tables.py): sines through eq_run1 and the gain
  * measured at the end. 1. the byte codings (zero is flat). 2. flat is flat (every frequency within 0.1 dB). 3. LOW: +12 dB
  * at 40 Hz within 2 dB of 12, none at 2 kHz (within 0.5), -12 likewise; HIGH the same at 14 kHz and 100 Hz; MID: the set gain

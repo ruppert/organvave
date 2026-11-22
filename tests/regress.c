@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments; Guilherme Ruppert (FMini-1, organvave-1) */
+ * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments; Guilherme Ruppert (FMini-1, organvave) */
 /* Regression suite of the DSP on the host (the firmware's sources, through tests/host.h).
  *   build/host/regress [GOLDEN_FILE CPU_FILE]      (run_tests.sh builds and runs it)
  *

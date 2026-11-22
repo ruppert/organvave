@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Guilherme Ruppert (OrganVave-1) */
+ * Copyright (C) 2026 Guilherme Ruppert (Organvave) */
 /* The organ over MIDI (0.4.0, setBfree's map) on the host, through the real event path (midi_in_q -> events_block):
  * 1. the channel picks the manual: 1 upper, 2 lower, 3 pedals (omni; the other channels play the upper); the key ranges
  *    (upper and lower 36..96, pedals 24..55) and note off.

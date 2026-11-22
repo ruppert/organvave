@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Guilherme Ruppert (OrganVave-1) */
-/* OrganVave-1: mock-ups of the organ's screens, drawn after the real console's panel with the firmware's own canvas and
+ * Copyright (C) 2026 Guilherme Ruppert (Organvave) */
+/* Organvave: mock-ups of the organ's screens, drawn after the real console's panel with the firmware's own canvas and
  * fonts (gfx.c, build/gen/ui_fonts.h) into DIR/mock_<name>.ppm (240 x 240). For the owner's approval before 0.1.0; the
  * drawing helpers here are integer-only so they can move into the firmware as they are.
  *   cc -O1 -w -Ibuild/gen -Ifirmware/src -Itests -o /tmp/mock tools/ui_mockups.c -lm && /tmp/mock DIR

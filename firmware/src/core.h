@@ -1,12 +1,12 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments */
 /* Core types: the instrument (one track), voices, engines, parameters. Felucca's four parts, drum grid, song chain
- * and automation are gone (organvave-1 plays one instrument: the organ, eng_organ.c); the parameter ids and the
+ * and automation are gone (organvave plays one instrument: the organ, eng_organ.c); the parameter ids and the
  * global ids stay as they were (the user presets and the editor protocol use them).
  * Sections: sizes, parameters, voices and engines, the track and the song, system. */
 #include <stdint.h>
 
-/* organvave-1's version: the splash and ABOUT show it; the workflow, the emulator and the installer read this line;
+/* organvave's version: the splash and ABOUT show it; the workflow, the emulator and the installer read this line;
  * build.py --release X.Y sets it. (FELUCCA_VERSION in felucca.c is Felucca's: the editor INFO "FELUCCA ...") */
 #ifndef ORGANVAVE_VERSION
 #define ORGANVAVE_VERSION "v0.11.1"

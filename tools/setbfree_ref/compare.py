@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
-# Copyright (C) 2026 Guilherme Ruppert (OrganVave-1)
+# Copyright (C) 2026 Guilherme Ruppert (Organvave)
 """Render the same cases with setBfree's tone generator (sbf_ref) and ORGAN's (build/host/organ_test render) and
 compare them: rms of each (dB), the difference's level against the reference (SNR, dB), the peak.
 

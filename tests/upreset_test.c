@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments; Guilherme Ruppert (organvave-1) */
+ * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments; Guilherme Ruppert (organvave) */
 /* The user presets against a RAM NOR (firmware/src/upreset.c, storage.c): the banks and the patches across a power
  * cycle, a bank or record of another shape read as empty, an older record mapped by count, a retired engine's record
  * playing on the organ, the patch kept through a rename and dropped when the record changes, a failed write changing

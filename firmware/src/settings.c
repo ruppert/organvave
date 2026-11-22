@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments; Guilherme Ruppert (FMini-1, organvave-1) */
+ * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments; Guilherme Ruppert (FMini-1, organvave) */
 /* The settings and the autosave, kept in flash (storage.c).
  *
  * Settings (OBJ_SETTINGS): the panel's calibration (panel.c), the speaker EQ (MENU's LOW CUT, fx_lowcut), the LEDs

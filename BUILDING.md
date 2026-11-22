@@ -1,4 +1,4 @@
-# Building OrganVave-1
+# Building Organvave
 
 The build makes three files in `build/`:
 
@@ -6,7 +6,7 @@ The build makes three files in `build/`:
 | --- | --- |
 | `felucca.bin` | the firmware app |
 | `loader/ota.bin` | the update loader |
-| `felucca.fwsc`, `organvave-1-vX.Y.Z.fwsc` | the installable package (app + loader), under its internal and its release name (the version of `core.h`) |
+| `felucca.fwsc`, `organvave-vX.Y.Z.fwsc` | the installable package (app + loader), under its internal and its release name (the version of `core.h`) |
 
 ## Get the source
 
@@ -58,9 +58,9 @@ On Linux x86-64 the toolchain runs natively and Docker is not needed.
 (`~/.jieli/toolchain`, `~/fw-AC79_AIoT_SDK`).
 
 `./build.sh --release 0.1` makes a release build: the package identity becomes `FM-1_801`
-and the version string (`ORGANVAVE_VERSION`) `v0.1`; the package is `build/organvave-1-v0.1.fwsc`, and
+and the version string (`ORGANVAVE_VERSION`) `v0.1`; the package is `build/organvave-v0.1.fwsc`, and
 `build/release-0.1/` holds what a release ships: the package, the app
-(`organvave-1-0.1-app.bin`), `SHA256SUMS`, `LICENSE`, `LICENSING.md` and
+(`organvave-0.1-app.bin`), `SHA256SUMS`, `LICENSE`, `LICENSING.md` and
 `LICENSES/` (the package contains Apache-2.0 SDK files, so the licence texts travel with it).
 
 Build options (environment, `0` or `1`; defaults in `firmware/src/felucca.c` and `firmware/src/usb.c`):
@@ -124,7 +124,7 @@ Or, to install your own build from the web installer, make a local copy of the s
 (Web MIDI needs a secure context):
 
 ```
-python3 web/make_site.py build/felucca.fwsc /tmp/site 0.1.0      # VERSION = ORGANVAVE_VERSION in firmware/src/core.h; the download is organvave-1-v0.1.0.fwsc
+python3 web/make_site.py build/felucca.fwsc /tmp/site 0.1.0      # VERSION = ORGANVAVE_VERSION in firmware/src/core.h; the download is organvave-v0.1.0.fwsc
 cd /tmp/site && python3 -m http.server 8000
 # open http://localhost:8000/
 ```

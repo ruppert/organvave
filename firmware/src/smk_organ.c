@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Guilherme Ruppert (OrganVave-1) */
+ * Copyright (C) 2026 Guilherme Ruppert (Organvave) */
 /* The SMK-37 port's organ mapping (BOARD_SMK37 only; the owner's decisions are smk37-port.yaml), on top of the board layer
  * of genkigenki/fm1-to-smk37 (hal/smk_input.h). main.c calls smk_frame() once a UI frame (before the LEDs and the screen)
  * and smk_poll() between frames; organ_app.c hands it the button presses (smk_buttons), draws its page (smk_draw) and
@@ -16,7 +16,7 @@
  *    crossing, so the pads and the pedal can switch it too). The pitch wheel does nothing (an organ has no bend).
  *  - The pedal input (a footswitch) switches the Leslie SLOW / FAST, either polarity (its rest learnt).
  *  - < and >: the preset before / after. KNOB BANK and FADER BANK together: the diagnostics page (the keys, pads,
- *    faders, wheels, pedal, buttons, the ADC live: the serial console the kit's bring-up uses is not in OrganVave-1). */
+ *    faders, wheels, pedal, buttons, the ADC live: the serial console the kit's bring-up uses is not in Organvave). */
 #ifndef SMK_ORGAN_C
 #define SMK_ORGAN_C
 

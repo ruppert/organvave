@@ -2,7 +2,7 @@
  * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments */
 /* The update loader (device side; Felucca's). Runs from RAM, started by the SPL from
  * an update record, with interrupts off: USB is polled from the main loop.
- * It is a USB-MIDI device "OrganVave-1 Update" (1209:0002) that answers the
+ * It is a USB-MIDI device "Organvave Update" (1209:0002) that answers the
  * M-UPGRADE update protocol as "ota-FM-1_900" (SMK: "ota-SMK-37 Pro_900", or the
  * SMK_MODEL build's name; hosts look for "ota-"), and
  * writes the app area only (ldr_core.c). The UBOOT soft key works here too.

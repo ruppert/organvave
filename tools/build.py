@@ -6,18 +6,18 @@
   tools/build.py [--release X.Y[-suffix]] [--board fm1|smk37] [--model pro|elite|mke]
 
 Outputs in build/: felucca.bin (app), loader/ota.bin (update loader),
-felucca.fwsc (package), and the same package under its release name organvave-1-vX.Y.Z.fwsc (the version of
+felucca.fwsc (package), and the same package under its release name organvave-vX.Y.Z.fwsc (the version of
 firmware/src/core.h, or --release's). A release build (--release X.Y) writes a folder release-X.Y/ with the package,
 the app, SHA256SUMS and the licence files.
 See BUILDING.md for the toolchain and the SDK.
 
-BOARD=smk37 (or --board smk37) builds OrganVave-1 for the SMK-37 Pro (the port of genkigenki/fm1-to-smk37, its
+BOARD=smk37 (or --board smk37) builds Organvave for the SMK-37 Pro (the port of genkigenki/fm1-to-smk37, its
 Felucca layer): -DBOARD_SMK37=1 for the app and the loader, identity SMK-37 Pro_800 (release SMK-37 Pro_8XY), the
-SMK flash layout (fm1pkg_make.py), and the package build/organvave-1-smk37.fwsc (and organvave-1-smk37-vX.Y.Z.fwsc).
+SMK flash layout (fm1pkg_make.py), and the package build/organvave-smk37.fwsc (and organvave-smk37-vX.Y.Z.fwsc).
 The default stays the FM-1, byte-identical.
 MODEL=elite / mke (or --model) with smk37: the same build under the SMK-37 Elite's or the MKE-P37's model
 name (identity SMK-37 Elite_800 / MKE-P37_800, the loader's and the update record's name too; -DSMK_MODEL),
-so the stock updater still takes that unit's factory package; build/organvave-1-smk37-elite.fwsc, -mke.fwsc.
+so the stock updater still takes that unit's factory package; build/organvave-smk37-elite.fwsc, -mke.fwsc.
 
 The JieLi toolchain is Linux x86-64 only. JIELI_TOOLCHAIN points at it; on
 macOS (or with JIELI_DOCKER=1) each tool runs in a linux/amd64 container.
@@ -59,11 +59,11 @@ SDK_SHA256 = {
     "cfg/eq_cfg_hw.bin": "41167491bffed4651750719c973d2758adeb9021a5670d02d6a53c85ed80ea7d",
 }
 
-PRODUCT = "FM-1_800"                # package identity (organvave-1: FM-1_8XY); release builds are FM-1_8XY
+PRODUCT = "FM-1_800"                # package identity (organvave: FM-1_8XY); release builds are FM-1_8XY
 BOARD = "fm1"                       # fm1 (default) or smk37: BOARD env or --board (the SMK-37 port, genkigenki's layer)
 BOARD_PREFIX = {"fm1": "FM-1_8", "smk37": "SMK-37 Pro_8"}   # identity of a release build: prefix + X + Y
 BOARD_DEFS = {"fm1": [], "smk37": ["-DBOARD_SMK37=1"]}       # the FM-1 build gets no new flag (byte-identical)
-BOARD_STEM = {"fm1": "felucca", "smk37": "organvave-1-smk37"}   # package name: STEM.fwsc (and the versioned copy)
+BOARD_STEM = {"fm1": "felucca", "smk37": "organvave-smk37"}   # package name: STEM.fwsc (and the versioned copy)
 # smk37: the keyboard's model name (MODEL env or --model); one hardware, three names. pro adds no flag
 MODELS = {"pro": "SMK-37 Pro", "elite": "SMK-37 Elite", "mke": "MKE-P37"}
 VERSION = None                      # ORGANVAVE_VERSION for release builds (default: firmware/src/core.h)
@@ -431,8 +431,8 @@ def main():
     if errors:
         raise SystemExit("build: checks failed")
     pkg = fm1pkg_make.ufw(fm1pkg_make.flash_image(img, fm1pkg_make.KEY), ota, PRODUCT)
-    # e.g. organvave-1-v0.1.0.fwsc; the SMK-37: organvave-1-smk37[-elite|-mke]-v0.1.0.fwsc
-    named = ("organvave-1-" if BOARD == "fm1" else stem + "-") + (VERSION or core_version()) + ".fwsc"
+    # e.g. organvave-v0.1.0.fwsc; the SMK-37: organvave-smk37[-elite|-mke]-v0.1.0.fwsc
+    named = ("organvave-" if BOARD == "fm1" else stem + "-") + (VERSION or core_version()) + ".fwsc"
     (OUT / name).write_bytes(pkg)
     (OUT / named).write_bytes(pkg)
     print(f"app      {OUT / 'felucca.bin'}  {len(img)} B")

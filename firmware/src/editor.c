@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments; Guilherme Ruppert (FMini-1, organvave-1) */
+ * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments; Guilherme Ruppert (FMini-1, organvave) */
 /* Editor protocol: SysEx for the web editor (web/EDITOR_PROTOCOL.md; the organ's web editor is web/editor_organ.html): INFO GET SET
  * DUMP DESC PRESET NAMES, the user presets (UP_LIST GET STORE LOAD ERASE), live sync (WATCH, the CHANGED / RELOAD
  * pushes, PING), TRACK, and the organ patch (85, 86: editor_organ.c).
@@ -221,7 +221,7 @@ static void ed_handle(const uint8_t *f, uint32_t n)   /* f: the bytes between F0
             ed_str(ENGINES[i]->name, 8);
         ed_b(NTRK);                                       /* v3 */
         ed_b(0x53); ed_b(1); ed_b(3);   /* live sync: bit 0 WATCH while on keeps the shadow, bit 1 no RELOAD echo */
-        ed_b(0x4F); ed_b(1); ed_b(ORG_PSIZE);   /* OrganVave-1: the organ patch, ORG_PSIZE bytes (cmds 85, 86; editor_organ.c) */
+        ed_b(0x4F); ed_b(1); ed_b(ORG_PSIZE);   /* Organvave: the organ patch, ORG_PSIZE bytes (cmds 85, 86; editor_organ.c) */
         break;
     case ED_GET:
     case ED_SET:

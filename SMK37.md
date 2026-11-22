@@ -1,6 +1,6 @@
-# OrganVave-1 on the SMK-37 (beta)
+# Organvave on the SMK-37 (beta)
 
-OrganVave-1 also builds for the M-Vave SMK-37, a 37-key controller with the same chip as the FM-1. The FM-1 build is
+Organvave also builds for the M-Vave SMK-37, a 37-key controller with the same chip as the FM-1. The FM-1 build is
 unchanged (byte for byte); everything for the SMK-37 is behind `BOARD_SMK37`. The port follows
 [genkigenki/fm1-to-smk37](https://github.com/genkigenki/fm1-to-smk37) and carries its board layer (the SMK-37 target of
 genkigenki/Felucca); the decisions for each control are in [smk37-port.yaml](smk37-port.yaml).
@@ -22,7 +22,7 @@ model; the unit's own stock package is the same model, so the way back to stock 
 
 The FM-1's manual still applies; the SMK-37's controls map onto the FM-1's like this.
 
-| SMK-37 | OrganVave-1 |
+| SMK-37 | Organvave |
 | --- | --- |
 | Keys F3..G5 (the middle 27) | the FM-1's 27 keys (DRAWBAR PRESET MODE's keys too) |
 | Keys C3..E3 and G#5..C6 (the outer 10) | more notes for the organ, past the 27: with the octave buttons and the manuals' split (silent in DRAWBAR PRESET MODE) |
@@ -53,9 +53,9 @@ The SMK-37's TRS jack is a MIDI output and this build does not use it; there is 
 See [BUILDING.md](BUILDING.md) for the toolchain.
 
 ```sh
-BOARD=smk37 ./build.sh                 # build/organvave-1-smk37.fwsc (SMK-37 Pro)
-BOARD=smk37 MODEL=elite ./build.sh     # build/organvave-1-smk37-elite.fwsc
-BOARD=smk37 MODEL=mke ./build.sh       # build/organvave-1-smk37-mke.fwsc
+BOARD=smk37 ./build.sh                 # build/organvave-smk37.fwsc (SMK-37 Pro)
+BOARD=smk37 MODEL=elite ./build.sh     # build/organvave-smk37-elite.fwsc
+BOARD=smk37 MODEL=mke ./build.sh       # build/organvave-smk37-mke.fwsc
 ./build.sh                             # the FM-1 build again before tests/run_tests.sh (the tests use its files)
 ```
 
@@ -68,13 +68,13 @@ section 3): part of the flash is unique to each unit (its calibration and key) a
 Then connect the keyboard by USB and run, with the package for your model:
 
 ```sh
-python3 tools/fm1_install.py build/organvave-1-smk37.fwsc
+python3 tools/fm1_install.py build/organvave-smk37.fwsc
 ```
 
 `fm1_install.py` needs `mido` and `python-rtmidi` (`pip3 install mido python-rtmidi`). It checks that the package is
 for the connected model.
 
-Or from the browser (Chrome or Edge): **<https://ruppert.github.io/organvave-1/smk.html>**. The page asks the keyboard for
+Or from the browser (Chrome or Edge): **<https://ruppert.github.io/organvave/smk.html>**. The page asks the keyboard for
 its model and installs that model's package; it refuses an FM-1 and holds Install until you confirm the backup. It is
 `web/site_smk.html`, built by `web/make_smk_site.py` (tests: `web/test_smk_site.mjs`); the site's workflow on `main`
 builds the three packages from this branch and publishes the page.

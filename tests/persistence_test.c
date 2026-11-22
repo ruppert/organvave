@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Guilherme Ruppert (organvave-1) */
+ * Copyright (C) 2026 Guilherme Ruppert (organvave) */
 /* The settings and the autosave against a RAM NOR (firmware/src/settings.c, storage.c): written only when quiet and
  * changed, retried after a flash error, read back at power-on; the autosave after AS_IDLE_MS of quiet, at most once per
  * AS_GAP_MS, restored only after a clean boot; FMini-1's settings record read as it is, its autosave (a project) and a

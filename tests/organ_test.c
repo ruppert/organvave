@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Guilherme Ruppert (OrganVave-1) */
+ * Copyright (C) 2026 Guilherme Ruppert (Organvave) */
 /* ORGAN's tone generator (src/eng_organ.c) on the host, against numbers measured on setBfree's own (the float
  * reference, tools/setbfree_ref: tools/setbfree_ref/compare.py renders both and prints them).
  *   build/host/organ_test                                    the checks
