@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-only
-# Organvave's site on GitHub Pages, at https://ruppert.github.io/organvave/ (Settings > Pages: Source = GitHub Actions).
+# OrganVave's site on GitHub Pages, at https://ruppert.github.io/organvave/ (Settings > Pages: Source = GitHub Actions).
 # The site: the installer page (web/make_site.py with the firmware's package), the patch editor (editor/), the browser
 # emulator (emu/), the splash. Each push that changes what the site is built from publishes it.
 name: Installer
@@ -51,7 +51,7 @@ jobs:
           python3 -c "from PIL import Image; Image.open('docs/organvave-splash.png').convert('RGB').resize((900, 900), Image.LANCZOS).save('_site/img/splash.webp', quality=86)"
           mkdir -p _site/editor && cp web/editor_organ.html _site/editor/index.html
           cp -r docs/emu _site/emu
-          echo "Organvave v$VERSION: the home page with the installer, the patch editor and the FM-1 emulator" >> "$GITHUB_STEP_SUMMARY"
+          echo "OrganVave v$VERSION: the home page with the installer, the patch editor and the FM-1 emulator" >> "$GITHUB_STEP_SUMMARY"
 
       # the SMK-37 port lives on the branch organvave-37 (SMK37.md there): its three packages (SMK-37 Pro, Elite, MKE-P37)
       # and its installer page, smk.html (web/make_smk_site.py there). A failure here leaves the FM-1 site as it is.

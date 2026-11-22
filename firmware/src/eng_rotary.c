@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Guilherme Ruppert (Organvave) */
+ * Copyright (C) 2026 Guilherme Ruppert (OrganVave) */
 /* The rotary speaker, CLASSIC model and its variants (ORGAN.md, "Rotary speaker"), in single precision (0.11.0, the port
  * back): setBfree's whirl.c (whirlProc2, GPL-2.0-or-later), sample for sample: the horn's filters A and B, the leakage, six
  * horn taps (two per reflection stage) read through the angle FIR, the two reflections, six drum taps on the unfiltered

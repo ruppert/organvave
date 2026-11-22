@@ -1,6 +1,6 @@
-# Developing Organvave
+# Developing OrganVave
 
-Organvave (repository `organvave`) is a tonewheel-organ firmware for the M-VAVE FM-1. [ORGAN.md](ORGAN.md) is its plan
+OrganVave (repository `organvave`) is a tonewheel-organ firmware for the M-VAVE FM-1. [ORGAN.md](ORGAN.md) is its plan
 (the map from setBfree, the budget, the milestones); this guide is how the code is laid out and how to change it. It was
 seeded from FMini-1 (Guilherme Ruppert), itself a fork of Felucca (Leo Kuroshita); what is left of those is named in
 [CREDITS.md](CREDITS.md). Since 0.1.0 the instrument is the organ alone: FMini-1's synthesizer engine, its UI and its

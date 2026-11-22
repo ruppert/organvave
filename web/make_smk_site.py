@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
-# Copyright (C) 2026 Guilherme Ruppert (Organvave)
-# Organvave's installer page for the M-Vave SMK-37 (the SMK-37 port, SMK37.md): site_smk.html with the installer's JS
+# Copyright (C) 2026 Guilherme Ruppert (OrganVave)
+# OrganVave's installer page for the M-Vave SMK-37 (the SMK-37 port, SMK37.md): site_smk.html with the installer's JS
 # (fm1pkg.js, fm1ota.js) and the three packages beside it.
 #   python3 web/make_smk_site.py OUTDIR VERSION PRO.fwsc ELITE.fwsc MKE.fwsc
 # writes OUTDIR/smk.html, OUTDIR/smk/organvave-smk37[-elite|-mke]-vVERSION.fwsc and OUTDIR/smk/index.html (to smk.html).
@@ -46,7 +46,7 @@ def main(outdir, version, *pkgs):
     html = html.replace("/*LIB*/", lib).replace("/*META*/{}", meta + ";").replace("/*VERSION*/", version)
     (out / "smk.html").write_text(html, encoding="utf-8")
     (out / "smk" / "index.html").write_text('<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=../smk.html">'
-                                            '<title>Organvave for the SMK-37</title><a href="../smk.html">Organvave for the SMK-37</a>\n',
+                                            '<title>OrganVave for the SMK-37</title><a href="../smk.html">OrganVave for the SMK-37</a>\n',
                                             encoding="utf-8")
     print(f"{out}/smk.html: {len(html)} B; " + ", ".join(e["product"] for e in entries) + " in smk/")
 

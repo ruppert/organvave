@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Guilherme Ruppert (Organvave) */
+ * Copyright (C) 2026 Guilherme Ruppert (OrganVave) */
 /* The organ's equaliser (0.5.0): LOW, a low shelf at 120 Hz; MID, a peak (Q 0.8) at one of twelve frequencies, 160 Hz to
  * 7.2 kHz; HIGH, a high shelf at 4 kHz; each -12 .. +12 dB in 1 dB steps. Three biquads (direct form I, Q14) a channel, run on
  * the stereo output after MASTER and before the limiter: it is linear, so where it sits does not change what it does, and

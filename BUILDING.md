@@ -1,4 +1,4 @@
-# Building Organvave
+# Building OrganVave
 
 The build makes three files in `build/`:
 

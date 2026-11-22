@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
-# Copyright (C) 2026 Guilherme Ruppert (Organvave)
+# Copyright (C) 2026 Guilherme Ruppert (OrganVave)
 """Writes firmware/src/eng_eq_tables.h: the organ's equaliser, three biquads (R. Bristow-Johnson's Audio EQ Cookbook, a0 = 1,
 Q14, at 44100 Hz): a low shelf at 120 Hz, a peak with a frequency and a high shelf at 4 kHz, each from -12 to +12 dB in 1 dB steps.
 

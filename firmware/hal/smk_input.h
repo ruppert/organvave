@@ -435,7 +435,7 @@ static void fm1__frame(void)
 #define SMK_PAD_OFF 12u           /* below base + this: released */
 #define SMK_PAD_PEAKN 3u          /* samples (2.4 ms apart) for the peak */
 
-/* Organvave (smk_organ.c): the pads as command keys, not notes. While smk_pad_cmd is set a pad's hit and release go to
+/* OrganVave (smk_organ.c): the pads as command keys, not notes. While smk_pad_cmd is set a pad's hit and release go to
  * a queue of their own (pad << 8 | velocity, 0 = release; smk_padcmd_take), never to the note bits */
 static volatile uint8_t smk_pad_cmd;
 #define SMK_PADCQ 16u

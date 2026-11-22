@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
-// Copyright (C) 2026 Guilherme Ruppert (Organvave)
+// Copyright (C) 2026 Guilherme Ruppert (OrganVave)
 // The SMK-37 installer page (web/make_smk_site.py's smk.html): every marker filled, both scripts compile, the three packages
 // beside it carry their models' identities; then the page itself runs (node, with a fake fetch, Web MIDI and Updater):
 // Install waits for the backup box, the keyboard's model picks its own package (SMK-37 Pro, Elite, MKE-P37, also when
@@ -73,7 +73,7 @@ const run = async (t) => { device = t; calls.length = 0; await vm.runInContext("
 let c = await run("SMK-37 Elite_016");
 ok(c.length === 1 && c[0][0] === "install" && /^SMK-37 Elite_8/.test(c[0][1]), `an SMK-37 Elite (stock): the Elite package (${c[0] && c[0][1]})`);
 c = await run("SMK-37 Pro_800");
-ok(c.length === 1 && c[0][0] === "install" && /^SMK-37 Pro_8/.test(c[0][1]), `an SMK-37 Pro running Organvave: the Pro package (${c[0] && c[0][1]})`);
+ok(c.length === 1 && c[0][0] === "install" && /^SMK-37 Pro_8/.test(c[0][1]), `an SMK-37 Pro running OrganVave: the Pro package (${c[0] && c[0][1]})`);
 c = await run("ota-MKE-P37_900");
 ok(c.length === 1 && c[0][0] === "resume" && /^MKE-P37_8/.test(c[0][1]), `an MKE-P37 in update mode: resume with the MKE package (${c[0] && c[0][1]})`);
 c = await run("FM-1_015");

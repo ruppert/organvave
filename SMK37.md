@@ -1,6 +1,6 @@
-# Organvave on the SMK-37 (beta)
+# OrganVave on the SMK-37 (beta)
 
-Organvave also builds for the M-Vave SMK-37, a 37-key controller with the same chip as the FM-1. The FM-1 build is
+OrganVave also builds for the M-Vave SMK-37, a 37-key controller with the same chip as the FM-1. The FM-1 build is
 unchanged (byte for byte); everything for the SMK-37 is behind `BOARD_SMK37`. The port follows
 [genkigenki/fm1-to-smk37](https://github.com/genkigenki/fm1-to-smk37) and carries its board layer (the SMK-37 target of
 genkigenki/Felucca); the decisions for each control are in [smk37-port.yaml](smk37-port.yaml).
@@ -22,7 +22,7 @@ model; the unit's own stock package is the same model, so the way back to stock 
 
 The FM-1's manual still applies; the SMK-37's controls map onto the FM-1's like this.
 
-| SMK-37 | Organvave |
+| SMK-37 | OrganVave |
 | --- | --- |
 | Keys F3..G5 (the middle 27) | the FM-1's 27 keys (DRAWBAR PRESET MODE's keys too) |
 | Keys C3..E3 and G#5..C6 (the outer 10) | more notes for the organ, past the 27: with the octave buttons and the manuals' split (silent in DRAWBAR PRESET MODE) |

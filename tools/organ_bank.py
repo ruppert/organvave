@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-only
-# Copyright (C) 2026 Guilherme Ruppert (Organvave)
-"""Organvave's factory bank, in physical units (CLAUDE.md: the bank is written in units, the generator converts):
+# Copyright (C) 2026 Guilherme Ruppert (OrganVave)
+"""OrganVave's factory bank, in physical units (CLAUDE.md: the bank is written in units, the generator converts):
 tools/gen_organ_presets.py -> firmware/src/eng_organ_presets.h.
 
 A preset: its name (no trademarks, no artists), the upper drawbars as the console writes them ("88 8000 000": 16' 5 1/3'

@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Guilherme Ruppert (Organvave)
+ * Copyright (C) 2026 Guilherme Ruppert (OrganVave)
  * Ported from setBfree's tone generator (src/tonegen.c, src/vibrato.c, GPL-2.0-or-later; Copyright (C) 2003-2004
  * Fredrik Kilander, 2003-2004 Robin Gareus, 2003-2004 Ken Restivo, 2008-2015 Robin Gareus, 2010 Will Panther). */
 /* ORGAN: the tone generator (ORGAN.md). setBfree's oscGenerateFragment rewritten in integer C, with its data

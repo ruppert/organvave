@@ -1,13 +1,13 @@
 <!doctype html>
 <!-- SPDX-License-Identifier: GPL-3.0-only
-     Organvave's patch editor (0.5.0): the organ's drawbars, tuning and crosstalk over USB MIDI, with the protocol of
+     OrganVave's patch editor (0.5.0): the organ's drawbars, tuning and crosstalk over USB MIDI, with the protocol of
      web/EDITOR_PROTOCOL.md "Organ patch (85-86)". Standalone: no library; open it from the site's editor/ folder. -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
-<title>Organvave · patch editor</title>
+<title>OrganVave · patch editor</title>
 <style>
   :root { --bg: #0b0806; --wood: #6b3a1f; --wood2: #8a4b26; --chrome: #c9c4bb; --cream: #efe6d2; --orange: #ff6a13; --dim: #a59a88;
           --panel: #1a120c; --warn: #e0a030; --ok: #8fbf6a; }
@@ -343,7 +343,7 @@ async function open(p) {
     const n = info.length;
     info_psize = info[n - 1];
     if (!(info[n - 3] === 0x4F && info[n - 2] === 1 && (info[n - 1] === ORG_PSIZE || info[n - 1] === ORG_PSIZE_OLD))) {
-      dev = null; return say("The device answers, but its firmware has no organ patch. Install Organvave 0.1.0 or later.", "bad");
+      dev = null; return say("The device answers, but its firmware has no organ patch. Install OrganVave 0.1.0 or later.", "bad");
     }
   } catch (err) { dev = null; return say("The device did not answer: " + err.message + ". Check the cable and the port.", "bad"); }
   psize = info_psize;

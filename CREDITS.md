@@ -2,10 +2,10 @@
 
 Felucca is Leo Kuroshita's ([@kurogedelic](https://github.com/kurogedelic), [Hügelton Instruments](https://hugelton.com)). It uses and
 thanks the work below; each keeps its own licence (see [LICENSE](LICENSE), [LICENSING.md](LICENSING.md) and [LICENSES/](LICENSES/)).
-Organvave (Guilherme Ruppert) is built on FMini-1 and Felucca with Felucca's other engines, its sample sets and its
+OrganVave (Guilherme Ruppert) is built on FMini-1 and Felucca with Felucca's other engines, its sample sets and its
 second core taken out; the credits for those parts stay below, marked "(Felucca: not in this firmware)".
 
-- Organvave's organ and rotary speaker (in development, ORGAN.md) are ported from [setBfree](https://github.com/pantherb/setBfree)
+- OrganVave's organ and rotary speaker (in development, ORGAN.md) are ported from [setBfree](https://github.com/pantherb/setBfree)
   by Fredrik Kilander, Robin Gareus, Ken Restivo and Will Panther (GPL-2.0-or-later): its tone generator, keys and buses,
   tapering and crosstalk, envelopes and key click, percussion, scanner vibrato / chorus, preamp curve and the rotary speaker
   `whirl.c`, rewritten in integer C with the same algorithms and data; the derived files keep its copyright notices. setBfree's
@@ -16,7 +16,7 @@ second core taken out; the credits for those parts stay below, marked "(Felucca:
 - The drive's type EXTREME (0.11.0) is setBfree's own overdrive, `b_overdrive/overdrive.c` (GPL-2.0-or-later; the same authors),
   in single precision: its curve, sag, feedback, the two one-poles, the 33-tap interpolation and decimation filters
   (`tests/drive_orig_ref.h` and `tools/gen_drive_tables.py` copy its filter definitions) and its default constants. The DC
-  blocker after it is Organvave's (setBfree's has none).
+  blocker after it is OrganVave's (setBfree's has none).
 - The equaliser's filters (0.5.0) use the formulas of Robert Bristow-Johnson's "Cookbook formulae for audio EQ biquad filter
   coefficients" (a published recipe, no code taken), evaluated by `tools/gen_eq_tables.py`
 - The splash picture is the owner's

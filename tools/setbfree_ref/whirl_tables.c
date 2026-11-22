@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Guilherme Ruppert (Organvave) */
+ * Copyright (C) 2026 Guilherme Ruppert (OrganVave) */
 /* The rotary's angle tables, from setBfree's own code (b_whirl/whirl.c, GPL-2.0-or-later), at the default geometry
  * (initValues: horn 19.2 cm, drum 22 cm, mic 42 cm, 44.1 kHz). whirl.c is included as it is: the tables are the
  * ones setBfree builds (computeOffsets, initTables), not a re-derivation.

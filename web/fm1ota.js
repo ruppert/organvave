@@ -179,7 +179,7 @@ export class Updater {
   async install(image, product, onStep) {
     const step = onStep || (() => {});
     const dev = await this.find((id) => !IS_OTA(id));
-    this.portName = null;                          // (the picked port was for the running firmware: the loader is ours, Organvave Update)
+    this.portName = null;                          // (the picked port was for the running firmware: the loader is ours, OrganVave Update)
     if (!dev) throw fail("notfound", "FM-1 not found (USB cable, and no other app using it?)");
     const [model] = product.split("_");
     if (!sameModel(dev.id.model, model)) { dev.link.close(); throw fail("model", `the device is ${dev.id.text}, the package is for ${product}`); }

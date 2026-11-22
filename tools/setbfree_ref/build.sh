@@ -1,6 +1,6 @@
 #!/bin/sh
 # SPDX-License-Identifier: GPL-3.0-only
-# Builds sbf_ref (Organvave's floating-point reference) against setBfree at the commit ORGAN.md was measured on.
+# Builds sbf_ref (OrganVave's floating-point reference) against setBfree at the commit ORGAN.md was measured on.
 #   sh tools/setbfree_ref/build.sh [OUTDIR]     (default build/sbf_ref; clones setBfree into OUTDIR/setBfree if missing)
 set -e
 HERE=$(cd "$(dirname "$0")" && pwd)

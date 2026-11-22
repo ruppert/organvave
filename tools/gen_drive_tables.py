@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
-# Copyright (C) 2026 Guilherme Ruppert (Organvave)
+# Copyright (C) 2026 Guilherme Ruppert (OrganVave)
 """Generates firmware/src/eng_drive_tables.h: the drive's shaping curves and gain tables (integer, for the firmware).
 
 The drive (0.9.24; two types since 0.9.30, six since 0.9.41) is a short chain. The first two types (dr_chain):

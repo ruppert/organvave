@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Guilherme Ruppert (Organvave) */
+ * Copyright (C) 2026 Guilherme Ruppert (OrganVave) */
 /* The rotary CLASSIC (src/eng_rotary.c) on the host, against numbers measured on setBfree's own whirl.c
  * (tools/setbfree_ref/whirl_render; DEVELOPING.md).
  * 1. sidebands: 440 Hz at 0.5, horn 400 rpm, drum stopped, last second of 4 s: the carrier's sidebands at -/+ 6.67 Hz and

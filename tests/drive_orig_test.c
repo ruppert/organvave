@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Guilherme Ruppert (Organvave) */
+ * Copyright (C) 2026 Guilherme Ruppert (OrganVave) */
 /* EXTREME (byte 8, 0.11.0): setBfree's overdrive (src/eng_drive.c dr_orig) on the host.
  * The reference is setBfree's own loop (b_overdrive/overdrive.c: mixFilterWeights and overdrive()) written again here in
  * double, with its default constants and its two 33-tap filters (drive_orig_ref.h). The firmware's float chain must follow it.

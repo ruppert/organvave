@@ -61,7 +61,7 @@ int main(void)
     check("loader: app area 0x4000-0x9CFFF, records 0x9D000-0xBFFFF only",
           LDR_RANGE_OK(0x4000u, 0x1000u) && LDR_RANGE_OK(0x9C000u, 0x1000u) && LDR_RANGE_OK(0xBF000u, 0x1000u) &&
           !LDR_RANGE_OK(0xC0000u, 0x1000u) && FL_REC_HI == 0xC0000u);
-    for (o = 0; o < OBJ_COUNT; o++)              /* (Organvave's objects; the retired numbers have no sector) */
+    for (o = 0; o < OBJ_COUNT; o++)              /* (OrganVave's objects; the retired numbers have no sector) */
         for (c = 0; c < 2u; c++)
             if (st_sector(o, c) != 0xFFFFFFFFu)
                 in_store &= FL_STORE_OK(st_sector(o, c), 0x1000u) && st_sector(o, c) < 0xAF000u;

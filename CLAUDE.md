@@ -1,8 +1,8 @@
 # CLAUDE.md
 
-Organvave: a tonewheel-organ firmware for the M-VAVE FM-1 by Guilherme Ruppert, seeded from his FMini-1 (a fork of
+OrganVave: a tonewheel-organ firmware for the M-VAVE FM-1 by Guilherme Ruppert, seeded from his FMini-1 (a fork of
 [Felucca](https://github.com/hugelton/Felucca), GPL-3.0-only, by Leo Kuroshita). Repository: <https://github.com/ruppert/organvave>
-(the repository and file names are lower case; the product name is written Organvave). The plan is [ORGAN.md](ORGAN.md): the
+(the repository and file names are lower case; the product name is written OrganVave). The plan is [ORGAN.md](ORGAN.md): the
 organ and the rotary are ported from setBfree; Felucca's `eng_wheel.c` is not used. Until 0.1.0 the firmware still runs
 FMini-1's instrument (FMUG) as a scaffold; since 0.1.0 FMUG is gone. Package identity `FM-1_800` (releases `FM-1_8XY`). GitHub
 Pages is on, source GitHub Actions: the Installer workflow publishes the site (installer page with the package, patch editor,

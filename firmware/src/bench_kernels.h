@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Guilherme Ruppert (Organvave) */
+ * Copyright (C) 2026 Guilherme Ruppert (OrganVave) */
 /* BENCHMARK kernels (0.11.0, GLOBAL > BENCHMARK): the arithmetic of the audio path, written twice: in integers (the Q15
  * sine table, int32 sums, Q9 gains, Q10 filter taps) and in single precision (the float sine table, float sums). Pure C
  * on purpose: no firmware state here, so tests/bench_test.c checks that the two agree. The runner that times them on the

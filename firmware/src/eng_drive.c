@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Guilherme Ruppert (Organvave) */
+ * Copyright (C) 2026 Guilherme Ruppert (OrganVave) */
 /* The drive (0.9.24, rewritten from scratch; two types since 0.9.30, six since 0.9.41): TUBE DRIVE and DISTORTION (a JCM900
  * style two-stage clip) run dr_chain below; SOFT TUBE, SCREAMER, HARD CLIP and TIGHT TUBE (a 12AX7 stage's circuit model) run
  * dr_chain2 (its comment; tools/gen_drive_tables.py has the circuits). dr_chain, in integer:

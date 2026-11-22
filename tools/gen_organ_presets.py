@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
-# Copyright (C) 2026 Guilherme Ruppert (Organvave)
+# Copyright (C) 2026 Guilherme Ruppert (OrganVave)
 """The organ's factory presets: tools/organ_bank.py (physical units) -> firmware/src/eng_organ_presets.h.
 
     python3 tools/gen_organ_presets.py

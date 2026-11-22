@@ -11,7 +11,7 @@ firmware/src/core.h, or --release's). A release build (--release X.Y) writes a f
 the app, SHA256SUMS and the licence files.
 See BUILDING.md for the toolchain and the SDK.
 
-BOARD=smk37 (or --board smk37) builds Organvave for the SMK-37 Pro (the port of genkigenki/fm1-to-smk37, its
+BOARD=smk37 (or --board smk37) builds OrganVave for the SMK-37 Pro (the port of genkigenki/fm1-to-smk37, its
 Felucca layer): -DBOARD_SMK37=1 for the app and the loader, identity SMK-37 Pro_800 (release SMK-37 Pro_8XY), the
 SMK flash layout (fm1pkg_make.py), and the package build/organvave-smk37.fwsc (and organvave-smk37-vX.Y.Z.fwsc).
 The default stays the FM-1, byte-identical.

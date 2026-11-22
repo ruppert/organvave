@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Guilherme Ruppert (Organvave) */
+ * Copyright (C) 2026 Guilherme Ruppert (OrganVave) */
 /* The drive (src/eng_drive.c; two types since 0.9.30, six since 0.9.41) on the host, measured on the firmware's integer chains.
  * 1. the laws: the harmonic distortion of a 441 Hz sine at the organ's level (RMS 0.73 at the drive) follows the GAIN knob on an
  *    exponential. TUBE DRIVE (0.9.31): THD = 25.2 (e^(0.085 g) - 1) %: under 0.5 % at 0.1, 0.6 .. 1.8 % at 0.5, about 4.7 % at

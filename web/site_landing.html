@@ -1,14 +1,14 @@
 <!doctype html>
 <!-- SPDX-License-Identifier: GPL-3.0-only
-     Organvave site + installer. The layout follows the FMini-1 site (Guilherme Ruppert); the installer logic is the Felucca
+     OrganVave site + installer. The layout follows the FMini-1 site (Guilherme Ruppert); the installer logic is the Felucca
      installer's (Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments). -->
 <html lang="en" data-lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
-<meta name="description" content="Organvave: a tonewheel-organ firmware for the M-VAVE FM-1 and SMK-37. Nine drawbars, percussion, vibrato and chorus, a rotary speaker, drive and EQ. Install it from the browser, with Chrome or Edge.">
-<title>Organvave — a tonewheel organ for the M-VAVE FM-1 and SMK-37</title>
+<meta name="description" content="OrganVave: a tonewheel-organ firmware for the M-VAVE FM-1 and SMK-37. Nine drawbars, percussion, vibrato and chorus, a rotary speaker, drive and EQ. Install it from the browser, with Chrome or Edge.">
+<title>OrganVave — a tonewheel organ for the M-VAVE FM-1 and SMK-37</title>
 <style>
   :root {
     --bg: #0d0c10; --surface: #15131a; --surface2: #1c1922; --line: #2a2631; --fg: #f4f0ea; --dim: #a29cab; --mute: #6f6a78;
@@ -61,7 +61,7 @@
   .copy1 { position: absolute; z-index: 3; left: max(24px, calc((100% - 1032px) / 2)); top: 50%; transform: translateY(-50%); width: min(500px, 46%); will-change: opacity, transform; }
   .kick { margin: 0 0 18px; font: 500 13px/1.4 var(--mono); color: var(--dim); }
   .kick .ver { display: inline-block; margin-left: 8px; font: 700 11.5px/1 var(--mono); background: var(--or); color: #1a0e05; border-radius: 4px; padding: 4px 6px; }
-  .logo { margin: 0; font-weight: 900; font-style: italic; letter-spacing: -.05em; line-height: .92; font-size: clamp(56px, 8.4vw, 118px); font-family: "Montserrat", "Inter", "Helvetica Neue", Arial, sans-serif; }
+  .logo { margin: 0 0 0 -.04em; font-weight: 900; font-style: italic; letter-spacing: -.05em; line-height: .92; font-size: clamp(56px, 8.4vw, 118px); font-family: "Montserrat", "Inter", "Helvetica Neue", Arial, sans-serif; }
   .logo .f { color: var(--or); }
   .by { margin: 14px 0 0; font-size: clamp(18px, 3vw, 24px); font-weight: 600; color: var(--dim); }
   .tag { margin: 22px 0 0; max-width: 700px; font-size: clamp(20px, 2.4vw, 28px); line-height: 1.25; font-weight: 600; letter-spacing: -.015em; }
@@ -195,7 +195,7 @@
 
 <header class="nav">
   <div class="wrap">
-    <a class="brand" href="#top" aria-label="Organvave"><i>Organ</i>vave</a>
+    <a class="brand" href="#top" aria-label="OrganVave"><i>Organ</i>Vave</a>
     <nav>
       <a href="#features" data-sec><span class="en">Sound</span><span class="pt">Som</span></a>
       <a href="#screens" data-sec><span class="en">Screens</span><span class="pt">Telas</span></a>
@@ -215,7 +215,7 @@
     <div class="stage" id="stage">
       <div class="copy1" id="copy1">
         <p class="kick"><span class="en">Tonewheel organ · M-VAVE FM-1 and SMK-37</span><span class="pt">Órgão de rodas tonais · M-VAVE FM-1 e SMK-37</span><span class="ver">v/*VERSION*/</span></p>
-        <h1 class="logo"><span class="f">Organ</span>vave</h1>
+        <h1 class="logo"><span class="f">Organ</span>Vave</h1>
         <p class="by">by Ruppert</p>
         <p class="tag"><span class="en">Nine drawbars, percussion, scanner vibrato and a rotary speaker, on the instrument you already have.</span><span class="pt">Nove drawbars, percussão, vibrato de scanner e alto-falante rotativo, no instrumento que você já tem.</span></p>
         <p class="sub"><span class="en">A firmware in the style of the classic electromechanical consoles, ported from setBfree to integer C for the FM-1's chip. Free software under the GPL-3.0.</span><span class="pt">Um firmware no estilo dos consoles eletromecânicos clássicos, portado do setBfree para C inteiro no chip do FM-1. Software livre, GPL-3.0.</span></p>
@@ -331,9 +331,9 @@
 
 <footer>
   <div class="wrap">
-    <span class="mk"><i>Organ</i>vave <small style="font-weight:600;font-size:13px;letter-spacing:0;color:var(--dim)">by Ruppert</small></span>
-    <span class="credits"><span class="en">Organvave was made by Guilherme Ruppert, based on the</span><span class="pt">O Organvave foi feito por Guilherme Ruppert, com base no projeto</span> <a href="https://github.com/hugelton/Felucca" target="_blank" rel="noopener">Felucca</a><span class="en"> project by Leo Kuroshita (Hügelton Instruments). The organ is ported from</span><span class="pt">, de Leo Kuroshita (Hügelton Instruments). O órgão é portado do</span> <a href="https://github.com/pantherb/setBfree" target="_blank" rel="noopener">setBfree</a>.<br><span class="en">Hammond is a registered trademark of its owner. This project has no affiliation with it.</span><span class="pt">Hammond é marca registrada de seu dono. Este projeto não tem afiliação com ela.</span><br><span class="en">AI disclaimer: this project was developed with the assistance of Claude, an AI model by Anthropic.</span><span class="pt">Aviso sobre IA: este projeto foi realizado com o auxílio do Claude, um modelo de IA da Anthropic.</span></span><br><br>
-    Organvave, by Guilherme Ruppert. Source, plan and progress: <a href="https://github.com/ruppert/organvave">github.com/ruppert/organvave</a>. Free software, GPL-3.0-only.<br>
+    <span class="mk"><i>Organ</i>Vave <small style="font-weight:600;font-size:13px;letter-spacing:0;color:var(--dim)">by Ruppert</small></span>
+    <span class="credits"><span class="en">OrganVave was made by Guilherme Ruppert, based on the</span><span class="pt">O OrganVave foi feito por Guilherme Ruppert, com base no projeto</span> <a href="https://github.com/hugelton/Felucca" target="_blank" rel="noopener">Felucca</a><span class="en"> project by Leo Kuroshita (Hügelton Instruments). The organ is ported from</span><span class="pt">, de Leo Kuroshita (Hügelton Instruments). O órgão é portado do</span> <a href="https://github.com/pantherb/setBfree" target="_blank" rel="noopener">setBfree</a>.<br><span class="en">Hammond is a registered trademark of its owner. This project has no affiliation with it.</span><span class="pt">Hammond é marca registrada de seu dono. Este projeto não tem afiliação com ela.</span><br><span class="en">AI disclaimer: this project was developed with the assistance of Claude, an AI model by Anthropic.</span><span class="pt">Aviso sobre IA: este projeto foi realizado com o auxílio do Claude, um modelo de IA da Anthropic.</span></span><br><br>
+    OrganVave, by Guilherme Ruppert. Source, plan and progress: <a href="https://github.com/ruppert/organvave">github.com/ruppert/organvave</a>. Free software, GPL-3.0-only.<br>
     M-VAVE and FM-1 are trademarks of their respective owners; this firmware is not affiliated with them.
   </div>
 </footer>

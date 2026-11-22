@@ -1,6 +1,6 @@
-# Organvave
+# OrganVave
 
-![Organvave](docs/organvave-splash.png)
+![OrganVave](docs/organvave-splash.png)
 
 A tonewheel-organ firmware for the M-VAVE FM-1, by Guilherme Ruppert: an organ in the style of the classic electromechanical
 consoles (nine drawbars, percussion, scanner vibrato / chorus, a valve-style preamp) with a rotary speaker, ported from
@@ -48,12 +48,12 @@ architecture, the method and the tests; [CLAUDE.md](CLAUDE.md) is the short list
 
 ## Origin and licence
 
-Organvave is a fork of FMini-1 (Guilherme Ruppert), itself a fork of [Felucca](https://github.com/hugelton/Felucca) by
+OrganVave is a fork of FMini-1 (Guilherme Ruppert), itself a fork of [Felucca](https://github.com/hugelton/Felucca) by
 Leo Kuroshita (Hügelton Instruments). It is free software under the GNU General Public License version 3 only
 ([LICENSE](LICENSE)); the parts with other licences are listed in [LICENSING.md](LICENSING.md) and credited in
 [CREDITS.md](CREDITS.md).
 
-"M-VAVE" and "FM-1" are trademarks of their owners. Organvave is independent firmware, not affiliated with or endorsed by
+"M-VAVE" and "FM-1" are trademarks of their owners. OrganVave is independent firmware, not affiliated with or endorsed by
 them, and uses no other trademarks in its names.
 
 ## User manual (0.9.0)

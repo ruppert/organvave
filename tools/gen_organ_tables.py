@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
-# Copyright (C) 2026 Guilherme Ruppert (Organvave)
-"""Organvave's tone generator tables, from setBfree's own (ORGAN.md).
+# Copyright (C) 2026 Guilherme Ruppert (OrganVave)
+"""OrganVave's tone generator tables, from setBfree's own (ORGAN.md).
 
     python3 tools/gen_organ_tables.py      -> firmware/src/eng_organ_tables.h
 

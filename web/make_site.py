@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
-# Organvave's site with the installer: one self-contained page (site_landing.html, with the installer and the package embedded) and the
+# OrganVave's site with the installer: one self-contained page (site_landing.html, with the installer and the package embedded) and the
 # package itself for the download. The installer's JS is fm1pkg.js and fm1ota.js (the FMini-1 site's, GPL-3.0-only).
 #   python3 web/make_site.py build/felucca.fwsc OUTDIR VERSION
 # writes OUTDIR/index.html (the home page, site_landing.html: the installer is in it, the package embedded) and the package

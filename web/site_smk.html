@@ -1,6 +1,6 @@
 <!doctype html>
 <!-- SPDX-License-Identifier: GPL-3.0-only
-     Organvave's installer for the M-Vave SMK-37 (the SMK-37 port, SMK37.md). web/make_smk_site.py fills the LIB, META and
+     OrganVave's installer for the M-Vave SMK-37 (the SMK-37 port, SMK37.md). web/make_smk_site.py fills the LIB, META and
      VERSION markers and writes the site's smk.html, with the three packages (SMK-37 Pro, SMK-37 Elite, MKE-P37) beside it in
      smk/. The page asks the keyboard for its identity and installs the package of exactly that model; the installer logic
      (Web MIDI, SysEx, the update loader) is fm1ota.js and fm1pkg.js, as on the FM-1 page. -->
@@ -9,8 +9,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
-<title>Organvave for the SMK-37</title>
-<meta name="description" content="Organvave, the tonewheel-organ firmware, for the M-Vave SMK-37 (beta). Install it from the browser, with Chrome or Edge.">
+<title>OrganVave for the SMK-37</title>
+<meta name="description" content="OrganVave, the tonewheel-organ firmware, for the M-Vave SMK-37 (beta). Install it from the browser, with Chrome or Edge.">
 <style>
   :root { --bg: #0b0806; --wood: #6b3a1f; --wood2: #8a4b26; --chrome: #c9c4bb; --cream: #efe6d2; --orange: #ff6a13; --dim: #a59a88; --warn: #e0a030; --panel: #1a120c; }
   * { box-sizing: border-box; }
@@ -59,7 +59,7 @@
 <body class="en">
 <main>
   <nav><button id="b-en" aria-pressed="true">EN</button> <button id="b-pt" aria-pressed="false">PT</button></nav>
-  <img class="splash" src="splash.webp" alt="Organvave by Ruppert">
+  <img class="splash" src="splash.webp" alt="OrganVave by Ruppert">
   <div class="rail"></div>
   <h1><b>Organ</b>Vave-1 <span class="ver">v/*VERSION*/ · SMK-37</span></h1>
 
@@ -112,8 +112,8 @@
 
   <h2 data-l="en">The controls</h2><h2 data-l="pt">Os controles</h2>
   <table>
-    <tr data-l="en"><th>SMK-37</th><th>Organvave</th></tr>
-    <tr data-l="pt"><th>SMK-37</th><th>Organvave</th></tr>
+    <tr data-l="en"><th>SMK-37</th><th>OrganVave</th></tr>
+    <tr data-l="pt"><th>SMK-37</th><th>OrganVave</th></tr>
     <tr data-l="en"><td>Keys</td><td>all 37 play the organ (the octave buttons and the manuals' split as on the FM-1)</td></tr>
     <tr data-l="pt"><td>Teclas</td><td>as 37 tocam o órgão (os botões de oitava e o split dos manuais como no FM-1)</td></tr>
     <tr data-l="en"><td>Pads 1-8 (top)</td><td>the upper manual's drawbar sets; the one playing lit bright</td></tr>
@@ -137,11 +137,11 @@
   <h2 data-l="en">The packages</h2><h2 data-l="pt">Os pacotes</h2>
   <ul id="files"></ul>
 
-  <p class="dim" data-l="en">Organvave by Guilherme Ruppert, based on <a href="https://github.com/hugelton/Felucca">Felucca</a> by Leo Kuroshita
+  <p class="dim" data-l="en">OrganVave by Guilherme Ruppert, based on <a href="https://github.com/hugelton/Felucca">Felucca</a> by Leo Kuroshita
     (Hügelton Instruments); the organ is ported from <a href="https://github.com/pantherb/setBfree">setBfree</a>; the SMK-37 board
     layer and the porting kit are M. Geisler's (<a href="https://github.com/genkigenki/fm1-to-smk37">genkigenki/fm1-to-smk37</a>).
     Free software, GPL-3.0-only. M-Vave, SMK-37 and FM-1 are names of their owners; this firmware is not affiliated with them.</p>
-  <p class="dim" data-l="pt">Organvave por Guilherme Ruppert, baseado no <a href="https://github.com/hugelton/Felucca">Felucca</a> de Leo Kuroshita
+  <p class="dim" data-l="pt">OrganVave por Guilherme Ruppert, baseado no <a href="https://github.com/hugelton/Felucca">Felucca</a> de Leo Kuroshita
     (Hügelton Instruments); o órgão é portado do <a href="https://github.com/pantherb/setBfree">setBfree</a>; a camada de placa do
     SMK-37 e o kit de porte são de M. Geisler (<a href="https://github.com/genkigenki/fm1-to-smk37">genkigenki/fm1-to-smk37</a>).
     Software livre, GPL-3.0-only. M-Vave, SMK-37 e FM-1 são nomes de seus donos; este firmware não tem afiliação com eles.</p>
