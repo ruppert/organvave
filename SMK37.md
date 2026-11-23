@@ -26,7 +26,7 @@ The FM-1's manual still applies; the SMK-37's controls map onto the FM-1's like 
 | --- | --- |
 | Keys F3..G5 (the middle 27) | the FM-1's 27 keys (DRAWBAR PRESET MODE's keys too) |
 | Keys C3..E3 and G#5..C6 (the outer 10) | more notes for the organ, past the 27: with the octave buttons and the manuals' split (silent in DRAWBAR PRESET MODE) |
-| Pads 1-8 (top row) | the upper manual's drawbar sets, as a Hammond's preset keys: 800000000, 828000000, 008000000, 800000008, 888000000, 888800000, 888000007, 800008888 (DRAWBAR PRESET MODE's first eight); the set playing is lit bright |
+| Pads 1-8 (top row) | the upper manual's drawbar sets, as a Hammond's preset keys: 800000000, 800000008, 888000000, 888800000, 800008888, 888642468, 888888888; pad 8 is "current": the bars from before the last set picked on the pads (the FM-1's C above in DRAWBAR PRESET MODE); the set playing is lit bright |
 | Pads 9-16 (bottom row) | LESLIE SLOW / FAST, the upper manual's VIB / CHORUS, PERCUSSION, SOFT, FAST, 3RD, OVERDRIVE (TUBE DRIVE at 2.5), REVERB, each lit while it is on |
 | Faders 1..4 | drawbars of the manual KNOB BANK picks, in the bank FADER BANK picks: A 16' 5 1/3' 8' 4', B 2 2/3' 2' 1 3/5' 1 1/3', C 1', EXPR, DRIVE GAIN, REVERB SEND (PEDAL: its 16' and 8' on A). A fader takes over only once it moves |
 | KNOB BANK | the faders' manual: UPPER, LOWER, PEDAL (lit off UPPER) |

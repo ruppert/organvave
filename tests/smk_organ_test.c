@@ -5,7 +5,7 @@
  * buttons). What the board layer reads from the hardware (smk_input.h: the scan, the ADC, the pads' thresholds) is not
  * under test here: that is the device's (the diagnostics page).
  *  - the outer keys: C3..E3 and G#5..C6 play the notes past the FM-1's 27 (with the octave), silent in DRAWBAR PRESET MODE
- *  - the pads: the top row sets the upper drawbars to DRAWBAR PRESET MODE's sets (and lights the one playing); the
+ *  - the pads: the top row sets the upper drawbars to the SMK_SET sets, pad 8 is "current" (and lights the one playing); the
  *    bottom row switches the Leslie, the upper VIB / CHORUS, the percussion and its SOFT FAST 3RD, OVERDRIVE, the reverb
  *  - the faders: soft takeover, the banks A B C of UPPER, LOWER and PEDAL (KNOB BANK, FADER BANK), EXPR, DRIVE, REVERB
  *  - the mod wheel and the pedal: the Leslie; < and >: the presets; KNOB BANK + FADER BANK: the diagnostics page
@@ -80,13 +80,21 @@ int main(void)
     ext(1, 0);
     org_dbp_mode = 0;
 
-    /* the pads: the drawbar sets */
-    pad(3);                                      /* pad 4: 800000008 */
+    /* the pads: the drawbar sets (SMK_SET) and "current" (the bars before the last set picked on the pads) */
+    pad(1);                                      /* pad 2: 800000008 */
     for (i = 0, ok = 1; i < 9u; i++)
-        ok &= org_patch[OP_UB + i] == OA_DBP[3][i];
+        ok &= org_patch[OP_UB + i] == SMK_SET[1][i];
     frame();
-    bad += check("pads: pad 4 sets the upper drawbars to DRAWBAR PRESET MODE's fourth set, lit bright, the others dim",
-                 ok && host_padrgb[3] == (90u << 16 | 64u << 8 | 28u) && host_padrgb[0] == (7u << 16 | 5u << 8 | 2u));
+    bad += check("pads: pad 2 sets the upper drawbars to 800000008, lit bright, the others dim",
+                 ok && host_padrgb[1] == (90u << 16 | 64u << 8 | 28u) && host_padrgb[0] == (7u << 16 | 5u << 8 | 2u));
+    pad(2);                                      /* pad 3: 888000000, the bars before it (800000008) are "current" */
+    pad(7);                                      /* pad 8: current, back to 800000008 */
+    for (i = 0, ok = 1; i < 9u; i++)
+        ok &= org_patch[OP_UB + i] == SMK_SET[1][i];
+    frame();
+    bad += check("pads: pad 8 (current) goes back to the bars before the last set picked", ok);
+    pad(7);                                      /* current again: the same bars (800000008 before pad 8's own) */
+    bad += check("  .. current with nothing picked since: the bars stay", ok && org_patch[OP_UB + 8] == 8);
     bad += check("  .. no note from a pad (the pads are commands)", fm1_in.notes == 0 && smk_pad_cmd == 1);
     /* the switches */
     org_set(OP_ROT, 1);

@@ -5,8 +5,8 @@
  * and smk_poll() between frames; organ_app.c hands it the button presses (smk_buttons), draws its page (smk_draw) and
  * redraws for it (smk_sig).
  *  - The 16 pads are a Hammond's preset keys (the pads as commands: hal smk_pad_cmd, never notes). Top row (pads 1-8,
- *    hardware 0..7): the upper manual's drawbar sets, DRAWBAR PRESET MODE's first eight (organ_app.c OA_DBP, the keys
- *    C .. G of its middle octave); the one playing bright. Bottom row (9-16): LESLIE SLOW / FAST, the upper manual's
+ *    hardware 0..7): seven upper drawbar sets (SMK_SET, the owner's), and "current" (pad 8): the bars from before the last
+ *    set picked on the pads (the FM-1's C above in DRAWBAR PRESET MODE); the one playing bright. Bottom row (9-16): LESLIE SLOW / FAST, the upper manual's
  *    VIB / CHORUS (UP), PERCUSSION, its SOFT, FAST, 3RD, OVERDRIVE (TUBE DRIVE at 2.5), REVERB, lit by their state:
  *    each runs DRAWBAR PRESET MODE's own switch (oa_dbp_key), with its 0.5 s message.
  *  - The 4 faders set drawbars in banks (FADER BANK: A 16' 5 1/3' 8' 4', B 2 2/3' 2' 1 3/5' 1 1/3', C 1', EXPR, DRIVE
@@ -47,13 +47,33 @@ static char *smk_cat(char *d, const char *s)
 /* bottom row (hardware pads 8..15): the DRAWBAR PRESET MODE key that is each one's switch */
 static const uint8_t SMK_PAD_KEY[8] = {0, 1, 21, 23, 24, 26, 20, 25};
 
-static int smk_set_playing(uint32_t p)          /* the upper drawbars are set p */
+/* top row (hardware pads 0..6): the upper drawbars' sets, 16' .. 1' (the owner's), and pad 7 is "current" */
+static const uint8_t SMK_SET[7][9] = {
+    {8, 0, 0, 0, 0, 0, 0, 0, 0}, {8, 0, 0, 0, 0, 0, 0, 0, 8}, {8, 8, 8, 0, 0, 0, 0, 0, 0}, {8, 8, 8, 8, 0, 0, 0, 0, 0},
+    {8, 0, 0, 0, 8, 8, 8, 8, 8}, {8, 8, 8, 6, 4, 2, 4, 6, 8}, {8, 8, 8, 8, 8, 8, 8, 8, 8},
+};
+static uint8_t smk_was[9];                      /* the upper bars before the last set picked on the pads ("current" goes back to them) */
+
+static int smk_bars_are(const uint8_t *v)       /* the upper drawbars are v */
 {
     uint32_t i;
     for (i = 0; i < 9u; i++)
-        if (org_patch[OP_UB + i] != OA_DBP[p][i])
+        if (org_patch[OP_UB + i] != v[i])
             return 0;
     return 1;
+}
+
+static int smk_set_playing(uint32_t p)          /* the upper drawbars are set p (pad 8: the bars it goes back to) */
+{
+    return smk_bars_are(p < 7u ? SMK_SET[p] : smk_was);
+}
+
+static void smk_bars(const uint8_t *v)          /* the upper drawbars become v, with its message */
+{
+    uint32_t i;
+    for (i = 0; i < 9u; i++)
+        org_set(OP_UB + i, v[i]);
+    oa_flash("DRAWBARS");
 }
 
 static void smk_pads_in(void)
@@ -64,9 +84,15 @@ static void smk_pads_in(void)
         uint32_t p = (uint32_t)e >> 8;
         if (!(e & 0x7F) || p >= SMK_NPAD)
             continue;                            /* (a release: the switches act on the hit) */
-        if (p < 8u) {
-            oa_dbp_key(7u + p);                  /* the set: the keys C .. G of DRAWBAR PRESET MODE's middle octave */
-            oa_flash("DRAWBARS");
+        if (p < 7u) {
+            if (!smk_bars_are(SMK_SET[p])) {     /* a new set: the bars now are what "current" goes back to */
+                uint32_t i;
+                for (i = 0; i < 9u; i++)
+                    smk_was[i] = (uint8_t)org_patch[OP_UB + i];
+            }
+            smk_bars(SMK_SET[p]);
+        } else if (p == 7u) {
+            smk_bars(smk_was);                   /* current */
         } else
             oa_dbp_key(SMK_PAD_KEY[p - 8u]);
         ui_touched();
