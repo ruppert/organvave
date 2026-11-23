@@ -6,7 +6,7 @@
   tools/build.py [--release X.Y[-suffix]] [--board fm1|smk37] [--model pro|elite|mke]
 
 Outputs in build/: felucca.bin (app), loader/ota.bin (update loader),
-felucca.fwsc (package), and the same package under its release name organvave-vX.Y.Z.fwsc (the version of
+felucca.fwsc (package), and the same package under its release name organvave-fm1-vX.Y.Z.fwsc (the version of
 firmware/src/core.h, or --release's). A release build (--release X.Y) writes a folder release-X.Y/ with the package,
 the app, SHA256SUMS and the licence files.
 See BUILDING.md for the toolchain and the SDK.
@@ -431,8 +431,8 @@ def main():
     if errors:
         raise SystemExit("build: checks failed")
     pkg = fm1pkg_make.ufw(fm1pkg_make.flash_image(img, fm1pkg_make.KEY), ota, PRODUCT)
-    # e.g. organvave-v0.1.0.fwsc; the SMK-37: organvave-smk37[-elite|-mke]-v0.1.0.fwsc
-    named = ("organvave-" if BOARD == "fm1" else stem + "-") + (VERSION or core_version()) + ".fwsc"
+    # e.g. organvave-fm1-v0.1.0.fwsc; the SMK-37: organvave-smk37[-elite|-mke]-v0.1.0.fwsc
+    named = ("organvave-fm1-" if BOARD == "fm1" else stem + "-") + (VERSION or core_version()) + ".fwsc"
     (OUT / name).write_bytes(pkg)
     (OUT / named).write_bytes(pkg)
     print(f"app      {OUT / 'felucca.bin'}  {len(img)} B")

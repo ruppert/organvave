@@ -4,7 +4,7 @@
 # FM-1's package and the SMK-37's three embedded). The installer's JS (fm1pkg.js, fm1ota.js) is the FMini-1 site's
 # (GPL-3.0-only). Each package goes to its own model: the device found picks it (as on FMini-1).
 #   python3 web/make_site.py build/felucca.fwsc OUTDIR VERSION [PRO.fwsc ELITE.fwsc MKE.fwsc]
-# writes OUTDIR/index.html and the packages beside it (organvave-vVERSION.fwsc, smk/organvave-smk37[-elite|-mke]-vVERSION.fwsc).
+# writes OUTDIR/index.html and the packages beside it (organvave-fm1-vVERSION.fwsc, smk/organvave-smk37[-elite|-mke]-vVERSION.fwsc).
 # Without the three SMK-37 packages the page carries the FM-1's only (a local check; the Installer workflow passes all four).
 # VERSION must be ORGANVAVE_VERSION in firmware/src/core.h. Serve it over https or http://localhost: Web MIDI with SysEx
 # needs a secure context (Chrome or Edge).
@@ -48,7 +48,7 @@ def main(pkg, outdir, version, *smk):
         raise SystemExit("the SMK-37 packages: PRO ELITE MKE (three files) or none")
     out = Path(outdir)
     out.mkdir(parents=True, exist_ok=True)
-    fm_file = f"organvave-v{version}.fwsc"
+    fm_file = f"organvave-fm1-v{version}.fwsc"
     entries, files = [], []
     raw, e = package(pkg, "FM-1", "FM-1", version, fm_file)
     entries.append(e)

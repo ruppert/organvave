@@ -23,7 +23,7 @@ for (const [i, s] of scripts.entries()) {
 // download's file name and a Felucca loader package inside
 const m = scripts[1].match(/const meta = (\{.*\});/);
 const meta = m ? JSON.parse(m[1]) : null;
-const want = [["FM-1", "FM-1_8\\d\\d", "organvave-v"], ["SMK-37 Pro", "SMK-37 Pro_8\\d\\d", "smk/organvave-smk37-v"],
+const want = [["FM-1", "FM-1_8\\d\\d", "organvave-fm1-v"], ["SMK-37 Pro", "SMK-37 Pro_8\\d\\d", "smk/organvave-smk37-v"],
   ["SMK-37 Elite", "SMK-37 Elite_8\\d\\d", "smk/organvave-smk37-elite-v"], ["MKE-P37", "MKE-P37_8\\d\\d", "smk/organvave-smk37-mke-v"]];
 ok(meta && meta.pkgs && meta.pkgs.length === want.length, `meta: ${meta && meta.pkgs ? meta.pkgs.length : 0} packages`);
 for (const [i, [label, idRe, prefix]] of want.entries()) {
