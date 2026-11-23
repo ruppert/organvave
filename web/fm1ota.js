@@ -10,7 +10,26 @@
 const HS_QUERY = [0xF0, 0x00, 0x32, 0x45, 0x00, 0x00, 0x00, 0x40, 0x7F, 0xF7];
 const UPGRADE = [0xF0, 0x22, 0x24, 0x35, 0x7F, 0xF7];
 const MAXDATA = 512;
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+// Waits come from a worker's timer: a page's timers are clamped to 1 s (and more) when the tab is in the background,
+// which made every 10 ms packet wait a second. The worker's timers are not. Without workers, the page's timers.
+let timerWorker = null, timerSeq = 0;
+const timerWaiters = new Map();
+function timers() {
+  if (timerWorker !== null) return timerWorker;
+  try {
+    const src = "onmessage=(e)=>{setTimeout(()=>postMessage(e.data.id),e.data.ms)};";
+    timerWorker = new Worker(URL.createObjectURL(new Blob([src], { type: "text/javascript" })));
+    timerWorker.onmessage = (e) => { const r = timerWaiters.get(e.data); timerWaiters.delete(e.data); if (r) r(); };
+  } catch (_) { timerWorker = false; }
+  return timerWorker;
+}
+const sleep = (ms) => new Promise((r) => {
+  const w = timers();
+  if (!w) { setTimeout(r, ms); return; }
+  const id = ++timerSeq;
+  timerWaiters.set(id, r);
+  w.postMessage({ id, ms });
+});
 const IS_OTA = (id) => /^ota-/i.test(id.model);
 // two models ("ota-" aside) are exactly the same: a package installs only on its own model (the SMK-37 Pro,
 // SMK-37 Elite and MKE-P37 builds each on their own model, never an FM-1 and an SMK)
@@ -86,9 +105,7 @@ class Link {
   drain() { this.q.length = 0; }
   async read(ms) {
     if (!this.q.length) {
-      let tm;
-      await Promise.race([new Promise((r) => { this.waiter = r; }), new Promise((r) => { tm = setTimeout(r, ms); })]);
-      clearTimeout(tm);
+      await Promise.race([new Promise((r) => { this.waiter = r; }), sleep(ms)]);
       this.waiter = null;
     }
     return this.q.shift() || null;
@@ -124,7 +141,7 @@ export class Updater {
     for (const input of this.access.inputs.values()) {
       if (input.state === "disconnected") continue;
       // never probe other gear: by name, unless the player picked a port (a firmware that names its USB device differently)
-      if (this.portName ? input.name !== this.portName : !/fm-1|fmini|felucca|organvave|smk|elite|mke-p37|starry|ota|composite|sinco|usb-midi/i.test(input.name || "")) continue;
+      if (this.portName ? input.name !== this.portName : !/fm-1|fmini|organvave|smk|elite|mke-p37|starry|felucca|ota|composite|sinco|usb-midi/i.test(input.name || "")) continue;
       const output = outs.find((o) => o.name === input.name && o.state !== "disconnected");
       if (!output) continue;
       try { await input.open(); await output.open(); } catch (_) { continue; }

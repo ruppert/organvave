@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // The built site (web/make_site.py's index.html): every marker filled, both scripts compile and run to the first status
-// without Web MIDI, the embedded package is the FM-1 package of the version. Node only (no browser, no hardware).
-//   python3 web/make_site.py build/felucca.fwsc SITE 0.11.1 && node web/test_site.mjs SITE/index.html
+// without Web MIDI, the four packages (FM-1, SMK-37 Pro, Elite, MKE-P37) are embedded with their identities. Node only (no browser, no hardware).
+//   python3 web/make_site.py build/felucca.fwsc SITE 0.11.1 PRO.fwsc ELITE.fwsc MKE.fwsc && node web/test_site.mjs SITE/index.html
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
 
@@ -19,13 +19,21 @@ for (const [i, s] of scripts.entries()) {
   ok(compiles, `script ${i + 1} compiles`);
 }
 
-// the page's meta: the package it carries, its identity and the file name of the download
+// the page's meta: the four packages it carries (the FM-1 first, then the SMK-37's three), each with its identity, its
+// download's file name and a Felucca loader package inside
 const m = scripts[1].match(/const meta = (\{.*\});/);
 const meta = m ? JSON.parse(m[1]) : null;
-ok(meta && /^FM-1_8\d\d$/.test(meta.product) && /^organvave-v\d+\.\d+\.\d+\.fwsc$/.test(meta.file), `meta: ${meta && meta.product}, ${meta && meta.file}`);
-const b64 = meta ? meta.pkg.split(",")[1] : "";
-const pkg = Buffer.from(b64, "base64");
-ok(pkg.includes(Buffer.from("FELUCCA-LOADER-1")), `the embedded package (${pkg.length} B) is a Felucca loader package`);
+const want = [["FM-1", "FM-1_8\\d\\d", "organvave-v"], ["SMK-37 Pro", "SMK-37 Pro_8\\d\\d", "smk/organvave-smk37-v"],
+  ["SMK-37 Elite", "SMK-37 Elite_8\\d\\d", "smk/organvave-smk37-elite-v"], ["MKE-P37", "MKE-P37_8\\d\\d", "smk/organvave-smk37-mke-v"]];
+ok(meta && meta.pkgs && meta.pkgs.length === want.length, `meta: ${meta && meta.pkgs ? meta.pkgs.length : 0} packages`);
+for (const [i, [label, idRe, prefix]] of want.entries()) {
+  const e = meta && meta.pkgs && meta.pkgs[i];
+  const good = !!e && e.label === label && new RegExp("^" + idRe + "$").test(e.product) &&
+    e.file === `${prefix}${meta.version}.fwsc` && e.file.startsWith(prefix);
+  ok(good, `package ${i + 1}: ${label} (${e && e.product}, ${e && e.file})`);
+  const pkg = e ? Buffer.from(e.pkg.split(",")[1], "base64") : Buffer.alloc(0);
+  ok(pkg.includes(Buffer.from("FELUCCA-LOADER-1")), `  its embedded package (${pkg.length} B) is a loader package`);
+}
 
 // the page runs without Web MIDI: the first status says so, and nothing throws
 const status = { textContent: "", className: "", style: {} };
@@ -37,7 +45,7 @@ const document = { getElementById: (id) => { if (id === "status") return status;
   documentElement: { dataset: {}, lang: "" }, body: { className: "", classList: { add() {}, toggle() {} } } };
 // the page also reads the browser around the installer: the hero film and the viewer (no timers run here)
 const ctx = { document, navigator: { language: "en-US" }, console, setTimeout, clearTimeout, setInterval: () => 0, fetch: undefined,
-  TextEncoder, Uint8Array, Date, window: {}, addEventListener() {}, scrollTo() {}, scrollY: 0, location: { hash: "" },
+  TextEncoder, Uint8Array, Date, window: { addEventListener() {}, removeEventListener() {} }, addEventListener() {}, scrollTo() {}, scrollY: 0, location: { hash: "" },
   performance: { now: () => 0 }, requestAnimationFrame: () => 0, matchMedia: () => ({ matches: false }),
   IntersectionObserver: class { observe() {} } };
 vm.createContext(ctx);

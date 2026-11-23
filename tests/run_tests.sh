@@ -175,14 +175,13 @@ if command -v node >/dev/null 2>&1; then
     run "web backup: capture, validation before writes, restore order" node web/test_backup.mjs
     $HC -o "$OUT/editor_bridge" tests/editor_bridge.c -lm
     run "organ patch editor against the firmware's editor: the INFO tag, ORG_GET / ORG_PUT, a refusal" node web/test_editor_organ.mjs "$OUT/editor_bridge"
-    python3 web/make_site.py build/felucca.fwsc "$OUT/site" "$(sed -n 's/^#define ORGANVAVE_VERSION "v\(.*\)"/\1/p' firmware/src/core.h)" >/dev/null
-    run "site: the home page and its installer (markers, scripts, the embedded package)" node web/test_site.mjs "$OUT/site/index.html"
-    for m in "SMK-37 Pro" "SMK-37 Elite" "MKE-P37"; do   # the SMK-37 page's three packages (the layout and the identity under test)
+    VER="$(sed -n 's/^#define ORGANVAVE_VERSION "v\(.*\)"/\1/p' firmware/src/core.h)"
+    for m in "SMK-37 Pro" "SMK-37 Elite" "MKE-P37"; do   # the site's three SMK-37 packages (the layout and the identity under test)
         python3 tools/fm1pkg_make.py --board smk37 --product "${m}_800" build/felucca.bin build/loader/ota.bin "$OUT/smk_site_$(echo "$m" | tr -d ' ').fwsc" >/dev/null
     done
-    python3 web/make_smk_site.py "$OUT/site" "$(sed -n 's/^#define ORGANVAVE_VERSION "v\(.*\)"/\1/p' firmware/src/core.h)" \
-        "$OUT/smk_site_SMK-37Pro.fwsc" "$OUT/smk_site_SMK-37Elite.fwsc" "$OUT/smk_site_MKE-P37.fwsc" >/dev/null
-    run "site: the SMK-37 installer page (smk.html: the three packages, the backup box, each model its own package, an FM-1 refused)" node web/test_smk_site.mjs "$OUT/site/smk.html"
+    python3 web/make_site.py build/felucca.fwsc "$OUT/site" "$VER" "$OUT/smk_site_SMK-37Pro.fwsc" "$OUT/smk_site_SMK-37Elite.fwsc" \
+        "$OUT/smk_site_MKE-P37.fwsc" >/dev/null
+    run "site: the home page and its installer (markers, scripts, the four packages with their identities)" node web/test_site.mjs "$OUT/site/index.html"
 else
     echo "== skip web tests (no node)"
 fi

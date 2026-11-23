@@ -145,44 +145,96 @@
   .btn.ko { margin-top: 24px; }
 
   /* install */
-  #install { padding-top: 104px; }
-  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 22px; margin-top: 24px; }
-  @media (max-width: 560px) { .card { padding: 14px; } }
-  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; list-style: none; margin: 0 0 12px; padding: 0; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 32px; margin-top: 44px; }
+  @media (max-width: 560px) { .card { padding: 20px; } }
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; list-style: none; margin: 0 0 18px; padding: 0; }
   .steps b { display: flex; align-items: center; gap: 10px; font-size: 16px; }
   .steps b i { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--or); color: #1a0e05; font: 800 13px/1 var(--sans); font-style: normal; }
   .steps span.d { display: block; color: var(--dim); font-size: 14.5px; line-height: 1.5; margin-top: 5px; }
   @media (max-width: 700px) { .steps { grid-template-columns: 1fr; gap: 12px; } }
+
   #go { width: 100%; font: 800 18px/1 var(--sans); color: #1a0e05; border: 0; border-radius: 12px; padding: 16px 20px; cursor: pointer; background: var(--or); transition: transform .08s, background .15s; }
+  #go small { font: 600 .62em/1 var(--mono); opacity: .75; margin-left: 4px; }
   #go:hover:not(:disabled) { background: var(--or2); }
   #go:active:not(:disabled) { transform: translateY(1px); }
   #go:disabled { cursor: default; background: var(--surface2); color: var(--mute); }
-  body.busy #go { background: var(--surface2); color: var(--or2); }
-  .busywarn { display: none; margin: 16px 0 0; padding: 14px 16px; border-radius: 12px; border: 2px solid var(--or); background: rgba(255,122,26,.12); color: var(--fg); font-size: 15px; line-height: 1.45; }
-  body.busy .busywarn { display: block; }
-  .meter { position: relative; height: 10px; border-radius: 999px; background: var(--bg); border: 1px solid var(--line); overflow: hidden; margin-top: 16px; }
-  #bar i { display: block; height: 100%; width: 0; border-radius: 999px; background: var(--or); transition: width .25s ease; position: relative; }
-  body.busy #bar i::after { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(115deg, rgba(255,255,255,.25) 0 10px, rgba(255,255,255,0) 10px 22px); animation: slide 1s linear infinite; }
-  @keyframes slide { to { background-position: 44px 0; } }
-  body.finished #bar i { background: var(--ok); }
-  #status { color: var(--fg); font-size: 15px; margin: 12px 0 0; min-height: 1.5em; }
-  body.bad #status { color: var(--bad); }
-  body.finished #status { color: var(--ok); font-weight: 700; }
-  .note { color: var(--dim); font-size: 14.5px; margin: 10px 0 0; }
-  .note.warn { color: #ffb37a; }
-  details { margin-top: 16px; border-top: 1px solid var(--line); padding-top: 14px; }
-  summary { cursor: pointer; color: var(--dim); font-size: 14.5px; }
-  summary:hover { color: var(--fg); }
-  pre { color: var(--mute); font-size: 12px; white-space: pre-wrap; margin: 10px 0 0; max-height: 220px; overflow: auto; }
   dialog.portpick { width: min(440px, calc(100vw - 32px)); padding: 22px; border: 1px solid var(--or); border-radius: 16px; background: var(--surface); color: var(--fg); font-size: 14.5px; line-height: 1.5; }
   dialog.portpick::backdrop { background: rgba(0,0,0,.7); }
   dialog.portpick b { font-size: 17px; }
   dialog.portpick p { color: var(--dim); margin: 8px 0 0; }
-  dialog.portpick select, dialog.portpick button { display: block; width: 100%; margin-top: 10px; font: 600 14px/1 var(--sans); padding: 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface2); color: var(--fg); }
-  dialog.portpick button { background: var(--or); color: #1a0e05; border: 0; font-weight: 800; cursor: pointer; }
-  .fwrow { margin: 14px 0 0; font-size: 15px; color: var(--dim); }
-  .fwrow a { color: var(--or2); }
+  .portpick select { height: auto; }
+  .portpick button.ghost { background: transparent; color: var(--dim); border: 1px solid var(--line); font-weight: 600; }
+  .portpick select, .portpick button { display: block; width: 100%; margin-top: 10px; font: 600 14px/1 var(--sans); padding: 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface2); color: var(--fg); }
+  .portpick button { background: var(--or); color: #1a0e05; border: 0; font-weight: 800; cursor: pointer; }
+  .busywarn { display: none; margin: 18px 0 0; padding: 14px 16px; border-radius: 12px; border: 2px solid var(--or); background: rgba(255,122,26,.12); color: var(--fg); font-size: 15px; line-height: 1.45; }
+  .busywarn b { display: block; color: var(--or2); font-size: 16px; margin-bottom: 4px; }
+  body.busy .busywarn { display: block; }
+  body.busy #go { background: var(--surface2); color: var(--or2); }
 
+  .prog { margin-top: 14px; }
+  #install { padding-top: 72px; }
+  #install .lead { margin-top: 10px; }
+  #install .card { margin-top: 24px; padding: 22px; }
+  @media (max-width: 560px) { #install .card { padding: 14px; } }
+  #install .steps { margin-bottom: 12px; }
+  #install #go { padding: 13px 20px; }
+  @media (min-width: 900px) {   /* the install block on one screen: steps and button left, notes and details right */
+    #install .card { display: grid; grid-template-columns: 1.3fr 1fr; grid-template-rows: auto auto auto auto auto 1fr; column-gap: 32px; row-gap: 12px; align-items: start; }
+    #install .steps { grid-column: 1; grid-row: 1; margin: 0; }
+    #install .detected { grid-column: 1; grid-row: 2; margin: 0; }
+    #install #go { grid-column: 1; grid-row: 3; }
+    #install .busywarn { grid-column: 1; grid-row: 4; margin: 0; }
+    #install .prog { grid-column: 1; grid-row: 5; margin: 0; }
+    #install .side { grid-column: 2; grid-row: 1 / span 6; display: flex; flex-direction: column; gap: 12px; }
+    #install .side .note { margin: 0; }
+  }
+  .meter { position: relative; height: 10px; border-radius: 999px; background: var(--bg); border: 1px solid var(--line); overflow: hidden; }
+  .fill { height: 100%; width: 0; border-radius: 999px; background: var(--or); transition: width .25s ease; position: relative; }
+  body.busy .fill::after { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(115deg, rgba(255,255,255,.25) 0 10px, rgba(255,255,255,0) 10px 22px);
+                           background-size: 44px 100%; animation: slide 1s linear infinite; }
+  @keyframes slide { to { background-position: 44px 0; } }
+  body.finished .fill { background: var(--ok); }
+  .row { display: flex; justify-content: space-between; align-items: baseline; margin-top: 10px; gap: 12px; }
+  #pct { font: 700 24px/1 var(--mono); font-variant-numeric: tabular-nums; }
+  #status { color: var(--fg); font-size: 15px; text-align: right; min-height: 1.5em; }
+  body.bad #status { color: var(--bad); }
+  body.finished #status { color: var(--ok); font-weight: 700; }
+  #phases { display: flex; list-style: none; padding: 0; margin: 16px 0 0; gap: 6px; }
+  #phases li { flex: 1; text-align: center; font-size: 12px; color: var(--mute); padding-top: 10px; position: relative; }
+  #phases li::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 3px; border-radius: 3px; background: var(--line); }
+  #phases li.now { color: var(--or2); font-weight: 700; }
+  #phases li.now::before { background: var(--or); }
+  #phases li.done { color: var(--dim); }
+  #phases li.done::before { background: #7a4a22; }
+  body.finished #phases li.done::before { background: var(--ok); }
+
+  .note { color: var(--dim); font-size: 14.5px; margin: 10px 0 0; }
+  .detected { margin: 0 0 14px; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--or); background: rgba(255,122,26,.10); font-size: 15px; line-height: 1.45; }
+  .detected b { color: var(--or2); }
+  .fwlist { list-style: none; margin: 8px 0 0; padding: 0; }
+  .fwlist li { margin: 6px 0; font-size: 14px; }
+  .fwlist li span { color: var(--mute); font: 500 12px/1 var(--mono); margin-left: 8px; }
+  .portpick label { display: block; margin-top: 14px; color: var(--dim); font-size: 13px; }
+  .devs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+  .devs label { display: flex; align-items: center; gap: 8px; margin: 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; color: var(--fg); font-size: 14px; cursor: pointer; }
+  .devs label:has(input:checked) { border-color: var(--or); background: rgba(255,122,26,.10); }
+  .devs input { accent-color: var(--or); margin: 0; }
+  .note.warn { color: #ffb37a; }
+  details { margin-top: 16px; border-top: 1px solid var(--line); padding-top: 14px; }
+  summary { cursor: pointer; color: var(--dim); font-size: 14.5px; }
+  summary:hover { color: var(--fg); }
+  details p { color: var(--dim); font-size: 14px; margin: 10px 0; }
+  details button { font: 600 14px/1 var(--sans); color: var(--fg); background: var(--surface2); border: 1px solid var(--line); border-radius: 8px; padding: 11px 16px; cursor: pointer; }
+  details button:disabled { opacity: .35; cursor: default; }
+  input[type=file] { color: var(--dim); font-size: 13px; max-width: 100%; }
+  pre { color: var(--mute); font-size: 12px; white-space: pre-wrap; margin: 10px 0 0; max-height: 220px; overflow: auto; }
+  .tipbg { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: flex; align-items: center; justify-content: center; z-index: 50; padding: 16px; }
+  .tipbg[hidden] { display: none; }
+  .tipbox { background: var(--surface2, #1b1917); border: 1px solid var(--line); border-radius: 14px; padding: 22px; max-width: 380px; color: var(--fg); }
+  .tipbox h3 { margin: 0 0 8px; font-size: 18px; }
+  .tipbox p { margin: 0 0 16px; color: var(--dim); line-height: 1.45; }
+  .tipgo { display: inline-block; background: var(--or); color: #1a0e05; font-weight: 700; text-decoration: none; padding: 10px 16px; border-radius: 10px; margin-right: 8px; }
+  .tipx { background: none; border: 1px solid var(--line); color: var(--dim); padding: 10px 14px; border-radius: 10px; cursor: pointer; font: inherit; }
   footer { color: var(--mute); font-size: 12.5px; line-height: 1.7; margin-top: 120px; padding: 36px 0 48px; border-top: 1px solid var(--line); }
   footer a { color: var(--dim); }
   footer .credits { color: var(--dim); font-size: 13.5px; }
@@ -303,32 +355,49 @@
   </section>
 
   <section class="s wrap" id="install">
-    <p class="eyebrow"><span class="en">Install</span><span class="pt">Instalar</span></p>
-    <h2><span class="en">Install on the FM-1</span><span class="pt">Instale no FM-1</span></h2>
-    <p class="lead"><span class="en">Connect the FM-1 to this computer with its USB cable, then press Install. Use Chrome or Edge, on this page's https address or on localhost (the browser needs a secure context for MIDI with SysEx).</span><span class="pt">Conecte o FM-1 a este computador com o cabo USB e clique em Instalar. Use o Chrome ou o Edge, neste endereço https ou em localhost (o navegador exige um contexto seguro para MIDI com SysEx).</span></p>
+    <p class="eyebrow" data-t="e_install"></p>
+    <h2 data-t="h_install"></h2>
+    <p class="lead" data-t="l_install"></p>
     <div class="card">
       <ol class="steps">
-        <li><b><i>1</i><span class="en">Connect</span><span class="pt">Conecte</span></b><span class="d"><span class="en">The FM-1 with its USB cable, straight to this computer.</span><span class="pt">O FM-1 com o cabo USB, direto neste computador.</span></span></li>
-        <li><b><i>2</i><span class="en">Install</span><span class="pt">Instale</span></b><span class="d"><span class="en">Press the button. The page finds the device and checks the package.</span><span class="pt">Clique no botão. A página encontra o aparelho e confere o pacote.</span></span></li>
-        <li><b><i>3</i><span class="en">Wait</span><span class="pt">Aguarde</span></b><span class="d"><span class="en">Do not unplug the device until it reports the new version.</span><span class="pt">Não desconecte o aparelho até ele informar a nova versão.</span></span></li>
+        <li><b><i>1</i><span data-t="step1"></span></b><span class="d" data-t="s1"></span></li>
+        <li><b><i>2</i><span data-t="step2"></span></b><span class="d" data-t="s2"></span></li>
+        <li><b><i>3</i><span data-t="step3"></span></b><span class="d" data-t="s3"></span></li>
       </ol>
-      <button id="go" disabled><span class="en">Install v/*VERSION*/</span><span class="pt">Instalar v/*VERSION*/</span></button>
-      <div class="busywarn"><b><span class="en">Do not unplug the device.</span><span class="pt">Não desconecte o aparelho.</span></b><span class="en">The install is writing. Keep this page open.</span><span class="pt">A instalação está gravando. Mantenha esta página aberta.</span></div>
-      <div class="meter" id="bar"><i></i></div>
-      <p id="status" role="status"></p>
-      <p class="note warn"><span class="en">Not yet tested on a real FM-1. Keep M-VAVE's official firmware file: this version has no built-in way back.</span><span class="pt">Ainda não testado num FM-1 real. Guarde o arquivo de firmware oficial da M-VAVE: esta versão não tem um jeito próprio de voltar.</span></p>
-      <p class="fwrow"><span class="en">Or download the package (the .fwsc file the installer uses):</span><span class="pt">Ou baixe o pacote (o arquivo .fwsc que o instalador usa):</span> <a id="fwsc" href="#">organvave</a></p>
+
+      <div class="detected" id="detected" role="status" hidden></div>
+      <button id="go" disabled><span data-t="install"></span> <small class="curver-b"></small></button>
+
+      <dialog class="portpick" id="portpick"><b data-t="pick_t"></b><p data-t="pick_d"></p>
+        <label data-t="pick_port"></label><select id="portsel" size="4" aria-label="MIDI"></select>
+        <label data-t="pick_dev"></label>
+        <div class="devs" id="devsel"><label><input type="radio" name="dev" value="FM-1" checked> FM-1</label><label><input type="radio" name="dev" value="SMK-37 Pro"> SMK-37 Pro</label><label><input type="radio" name="dev" value="SMK-37 Elite"> SMK-37 Elite</label><label><input type="radio" name="dev" value="MKE-P37"> MKE-P37</label></div>
+        <button id="portgo" type="button" data-t="pick_b"></button><button id="portno" type="button" class="ghost" data-t="pick_c"></button></dialog>
+      <div class="busywarn" role="alert"><b data-t="busy_t"></b><span data-t="busy_d"></span></div>
+      <div class="prog">
+        <div class="meter" id="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="fill" id="fill"></div></div>
+        <div class="row"><span id="pct">0%</span><span id="status" aria-live="polite"></span></div>
+        <ul id="phases">
+          <li data-t="ph_verify"></li><li data-t="ph_loader"></li><li data-t="ph_write"></li><li data-t="ph_reboot"></li><li data-t="ph_done"></li>
+        </ul>
+      </div>
+
+      <div class="side">
+      <p class="note" data-t="intro"></p>
+      <p class="note" data-t="compat"></p>
+      <p class="note" data-t="smknote"></p>
+      <p class="note warn" data-t="warn"></p>
+      <p class="note" data-t="direct"></p>
+      <p class="note" data-t="beta"></p>
+
       <details>
-        <summary><span class="en">Log</span><span class="pt">Registro</span></summary>
+        <summary data-t="logT"></summary>
+        <p data-t="fwdl"></p>
+        <ul class="fwlist" id="fwlist"></ul>
         <pre id="log"></pre>
       </details>
+      </div>
     </div>
-    <dialog id="portpick" class="portpick">
-      <b><span class="en">Pick the FM-1's MIDI port</span><span class="pt">Escolha a porta MIDI do FM-1</span></b>
-      <p><span class="en">This computer shows the device under another name. Pick the one that is the FM-1.</span><span class="pt">Este computador mostra o aparelho com outro nome. Escolha o que é o FM-1.</span></p>
-      <select id="portsel"></select>
-      <button id="portgo" type="button"><span class="en">Use this port</span><span class="pt">Usar esta porta</span></button>
-    </dialog>
   </section>
 </main>
 
@@ -341,6 +410,10 @@
   </div>
 </footer>
 
+<div class="tipbg" id="tip" hidden><div class="tipbox" role="dialog" aria-modal="true" aria-labelledby="tipt">
+  <h3 id="tipt" data-t="tip_t"></h3><p data-t="tip_b"></p>
+  <a class="tipgo" href="https://ko-fi.com/ruppert" target="_blank" rel="noopener" data-t="tip_go"></a><button class="tipx" id="tipx" data-t="tip_x"></button>
+</div></div>
 <script>
 /*LIB*/
 </script>
@@ -349,30 +422,6 @@ const meta = /*META*/{};
 const $ = (id) => document.getElementById(id);
 
 /* ---- the language: EN / PT, one choice for the whole page (localStorage "organvave-lang"; else the browser's) ---- */
-const TXT = {
-  en: {
-    ready: "Ready. Press Install with the FM-1 connected.", nomidi: "This browser has no Web MIDI. Use Chrome or Edge on https or localhost.",
-    denied: "MIDI access was refused. Allow it in the browser and try again.", start: "Found the FM-1. Starting the update...",
-    verify: "Checking the new firmware on the device...", loader: "Loading the update loader...", write: "Writing the firmware...",
-    reboot: "Restarting the FM-1...", done: "Installed: the FM-1 reports ", stopped: "The install stopped. Press Install again to resume.",
-    notfound: "FM-1 not found. Check the USB cable, and that no other app is using the device.",
-    model: "The device does not match this package.", lost: "The device was disconnected. Replug it and press Install again.",
-    noloader: "The update loader did not appear. Replug the cable and press Install again.",
-    noreturn: "The device did not come back. Power-cycle it.", mismatch: "Installed, but the device reports another firmware.",
-    error: "Something went wrong: ", loadfail: "Could not load the package: ", badpkg: "The package in this page is not an FM-1 package.",
-  },
-  pt: {
-    ready: "Pronto. Clique em Instalar com o FM-1 conectado.", nomidi: "Este navegador não tem Web MIDI. Use o Chrome ou o Edge em https ou localhost.",
-    denied: "O acesso MIDI foi recusado. Permita no navegador e tente de novo.", start: "FM-1 encontrado. Iniciando a atualização...",
-    verify: "Conferindo o novo firmware no aparelho...", loader: "Carregando o carregador de atualização...", write: "Gravando o firmware...",
-    reboot: "Reiniciando o FM-1...", done: "Instalado: o FM-1 informa ", stopped: "A instalação parou. Clique em Instalar de novo para retomar.",
-    notfound: "FM-1 não encontrado. Confira o cabo USB e se nenhum outro programa está usando o aparelho.",
-    model: "O aparelho não corresponde a este pacote.", lost: "O aparelho foi desconectado. Reconecte e clique em Instalar de novo.",
-    noloader: "O carregador de atualização não apareceu. Reconecte o cabo e clique em Instalar de novo.",
-    noreturn: "O aparelho não voltou. Desligue e ligue a alimentação.", mismatch: "Instalado, mas o aparelho informa outro firmware.",
-    error: "Algo deu errado: ", loadfail: "Não foi possível carregar o pacote: ", badpkg: "O pacote desta página não é um pacote FM-1.",
-  },
-};
 const SAVED_LANG = (() => { try { const v = localStorage.getItem("organvave-lang"); if (v === "pt" || v === "en") return v; } catch (_) { /* (no storage) */ } return (navigator.language || "").toLowerCase().startsWith("pt") ? "pt" : "en"; })();
 let lang = SAVED_LANG;
 function setLang(l) {
@@ -380,6 +429,7 @@ function setLang(l) {
   $("langbtn").textContent = l === "pt" ? "EN" : "PT";
   try { localStorage.setItem("organvave-lang", l); } catch (_) { /* (no storage) */ }
   renderSite();
+  applyInstaller();
 }
 $("langbtn").addEventListener("click", () => setLang(lang === "pt" ? "en" : "pt"));
 
@@ -617,76 +667,310 @@ function renderSite() {
   layout();
 })();
 
-/* ---- the installer: the package this page carries, and the image the update writes (fm1pkg.js) ---- */
-const say = (key, extra = "", bad = false) => { $("status").textContent = (TXT[lang][key] || key) + extra; document.body.classList.toggle("bad", bad); };
-const log = (line) => { $("log").textContent += line + "\n"; };
-const setBar = (pct) => { document.querySelector("#bar i").style.width = pct + "%"; };
-const STEP_PCT = { start: 4, verify: 20, loader: 50, write: 60, reboot: 92, done: 100 };
-let image = null, busy = false;
-
-(async () => {
-  if (!navigator.requestMIDIAccess) { say("nomidi", "", true); return; }
-  try {
-    const r = await fetch(meta.pkg);
-    if (!r.ok) throw new Error("HTTP " + r.status);
-    const pkg = new Uint8Array(await r.arrayBuffer());
-    if (productOf(pkg) !== meta.product) { say("badpkg", "", true); return; }
-    image = logicalImage(pkg);
-    $("fwsc").href = meta.file; $("fwsc").download = meta.file; $("fwsc").textContent = meta.file;
-    $("go").disabled = false;
-    say("ready");
-  } catch (e) { say("loadfail", e.message, true); }
-})();
-
-async function runInstall(portName) {
-  if (busy || !image) return;
-  busy = true; $("go").disabled = true; setBar(0); $("log").textContent = "";
-  let midi = null;
-  try {
-    midi = await navigator.requestMIDIAccess({ sysex: true });
-    const up = new Updater(midi, log);
-    up.portName = portName || null;
-    const step = (k, a) => {
-      log(`${k} ${a ?? ""}`);
-      if (k in STEP_PCT) setBar(STEP_PCT[k]);
-      if (k === "start") say("start");
-      else if (k === "verify") say("verify", ` ${a ?? ""}`);
-      else if (k === "loader") say("loader");
-      else if (k === "write") say("write", ` ${a ?? ""}`);
-      else if (k === "reboot") say("reboot");
-      else if (k === "done") say("done", a || "", false);
-    };
-    const ota = await up.find((id) => /^ota-/i.test(id.model));
-    if (ota) {
-      ota.link.close();
-      const ok = await up.resume(image, step, meta.product);
-      if (!ok) say("stopped", "", true);
-    } else {
-      await up.install(image, meta.product, step);
-    }
-  } catch (e) {
-    if (e && e.code && TXT[lang][e.code]) say(e.code, e.detail ? " " + e.detail : "", true);
-    else if (e && e.name === "NotAllowedError") say("denied", "", true);
-    else say("error", e && e.message || String(e), true);
-    log(String((e && e.stack) || e));
-    if (e && e.code === "notfound" && midi) offerPorts(midi);
-  } finally {
-    busy = false; $("go").disabled = false;
-  }
+/* ---- the installer: the packages this page carries (the FM-1 and the SMK-37 models), the install and the port picker (the FMini-1 site's, GPL-3.0-only) ---- */
+const TEXT = {
+  pt: {
+    intro: "Conecte o FM-1 ou o SMK-37 por USB. O instalador reconhece o aparelho e grava o firmware certo. (Funciona no Chrome ou no Edge.)",
+    compat: "Compatível com as novas versões do FM-1 (com o chip de flash UC25HQ80).",
+    warn: "Não desconecte o cabo USB durante a gravação.",
+    install: "Instalar",
+    other: "English",
+    smknote: "SMK-37 (Pro, Elite e MKE-P37): a primeira inicialização apaga as configurações do firmware original. Para voltar ao original, use o firmware e o atualizador da M-Vave para o seu modelo.",
+    det: "Dispositivo detectado: ",
+    det_ota: " (em modo de atualização)",
+    det_fw: " · instalando o OrganVave ",
+    direct: "Ligue o cabo USB direto no computador. Não precisa de Probe nem de Transporter.",
+    beta: "O OrganVave é uma versão experimental. O autor não se responsabiliza se o seu FM-1 ou SMK-37 for danificado ou se comportar de forma estranha por causa deste firmware personalizado. Use por sua conta e risco.",
+    nomidi: "Este navegador não consegue. Abra a página no Chrome ou no Edge.",
+    loadfail: "Não foi possível carregar: ",
+    start: "Iniciando",
+    verify: "Verificando",
+    loader: "Entrando no modo de atualização",
+    write: "Gravando",
+    reboot: "Reiniciando",
+    done: "Pronto! Seu teclado agora é um OrganVave",
+    tip_t: "Firmware instalado!",
+    tip_b: "Se você gostar dele, considere dar uma ajuda para o projeto para continuar o aprimoramento dele. Obrigado!",
+    tip_go: "Contribuir",
+    tip_x: "Fechar",
+    stopped: "Interrompido. Desconecte e reconecte o USB e aperte Instalar de novo.",
+    error: "Erro: ",
+    denied: "O acesso ao MIDI (SysEx) não foi permitido. Permita o MIDI nas configurações do site (barra de endereço) e aperte Instalar de novo.",
+    notfound: "Nenhum FM-1 ou SMK-37 encontrado. Confira o cabo USB (precisa ser de dados), feche outros apps que usam MIDI e aperte Instalar de novo.",
+    model: "O firmware não combina com o aparelho conectado: ",
+    unknown: "O aparelho conectado não é um FM-1 nem um SMK-37: ",
+    lost: "A conexão USB caiu. Reconecte e aperte Instalar de novo.",
+    noloader: "O aparelho em modo de atualização não foi encontrado. Reconecte o USB e aperte Instalar de novo (ele fica em modo de atualização até terminar).",
+    noreturn: "O aparelho não voltou. Desligue e ligue de novo.",
+    mismatch: "Gravado, mas o aparelho informa outra versão: ",
+    badpkg: "O arquivo a instalar está danificado. Recarregue a página.",
+    leave: "Gravando. Não feche a página.",
+    pick_t: "Qual é o seu teclado?",
+    pick_d: "Não achei o FM-1 nem o SMK-37 pelo nome: outro firmware personalizado pode dar outro nome ao USB. Escolha a entrada MIDI do aparelho (com o USB dele conectado) e qual é o aparelho:",
+    pick_port: "Entrada MIDI",
+    pick_dev: "Dispositivo",
+    pick_b: "Instalar neste dispositivo",
+    pick_c: "Cancelar",
+    busy_t: "Instalação em andamento: não feche esta página!",
+    busy_d: "Não feche a página, não desconecte o USB nem desligue o teclado até aparecer \"Pronto\".",
+    license: "GPL-3.0, sem garantia. Código-fonte:",
+    ready: "Pronto. Conecte o FM-1 ou o SMK-37 e aperte Instalar.",
+    step1: "Conectar",
+    step2: "Instalar",
+    step3: "Tocar",
+    s1: "Ligue o FM-1 ou o SMK-37 ao computador com um cabo USB de dados.",
+    s2: "Aperte Instalar: o aparelho é detectado e o firmware certo é gravado. Mantenha o cabo conectado até aparecer Pronto.",
+    s3: "O teclado reinicia como OrganVave, com a tela de abertura.",
+    ph_verify: "Verificar",
+    ph_loader: "Modo de atualização",
+    ph_write: "Gravar",
+    ph_reboot: "Reiniciar",
+    ph_done: "Pronto",
+    logT: "Baixar firmware",
+    fw: "Firmware",
+    fwdl: "Os firmwares desta página (.fwsc), para baixar:",
+    e_install: "Instalar",
+    h_install: "Instale direto do navegador",
+    l_install: "O instalador roda aqui mesmo, no navegador: reconhece se o aparelho é um FM-1 ou um SMK-37 e grava o firmware certo pelo cabo USB.",
+  },
+  en: {
+    intro: "Connect the FM-1 or the SMK-37 by USB. The installer recognises it and writes the right firmware. (Works in Chrome or Edge.)",
+    compat: "Supports the new FM-1 versions (with the UC25HQ80 flash chip).",
+    warn: "Do not unplug the USB cable while writing.",
+    install: "Install",
+    other: "Português",
+    smknote: "SMK-37 (Pro, Elite and MKE-P37): the first start clears the stock firmware's settings. To go back to the stock firmware, use M-Vave's firmware and updater for your model.",
+    det: "Detected device: ",
+    det_ota: " (in update mode)",
+    det_fw: " · installing OrganVave ",
+    direct: "Connect the USB cable directly to the computer. No probe or Transporter is needed.",
+    beta: "OrganVave is an experimental release. The author accepts no responsibility if your FM-1 or SMK-37 is damaged or misbehaves because of this custom firmware. Use it at your own risk.",
+    nomidi: "This browser cannot do it. Open the page in Chrome or Edge.",
+    loadfail: "Could not load: ",
+    start: "Starting",
+    verify: "Verifying",
+    loader: "Switching to update mode",
+    write: "Writing",
+    reboot: "Restarting",
+    done: "Done! Your keyboard is now an OrganVave",
+    tip_t: "Firmware installed!",
+    tip_b: "If you like it, consider a tip to support the project. Thank you!",
+    tip_go: "Donate",
+    tip_x: "Close",
+    stopped: "Stopped. Replug the USB cable and press Install again.",
+    error: "Error: ",
+    denied: "MIDI (SysEx) access was not allowed. Allow MIDI in the site settings (address bar) and press Install again.",
+    notfound: "No FM-1 or SMK-37 found. Check the USB cable (a data cable), close other apps that use MIDI, and press Install again.",
+    model: "The firmware does not match the connected device: ",
+    unknown: "The connected device is neither an FM-1 nor an SMK-37: ",
+    lost: "The USB connection was lost. Replug it and press Install again.",
+    noloader: "The device in update mode was not found. Replug the USB cable and press Install again (it stays in update mode until it is finished).",
+    noreturn: "The device did not come back. Power-cycle it.",
+    mismatch: "Written, but the device reports another version: ",
+    badpkg: "The file to install is damaged. Reload the page.",
+    leave: "Writing. Do not close the page.",
+    pick_t: "Which is your keyboard?",
+    pick_d: "I could not find the FM-1 or the SMK-37 by name: another custom firmware may name its USB device differently. Pick the device's MIDI input (with its USB connected) and which device it is:",
+    pick_port: "MIDI input",
+    pick_dev: "Device",
+    pick_b: "Install on this device",
+    pick_c: "Cancel",
+    busy_t: "Installing: do not close this page!",
+    busy_d: "Do not close the page, unplug the USB cable or power off the keyboard until it says Done.",
+    license: "GPL-3.0, no warranty. Source:",
+    ready: "Ready. Connect your FM-1 or SMK-37 and press Install.",
+    step1: "Connect",
+    step2: "Install",
+    step3: "Play",
+    s1: "Plug the FM-1 or the SMK-37 into the computer with a USB data cable.",
+    s2: "Press Install: the device is detected and the right firmware is written. Keep the cable connected until it says Done.",
+    s3: "The keyboard restarts as OrganVave with its splash screen.",
+    ph_verify: "Verify",
+    ph_loader: "Update mode",
+    ph_write: "Write",
+    ph_reboot: "Restart",
+    ph_done: "Done",
+    logT: "Download firmware",
+    fw: "Firmware",
+    fwdl: "This page's firmwares (.fwsc), to download:",
+    e_install: "Install",
+    h_install: "Install straight from the browser",
+    l_install: "The installer runs right here, in the browser: it recognises whether the device is an FM-1 or an SMK-37 and writes the right firmware over the USB cable.",
+  },
+};
+const t = (k) => TEXT[lang][k];
+let lastKey = null, lastArg = "", detKey = null;   /* (detKey: the device step 1 found, shown again on a language change) */
+/* the installer's texts follow the page's language (setLang calls this) */
+function applyInstaller() {
+  document.querySelectorAll("[data-t]").forEach((e) => { e.textContent = t(e.dataset.t); });
+  $("tipx").textContent = t("tip_x");
+  if (lastKey) $("status").textContent = t(lastKey) + lastArg;
+  if (detKey) showDetected(detKey.label, detKey.ota, detKey.pk);
+}
+$("tipx").addEventListener("click", () => { $("tip").hidden = true; });
+applyInstaller();
+/* the packages: the FM-1's and the SMK-37's (Pro, Elite, MKE-P37), each for exactly one model (fm1ota.js sameModel) */
+const PKGS = meta.pkgs;                       /* [{product, label, file, version, pkg}] */
+const modelOf = (product) => product.split("_")[0];
+const images = {};                            /* product -> the logical image */
+let ready = false;
+document.querySelectorAll(".curver").forEach((e) => { e.textContent = meta.smkVersion && meta.smkVersion !== meta.version ? "FM-1 v" + meta.version + " · SMK-37 v" + meta.smkVersion : "v" + meta.version + " · FM-1 · SMK-37"; });
+document.querySelectorAll(".curver-b").forEach((e) => { e.textContent = ""; });
+for (const p of PKGS) {
+  const li = document.createElement("li"), a = document.createElement("a"), sp = document.createElement("span");
+  a.href = p.pkg; a.download = p.file; a.textContent = p.label + " · v" + p.version; sp.textContent = p.file;
+  li.append(a, sp); $("fwlist").appendChild(li);
 }
 
-// not found by name (a firmware may name its USB device differently): the player picks the MIDI port
+let writing = false;
+let wake = null;
+const keepAwake = async (on) => { try { if (on && navigator.wakeLock) wake = await navigator.wakeLock.request("screen"); else if (wake) { await wake.release(); wake = null; } } catch (_) {} };
+// While an install runs, the page is kept from being frozen or paused in the background: a Web Lock (the browser does not
+// freeze a page that holds one), a silent audio context (a page that makes sound is not throttled as hard) and the
+// screen wake lock, asked again when the tab comes back (the browser drops it when the tab is hidden).
+let holdRelease = null, holdAudio = null;
+const holdPage = (on) => {
+  if (on) {
+    try { if (navigator.locks) navigator.locks.request("fm1-install", () => new Promise((r) => { holdRelease = r; })).catch(() => {}); } catch (_) {}
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (AC && !holdAudio) {
+        holdAudio = new AC();
+        const o = holdAudio.createOscillator(), g = holdAudio.createGain();
+        g.gain.value = 0.000001;
+        o.connect(g).connect(holdAudio.destination);
+        o.start();
+      }
+    } catch (_) {}
+  } else {
+    if (holdRelease) { holdRelease(); holdRelease = null; }
+    if (holdAudio) { holdAudio.close().catch(() => {}); holdAudio = null; }
+  }
+};
+const lockInstaller = (on) => { keepAwake(on); holdPage(on); writing = on; $("go").disabled = on || !ready; };
+document.addEventListener("visibilitychange", () => { if (!document.hidden && writing) keepAwake(true); });
+window.addEventListener("beforeunload", (e) => { if (writing) { e.preventDefault(); e.returnValue = t("leave"); } });
+
+const sayK = (k, arg = "") => { lastKey = k; lastArg = arg; $("status").textContent = t(k) + arg; if (k === "done") $("tip").hidden = false; document.body.classList.toggle("bad", ["error","denied","notfound","model","unknown","lost","noloader","noreturn","mismatch","badpkg","stopped","loadfail","nomidi"].includes(k)); };
+(async () => {
+  if (!navigator.requestMIDIAccess) { sayK("nomidi"); return; }
+  try {
+    for (const p of PKGS) {
+      const r = await fetch(p.pkg);
+      if (!r.ok) throw new Error(`${p.file}: HTTP ${r.status}`);
+      const pkg = new Uint8Array(await r.arrayBuffer());
+      if (productOf(pkg) !== p.product) { sayK("badpkg"); return; }
+      images[p.product] = logicalImage(pkg);
+    }
+    ready = true;
+    say(t("ready"));
+    $("go").disabled = false;
+    setBar(0, null);
+  } catch (e) { sayK("loadfail", e.message); }
+})();
+
+/* step 1 done: which device, and what goes on it */
+function showDetected(label, ota, pk) {
+  detKey = { label, ota, pk };
+  const box = $("detected");
+  box.innerHTML = "";
+  const b = document.createElement("b"); b.textContent = label;
+  box.append(t("det"), b, (ota ? t("det_ota") : "") + (pk ? t("det_fw") + "v" + pk.version : ""));
+  box.hidden = false;
+}
+async function runInstall(portName, chosen) {
+  if (writing) return;
+  if ($("portpick").open) $("portpick").close();
+  lockInstaller(true);
+  $("detected").hidden = true; detKey = null;
+  let midi;
+  try { midi = await navigator.requestMIDIAccess({ sysex: true }); }
+  catch (e) { sayK("denied"); lockInstaller(false); return; }
+  try {
+    const up = new Updater(midi, log);
+    up.portName = portName || null;
+    const total = 74 + 1167;
+    const step = (k, a) => {
+      log(`${k} ${a ?? ""}`);
+      if (k === "start") sayK("start");
+      if (k === "start") setBar(0, "verify");
+      if (k === "verify") { sayK("verify"); setBar((a / total) * 100, "verify"); }
+      if (k === "loader") { sayK("loader"); setBar(6, "loader"); }
+      if (k === "write") { sayK("write"); writeBar(a); }
+      if (k === "reboot") { stopCrawl(); sayK("reboot"); setBar(100, "reboot"); }
+      if (k === "done") { stopCrawl(); setBar(100, "done"); sayK("done"); }
+    };
+    /* which device is it: its identity (the running firmware's, or the update loader's) */
+    const dev = await up.find(() => true);
+    if (!dev && !portName) { sayK("notfound"); offerPorts(midi); lockInstaller(false); return; }
+    const ota = !!dev && /^ota-/i.test(dev.id.model);
+    const model = dev ? dev.id.model.replace(/^ota-/i, "") : chosen;
+    if (dev) dev.link.close();
+    const pk = PKGS.find((p) => modelOf(p.product) === model);
+    if (!pk) { sayK("unknown", dev ? dev.id.text : String(model)); lockInstaller(false); return; }
+    showDetected(dev ? model : chosen, ota, pk);
+    const image = images[pk.product];
+    if (ota) sayK((await up.resume(image, step, pk.product)) ? "done" : "stopped");
+    else await up.install(image, pk.product, step);
+  } catch (e) {
+    if (e && e.code && TEXT[lang][e.code]) sayK(e.code, e.detail || "");
+    else sayK("error", e && e.message);
+    log(String(e && e.stack || e));
+    if (e && e.code === "notfound") offerPorts(midi);
+  }
+  lockInstaller(false);
+}
+// not found by name (another custom firmware may name its USB device differently): the player picks the MIDI port and
+// the device
 function offerPorts(midi) {
   const names = [...new Set([...midi.inputs.values()].filter((i) => i.state !== "disconnected").map((i) => i.name).filter(Boolean))];
   const sel = $("portsel");
   sel.innerHTML = "";
   for (const n of names) { const o = document.createElement("option"); o.value = o.textContent = n; sel.appendChild(o); }
+  sel.selectedIndex = 0;
   if (names.length && $("portpick").showModal) $("portpick").showModal();
 }
-$("portgo").addEventListener("click", () => { const n = $("portsel").value; $("portpick").close(); if (n) runInstall(n); });
-$("go").addEventListener("click", () => runInstall(null));
+$("portgo").addEventListener("click", () => {
+  const n = $("portsel").value, d = (document.querySelector('#devsel input:checked') || {}).value || "FM-1";
+  $("portpick").close();
+  if (n) runInstall(n, d);
+});
+$("portno").addEventListener("click", () => $("portpick").close());
+$("go").addEventListener("click", () => runInstall(null, null));const say = (txt) => { lastKey = null; $("status").textContent = txt; };
+const log = (t) => { $("log").textContent += t + "\n"; };
+const PHASES = ["verify", "loader", "write", "reboot", "done"];
+function setBar(pct, phase) {
+  pct = Math.max(0, Math.min(100, pct));
+  $("fill").style.width = pct + "%";
+  $("pct").textContent = Math.round(pct) + "%";
+  $("bar").setAttribute("aria-valuenow", String(Math.round(pct)));
+  const at = PHASES.indexOf(phase);
+  document.querySelectorAll("#phases li").forEach((li, i) => {
+    li.classList.toggle("done", at > i || phase === "done");
+    li.classList.toggle("now", at === i && phase !== "done");
+  });
+  document.body.classList.toggle("busy", phase && phase !== "done");
+  document.body.classList.toggle("finished", phase === "done");
+}
+// the write phase: the requests take the bar from 6 % to 78 %; from there (the last block, or no request for 1.5 s) +1 %
+// every 0.7 s up to 99 % while the device finishes, whatever it still asks for; 100 % as soon as the write is finished (the reboot step)
+let crawl = null, wLast = 0, wTick = 0, wPct = 6, wCap = false;
+function writeBar(n) {
+  const now = Date.now();
+  if (!crawl) { wPct = 6; wCap = false; wTick = now; }
+  wLast = now;
+  wCap = wCap || n >= 1167;
+  wPct = Math.max(wPct, 6 + 72 * Math.min(1, n / 1167));
+  setBar(wPct, "write");
+  if (!crawl) crawl = setInterval(() => {
+    const t = Date.now();
+    if (!writing) { stopCrawl(); return; }
+    if ((wCap || t - wLast > 1500) && t - wTick >= 700 && wPct < 99) { wTick = t; wPct = Math.min(99, wPct + 1); setBar(wPct, "write"); }
+  }, 100);
+}
+function stopCrawl() { if (crawl) clearInterval(crawl); crawl = null; }
 
-setLang(lang);
+$("tip").addEventListener("click", (e) => { if (e.target.id === "tip") $("tip").hidden = true; });
 </script>
 </body>
 </html>
