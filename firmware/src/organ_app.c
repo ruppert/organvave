@@ -361,6 +361,20 @@ static uint32_t oa_pp_until;
 static int oa_pp_on(void) { return oa_pp_until && (int32_t)(fm1_ms - oa_pp_until) < 0; }
 static uint32_t oa_vp_until;                              /* the vibrato selector's pop-up (HOME, K3): 1 s */
 static int oa_vp_on(void) { return oa_vp_until && (int32_t)(fm1_ms - oa_vp_until) < 0; }
+#if BOARD_SMK37
+/* K1 (the virtual MASTER pot, smk_input.h smk_master) turned: the MASTER VOLUME pop-up, 0..100 with its bar, 1.2 s (as FMini-1) */
+static uint32_t oa_mv_until;
+static int32_t oa_mv_last = -1;
+static uint32_t oa_mv_val(void) { return (uint32_t)smk_master * 100u / 1023u; }
+static int oa_mv_on(void) { return oa_mv_until && (int32_t)(fm1_ms - oa_mv_until) < 0; }
+static void oa_mv_poll(void)                              /* every UI frame: a change of the pot starts the pop-up */
+{
+    int32_t v = (int32_t)oa_mv_val();
+    if (oa_mv_last >= 0 && v != oa_mv_last)
+        oa_mv_until = fm1_ms + 1200u;
+    oa_mv_last = v;
+}
+#endif
 static uint32_t oa_track_preset(void)                     /* every frame; 1 = the preset changed now */
 {
     uint32_t u = oa_on_user() ? TSEL->user : 0u, p = u ? 0xFEu : oa_factory();
@@ -957,6 +971,21 @@ static void oa_pp_draw(void)                              /* the preset pop-up *
     ctext(120, 84, &AF_L, num, C_AMBER, C_POP);
     ctext(120, 126, f, nm, C_CREAM, C_POP);
 }
+#if BOARD_SMK37
+static void oa_mv_draw(void)                              /* the MASTER VOLUME pop-up (as FMini-1): two lines, the bar and the value */
+{
+    uint32_t v = oa_mv_val();
+    char b[8];
+    fmt_int(b, (int32_t)v);                               /* (the firmware's libc.c: no snprintf) */
+    cv_rect(12, 36, 216, 168, C_ORANGE);
+    cv_rect(14, 38, 212, 164, C_POP);
+    ctext(120, 46, &AF_L, "MASTER", C_CREAM, C_POP);
+    ctext(120, 78, &AF_L, "VOLUME", C_CREAM, C_POP);
+    cv_rect(28, 118, 184, 26, C_DIM);
+    cv_rect(31, 121, (int32_t)(178u * v / 100u), 20, C_ORANGE);
+    ctext(120, 154, &AF_L, b, C_AMBER, C_POP);
+}
+#endif
 static void oa_vp_draw(void)                              /* the vibrato selector's pop-up: the option with a hyphen, the name's size, 35% down */
 {
     static const char *const VIB_HY[7] = {"V-1", "V-1", "V-2", "V-3", "C-1", "C-2", "C-3"};   /* OP_VIB 0 (off) sits at V1 */
@@ -1819,6 +1848,10 @@ static void oa_scene(void)
         oa_vp_draw();
     else if (oa_pp_on())
         oa_pp_draw();
+#if BOARD_SMK37
+    if (oa_mv_on())                                       /* K1 (MASTER): over the page, as FMini-1 */
+        oa_mv_draw();
+#endif
     if (oa_dbp && oa_dbp_sv) {                            /* SAVE in the mode (0.9.73): its own pop-up, the key, then the confirmation */
         int32_t hs = 8 + 2 * AF_M.h + 6 + AF_L.h + 6 + AF_S.h + 8, ys = (240 - hs) / 2;
         cv_rect(7, ys - 2, 226, hs + 4, C_ORANGE);
@@ -1881,6 +1914,7 @@ static uint32_t oa_signature(void)
     h = (h ^ (uint32_t)song.g[G_DCOLOR] ^ (uint32_t)song.g[G_DMIX] << 7 ^ (uint32_t)(cpu_pop != 0u) << 15 ^ (uint32_t)oa_dbp << 16 ^ (uint32_t)oa_dbp_sv << 18 ^ (uint32_t)oa_dbp_slot << 20) * 16777619u;
     h = (h ^ (oa_fl_on() ? oa_fl_until : 0u)) * 16777619u;   /* a quick message: drawn, then gone */
 #if BOARD_SMK37
+    h = (h ^ (oa_mv_on() ? 0x80000000u | oa_mv_val() : 0u)) * 16777619u;   /* (the MASTER VOLUME pop-up) */
     h = (h ^ smk_sig()) * 16777619u;                      /* the diagnostics page: every frame while it is open */
 #endif
     return h;
@@ -2325,6 +2359,9 @@ static void oa_input(void)
     }
     if (oa_track_preset())                                /* a new preset (the knob, a Program Change, a saved one) */
         oa_sv = 0;
+#if BOARD_SMK37
+    oa_mv_poll();                                         /* K1 (MASTER) turned: its pop-up */
+#endif
     if (oa_gl) {                                          /* the GLO pop-up (the knobs wait) */
         for (k = 0; k < 4u; k++)
             (void)panel_enc(EN_K1 + k);

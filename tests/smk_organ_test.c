@@ -230,6 +230,18 @@ int main(void)
     frame();
     bad += check("  .. again: closed", smk_diag == 0 && smk_sig() == 0u);
 
+    /* K1 (the virtual MASTER pot): a turn opens the MASTER VOLUME pop-up for 1.2 s, then it closes (as FMini-1) */
+    fm1_ms = 5000u;
+    smk_master = 724;
+    oa_mv_poll();
+    bad += check("  .. K1 at rest: no pop-up", !oa_mv_on());
+    smk_master = 724 + 24 * 6;
+    oa_mv_poll();
+    bad += check("  .. K1 turned: MASTER VOLUME opens", oa_mv_on() && oa_mv_val() == 84u);
+    fm1_ms = 5000u + 1300u;
+    oa_mv_poll();
+    bad += check("  .. 1.2 s later: closed", !oa_mv_on());
+
     printf("%s\n", bad ? "SMK ORGAN TEST FAILED" : "smk organ test passed");
     return bad != 0;
 }
