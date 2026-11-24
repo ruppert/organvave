@@ -139,15 +139,15 @@ int main(void)
     frame();
     bad += check("faders: soft takeover: nothing moves until a fader does", org_patch[OP_UB + 2] == 0);
     fader(2, 127);
-    bad += check("  .. fader 3 on bank A, UPPER: 8' to 8", org_patch[OP_UB + 2] == 8);
+    bad += check("  .. fader 3 on bank A, UPPER: up is off: 8' to 0", org_patch[OP_UB + 2] == 0);
     fader(2, 0);
-    bad += check("  .. and to 0", org_patch[OP_UB + 2] == 0);
+    bad += check("  .. and down to 8", org_patch[OP_UB + 2] == 8);
     btn(SMK_BTN_FADER_BANK);
     fm1_in.fader[0] = 100;                       /* (moved while it waits: its first move after the change) */
     frame();
     bad += check("FADER BANK: bank B; the faders wait for a move (soft takeover again)", smk_bank == 1 && org_patch[OP_UB + 4] != 6);
     fader(0, 127);
-    bad += check("  .. fader 1 on B: 2 2/3' to 8", org_patch[OP_UB + 4] == 8);
+    bad += check("  .. fader 1 on B: 2 2/3' up to 0", org_patch[OP_UB + 4] == 0);
     btn(SMK_BTN_FADER_BANK);
     frame();
     fader(1, 127);
@@ -160,21 +160,21 @@ int main(void)
     bad += check("  .. 0: the drive off", org_patch[OP_DRV_GAIN] == 0);
     fader(3, 90);
     bad += check("  .. fader 4 the reverb send", TSEL->p[P_REV] == 90);
-    fader(0, 127);
-    bad += check("  .. fader 1 the upper 1'", org_patch[OP_UB + 8] == 8);
+    fader(0, 126);                               /* (a move: 127 was its place from bank B, the soft takeover waits for one) */
+    bad += check("  .. fader 1 the upper 1' to 0", org_patch[OP_UB + 8] == 0);
     btn(SMK_BTN_KNOB_BANK);
     frame();
     fader(0, 0);
-    bad += check("KNOB BANK: the LOWER manual: fader 1 on C its 1'", smk_man == 1 && org_patch[OP_LB + 8] == 0 &&
-                 org_patch[OP_UB + 8] == 8 && fm1_led[SMK_BTN_KNOB_BANK] == 1);
+    bad += check("KNOB BANK: the LOWER manual: fader 1 on C its 1' (down: 8)", smk_man == 1 && org_patch[OP_LB + 8] == 8 &&
+                 org_patch[OP_UB + 8] == 0 && fm1_led[SMK_BTN_KNOB_BANK] == 1);
     btn(SMK_BTN_KNOB_BANK);
     btn(SMK_BTN_FADER_BANK);                     /* PEDAL, bank A */
     frame();
     fader(0, 127);                               /* (the default PEDAL is 808000000 now: 16' up, then down to 0) */
     fader(1, 127);
     fader(0, 0);
-    bad += check("PEDAL, bank A: faders 1 and 2 its 16' and 8'", smk_man == 2 && smk_bank == 0 &&
-                 org_patch[OP_PB + 2] == 8 && org_patch[OP_PB] == 0 && fm1_led[SMK_BTN_FADER_BANK] == 0);
+    bad += check("PEDAL, bank A: faders 1 and 2 its 16' and 8' (down: on)", smk_man == 2 && smk_bank == 0 &&
+                 org_patch[OP_PB + 2] == 0 && org_patch[OP_PB] == 8 && fm1_led[SMK_BTN_FADER_BANK] == 0);
     i = org_patch[OP_PB + 4];
     fader(2, 127);
     bad += check("  .. fader 3 nothing there", org_patch[OP_PB + 4] == i);

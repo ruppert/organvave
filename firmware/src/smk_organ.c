@@ -9,7 +9,7 @@
  *    set picked on the pads (the FM-1's C above in DRAWBAR PRESET MODE); the one playing bright. Bottom row (9-16): LESLIE SLOW / FAST, the upper manual's
  *    VIB / CHORUS (UP), PERCUSSION, its SOFT, FAST, 3RD, OVERDRIVE (TUBE DRIVE at 2.5), REVERB, lit by their state:
  *    each runs DRAWBAR PRESET MODE's own switch (oa_dbp_key), with its 0.5 s message.
- *  - The 4 faders set drawbars in banks (FADER BANK: A 16' 5 1/3' 8' 4', B 2 2/3' 2' 1 3/5' 1 1/3', C 1', EXPR, DRIVE
+ *  - The 4 faders set drawbars in banks, up = off (FADER BANK: A 16' 5 1/3' 8' 4', B 2 2/3' 2' 1 3/5' 1 1/3', C 1', EXPR, DRIVE
  *    GAIN, REVERB SEND) of the manual KNOB BANK picks (UPPER, LOWER, PEDAL: its 16' and 8' on A's first two). A fader
  *    acts only once it moves (also after a bank or manual change), so nothing jumps; a move shows its value for 0.5 s.
  *  - The mod wheel is the Leslie's speed: up past 2/3 FAST, down under 1/3 SLOW (a switch with hysteresis, acting on the
@@ -170,8 +170,8 @@ static void smk_fader_set(uint32_t f, uint32_t v)   /* v 0..127 */
         smk_cpy(m, "REVERB ");
         fmt_fix(m + smk_len(m), (int32_t)(v * 100u / 127u), 0);
         smk_cat(m, "%");
-    } else {                                     /* a drawbar, 0..8 */
-        org_set(t, (v * 8u + 63u) / 127u);
+    } else {                                     /* a drawbar, 0..8: the fader's top is the bar off (the drawbars run the other way) */
+        org_set(t, ((127u - v) * 8u + 63u) / 127u);
         smk_cat(smk_cat(smk_cpy(m, SMK_MAN_NAME[smk_man]), " "), SMK_BAR_NAME[bar]);
         smk_cat(m, ": ");
         fmt_fix(m + smk_len(m), (int32_t)org_patch[t], 0);
