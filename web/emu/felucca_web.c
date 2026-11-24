@@ -182,6 +182,9 @@ static void lcd_init(void) {}
 #include "../../firmware/src/params.c"
 #include "../../firmware/src/voice.c"
 #include "../../firmware/src/fx.c"
+#if BOARD_SMK37
+#include "../../firmware/src/smk_midi_out.c"   /* SMK-37 MIDI OUT (the TRS jack is stubbed: wasi_shim/smk_uart_tx.h) */
+#endif
 #include "../../firmware/src/usb.c"
 #include "../../firmware/src/seq.c"
 #include "../../firmware/src/audio.c"
