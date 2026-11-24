@@ -9,7 +9,7 @@
  *    set picked on the pads (the FM-1's C above in DRAWBAR PRESET MODE); the one playing bright. Bottom row (9-16): LESLIE SLOW / FAST, the upper manual's
  *    VIB / CHORUS (UP), PERCUSSION, its SOFT, FAST, 3RD, OVERDRIVE (TUBE DRIVE at 2.5), REVERB, lit by their state:
  *    each runs DRAWBAR PRESET MODE's own switch (oa_dbp_key), with its 0.5 s message.
- *  - The 4 faders set drawbars in banks, up = off (FADER BANK: A 16' 5 1/3' 8' 4', B 2 2/3' 2' 1 3/5' 1 1/3', C 1', EXPR, DRIVE
+ *  - The 4 faders set drawbars in banks, up = off (FADER BANK: A 16' 5 1/3' 8' 4', B 2 2/3' 2' 1 3/5' 1 1/3', C 1', DRIVE
  *    GAIN, REVERB SEND) of the manual KNOB BANK picks (UPPER, LOWER, PEDAL: its 16' and 8' on A's first two). A fader
  *    acts only once it moves (also after a bank or manual change), so nothing jumps; a move shows its value for 0.5 s.
  *  - The mod wheel is the Leslie's speed: up past 2/3 FAST, down under 1/3 SLOW (a switch with hysteresis, acting on the
@@ -135,8 +135,8 @@ enum { SMK_F_NONE = 0xFF, SMK_F_EXPR = 0xF0, SMK_F_DRIVE, SMK_F_REVERB };
 /* what fader f sets: a drawbar's patch byte, or one of SMK_F_*; *bar its footage (0..8) */
 static uint32_t smk_fader_target(uint32_t f, uint32_t *bar)
 {
-    if (smk_bank == 2u && f > 0u)                /* C: EXPR, DRIVE GAIN, REVERB SEND (any manual) */
-        return f == 1u ? SMK_F_EXPR : f == 2u ? SMK_F_DRIVE : SMK_F_REVERB;
+    if (smk_bank == 2u && f > 0u)                /* C: DRIVE GAIN, REVERB SEND, EXPR (any manual) */
+        return f == 1u ? SMK_F_DRIVE : f == 2u ? SMK_F_REVERB : SMK_F_EXPR;
     if (smk_man == 2u) {                         /* PEDAL: its 16' and 8' (setBfree's buses 0 and 2) on A */
         if (smk_bank || f > 1u)
             return SMK_F_NONE;

@@ -9,7 +9,7 @@
 /* organvave's version: the splash and ABOUT show it; the workflow, the emulator and the installer read this line;
  * build.py --release X.Y sets it. (FELUCCA_VERSION in felucca.c is Felucca's: the editor INFO "FELUCCA ...") */
 #ifndef ORGANVAVE_VERSION
-#define ORGANVAVE_VERSION "v0.11.1"
+#define ORGANVAVE_VERSION "v0.12.0"
 #endif
 
 /* ------------------------------------------------------------ sizes --- */

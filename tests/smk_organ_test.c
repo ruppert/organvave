@@ -150,16 +150,16 @@ int main(void)
     bad += check("  .. fader 1 on B: 2 2/3' up to 0", org_patch[OP_UB + 4] == 0);
     btn(SMK_BTN_FADER_BANK);
     frame();
-    fader(1, 127);
-    bad += check("bank C: fader 2 is EXPR: up = 0 dB", org_patch[OP_EXPR] == 0);
+    fader(1, 127);                               /* bank C: fader 2 DRIVE GAIN, 3 REVERB SEND, 4 EXPR */
+    bad += check("bank C: fader 2 is DRIVE GAIN: up = 10.0, the drive on", org_patch[OP_DRV_GAIN] == 100);
     fader(1, 0);
+    bad += check("  .. down = 0: the drive off", org_patch[OP_DRV_GAIN] == 0);
+    fader(2, 90);
+    bad += check("  .. fader 3 the reverb send", TSEL->p[P_REV] == 90);
+    fader(3, 127);
+    bad += check("  .. fader 4 EXPR: up = 0 dB", org_patch[OP_EXPR] == 0);
+    fader(3, 0);
     bad += check("  .. down = 60 dB down", org_patch[OP_EXPR] == 60);
-    fader(2, 127);
-    bad += check("  .. fader 3 DRIVE GAIN 10.0, the drive on", org_patch[OP_DRV_GAIN] == 100);
-    fader(2, 0);
-    bad += check("  .. 0: the drive off", org_patch[OP_DRV_GAIN] == 0);
-    fader(3, 90);
-    bad += check("  .. fader 4 the reverb send", TSEL->p[P_REV] == 90);
     fader(0, 126);                               /* (a move: 127 was its place from bank B, the soft takeover waits for one) */
     bad += check("  .. fader 1 the upper 1' to 0", org_patch[OP_UB + 8] == 0);
     btn(SMK_BTN_KNOB_BANK);
