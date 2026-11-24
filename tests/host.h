@@ -125,6 +125,9 @@ static void lcd_sync(void) {}
 #include "../firmware/src/params.c"
 #include "../firmware/src/voice.c"
 #include "../firmware/src/fx.c"
+#if BOARD_SMK37
+#include "../firmware/src/smk_midi_out.c"   /* SMK-37: the MIDI OUT settings and the main loop's queue (FMini-1); the TRS jack stays off here (no smk_trs_init) */
+#endif
 #include "../firmware/src/usb.c"
 #include "../firmware/src/midi_uart.c"                  /* TRS MIDI IN: its parser (um_byte) feeds midi_in_q */
 #include "../firmware/src/seq.c"

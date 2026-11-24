@@ -35,6 +35,26 @@ static void midi_take(void)                      /* the note-ons sent (usb.c's M
             notes_out[n_out++] = (p >> 16) & 0x7Fu;
     }
 }
+static uint32_t mo_pk[64], mo_n;                 /* the USB MIDI OUT packets after the last flush */
+static void mo_flush(void)
+{
+    keyboard_block();                            /* (drains the main loop's queue, then the keys) */
+    mo_n = 0;
+    while (mo_r != mo_w && mo_n < 64u)
+        mo_pk[mo_n++] = midi_out_q[mo_r++ % MQ];
+}
+/* a packet with status st, data1 d1 and data2 d2 (0xFFFF = any) was sent since the last flush; flushes first */
+static int mo_has(uint32_t st, uint32_t d1, uint32_t d2)
+{
+    uint32_t j;
+    mo_flush();
+    for (j = 0; j < mo_n; j++) {
+        uint32_t p = mo_pk[j];
+        if (((p >> 8) & 0xFFu) == st && (d1 == 0xFFFFu || ((p >> 16) & 0x7Fu) == d1) && (d2 == 0xFFFFu || ((p >> 24) & 0x7Fu) == d2))
+            return 1;
+    }
+    return 0;
+}
 static void ext(uint32_t kk, uint32_t vel) { host_q_ext[host_ne++ % 64u] = (int32_t)(kk << 8 | vel); keyboard_block(); midi_take(); }
 
 int main(void)
@@ -249,6 +269,31 @@ int main(void)
     fm1_ms = 5000u + 1300u;
     oa_mv_poll();
     bad += check("  .. 1.2 s later: closed", !oa_mv_on());
+
+    /* MIDI OUT, always on (as FMini-1): the keys, the pads' notes (channel 10), the faders' and knobs' CCs (110.., 102..)
+     * and K1's MASTER CC go out as they happen; MIDI OUT (ALL) by default, USB only in mode 1, TRS only in mode 2 */
+    bad += check("MIDI OUT: ALL and channel 1 by default", smk_out_mode == 0 && smk_out_ch == 0);
+    pad(0);
+    bad += check("  .. a pad: note 44 on channel 10 (0x99), velocity 100, sent", mo_has(0x99u, 44u, 100u));
+    fader(0, 100);
+    bad += check("  .. a fader moves: CC 110 with its value (0xB0)", mo_has(0xB0u, 110u, 100u));
+    fader(3, 20);
+    bad += check("  .. fader 4 moves: CC 113", mo_has(0xB0u, 113u, 20u));
+    smk_knob_v[1] = 50;
+    smk_out_knob(1, 1);
+    bad += check("  .. a knob turned (K2): CC 103 with 51", mo_has(0xB0u, 103u, 51u));
+    smk_master = 1000;
+    frame();
+    bad += check("  .. K1 MASTER moves: CC 102 with its value 125", mo_has(0xB0u, 102u, 125u));
+    ext(5, 100);
+    bad += check("  .. a key: a note on sent to USB (ext() collects it)", n_out > 0);
+    smk_out_mode = 1;
+    fader(1, 30);
+    bad += check("  .. mode USB: the fader still goes to USB", mo_has(0xB0u, 111u, 30u));
+    smk_out_mode = 2;
+    fader(2, 40);
+    bad += check("  .. mode TRS: nothing on USB", !mo_has(0xB0u, 112u, 40u));
+    smk_out_mode = 0;
 
     printf("%s\n", bad ? "SMK ORGAN TEST FAILED" : "smk organ test passed");
     return bad != 0;

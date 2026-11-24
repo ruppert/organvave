@@ -79,6 +79,9 @@ static int32_t panel_enc(uint32_t role)
     int32_t s = fm1_enc_take(panel.enc[role]) * panel.dir[role];
     if (s)
         ui_touched();
+#if BOARD_SMK37
+    smk_out_knob(panel.enc[role], s);              /* the knob's own CC on MIDI OUT (smk_midi_out.c, FMini-1) */
+#endif
     return s;
 }
 

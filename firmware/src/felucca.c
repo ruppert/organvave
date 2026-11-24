@@ -73,6 +73,9 @@
 #include "fx.c"
 
 /* ------------------------------------------------- MIDI, sequencer --- */
+#if BOARD_SMK37
+#include "smk_midi_out.c"        /* SMK-37: MIDI OUT on the TRS jack, the MIDI OUT / MIDI OUT CH settings (FMini-1) */
+#endif
 #include "usb.c"
 #if FELUCCA_UART
 #include "midi_uart.c"

@@ -76,12 +76,24 @@ static void smk_bars(const uint8_t *v)          /* the upper drawbars become v, 
     oa_flash("DRAWBARS");
 }
 
+/* a pad's note on MIDI OUT, on channel 10 (smk_midi_out.c: 36..51, the velocity and the release, as FMini-1) */
+static void smk_pad_midi(uint32_t p, uint32_t v)
+{
+    uint32_t n = SMK_PAD_NOTE(p);
+    if (v)
+        smk_out_ui(0x09u | (0x90u | SMK_PAD_CH) << 8 | n << 16 | v << 24);
+    else
+        smk_out_ui(0x08u | (0x80u | SMK_PAD_CH) << 8 | n << 16);
+}
+
 static void smk_pads_in(void)
 {
     int32_t e;
     smk_pad_cmd = 1;
     while ((e = smk_padcmd_take()) >= 0) {
         uint32_t p = (uint32_t)e >> 8;
+        if (p < SMK_NPAD)
+            smk_pad_midi(p, (uint32_t)e & 0x7Fu);
         if (!(e & 0x7F) || p >= SMK_NPAD)
             continue;                            /* (a release: the switches act on the hit) */
         if (p < 7u) {
@@ -179,14 +191,38 @@ static void smk_fader_set(uint32_t f, uint32_t v)   /* v 0..127 */
     oa_flash(m);
 }
 
+/* K1 is the virtual MASTER pot: its value on MIDI OUT as CC 102 (K1's CC), when it moves (FMini-1's fa_mv_poll) */
+static void smk_master_out(void)
+{
+    static int32_t last = -1;
+    int32_t c = smk_master >> 3;
+    if (c > 127)
+        c = 127;
+    if (c != last) {
+        if (last >= 0)
+            smk_out_cc(SMK_CC_KNOB0, (uint32_t)c);
+        last = c;
+    }
+}
+
 static void smk_faders(void)
 {
-    static uint8_t last[4];
+    static uint8_t last[4], out[4];
+    static uint8_t out_set;
     uint32_t i;
     if (fm1_in.frames < 200u)                    /* (the first readings settle) */
         return;
+    if (!out_set) {                              /* the faders' CCs on MIDI OUT: from their first readings */
+        for (i = 0; i < 4u; i++)
+            out[i] = (uint8_t)fm1_in.fader[i];
+        out_set = 1;
+    }
     for (i = 0; i < 4u; i++) {
         uint32_t v = fm1_in.fader[i];
+        if (v != out[i]) {                       /* (every move goes to MIDI OUT, whatever the fader does) */
+            out[i] = (uint8_t)v;
+            smk_out_cc(SMK_CC_FADER0 + i, v);
+        }
         if (smk_ftake) {                         /* soft takeover: from here, a fader acts once it moves */
             last[i] = (uint8_t)v;
             continue;
@@ -401,6 +437,7 @@ static void smk_draw(void)
 /* ----------------------------------------------------------------- hooks --- */
 static void smk_frame(void)
 {
+    smk_master_out();
     smk_pads_in();
     smk_faders();
     smk_wheels();

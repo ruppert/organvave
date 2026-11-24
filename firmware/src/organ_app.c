@@ -507,6 +507,11 @@ static void oa_cfg_load(void)
         fm_midi_src = 3;
         fm_midi_base(0);
     }
+#if BOARD_SMK37
+    smk_out_mode = (uint8_t)(*oa_cfg_byte(7, 11) > 2u ? 0u : *oa_cfg_byte(7, 11));
+    smk_out_ch = (uint8_t)(*oa_cfg_byte(7, 12) > 15u ? 0u : *oa_cfg_byte(7, 12));
+    fm_midi_src = 0;                                  /* SMK-37: MIDI IN is USB, always */
+#endif
     for (i = 0; i < 12u * 9u; i++)                       /* the drawbar presets: the factory ones, or those stored over them (0.9.72) */
         oa_dbp_tab[i / 9u][i % 9u] = OA_DBP[i / 9u][i % 9u];
     if (*oa_cfg_byte(11, 0) == 0xD8u && *oa_cfg_byte(11, 1) == 0x3Bu)
@@ -539,6 +544,10 @@ static void oa_cfg_save(void)
     *oa_cfg_byte(7, 4) = 0xC5;
     *oa_cfg_byte(7, 5) = fm_ch_lo;
     *oa_cfg_byte(7, 6) = fm_ch_pd;
+#if BOARD_SMK37
+    *oa_cfg_byte(7, 11) = smk_out_mode;
+    *oa_cfg_byte(7, 12) = smk_out_ch;
+#endif
     for (i = 0; i < OA_NCTL; i++)
         *oa_cfg_byte(8u + i / 32u, i) = oa_ccmap[i];
     *oa_cfg_byte(7, 8) = 0x7B;
@@ -561,7 +570,7 @@ static void oa_factory_reset(void)
 {
     uint32_t i;
     int rc = up_reset_all();
-    fm_midi_src = 3;
+    fm_midi_src = BOARD_SMK37 ? 0 : 3;
     fm_midi_base(0);
     memset(oa_ccmap, 0, sizeof oa_ccmap);
     for (i = 0; i < 12u * 9u; i++)
@@ -748,9 +757,71 @@ static void scr_bench(void)
     footer(bench_have ? "ALGO: RUN AGAIN   GLO: BACK" : "ALGO: RUN   GLO: BACK");
 }
 
+#if BOARD_SMK37
+/* SMK-37's MIDI SETTINGS (FMini-1's list): MIDI OUT and MIDI OUT CH, the three channels, MIDI IN CC and MIDI MONITOR.
+ * No MIDI IN line: the SMK-37 has no MIDI IN on its TRS jack, so MIDI IN is USB, always */
+static void scr_midi_smk(void)
+{
+    static const char *const LB[7] = {"MIDI OUT", "MIDI OUT CH", "UPPER CHANNEL", "LOWER CHANNEL", "PEDAL CHANNEL", "MIDI IN CC", "MIDI MONITOR"};
+    static const char *const OUT[3] = {"ALL", "USB", "TRS"};
+    char b[8];
+    uint32_t r;
+    header("MIDI SETTINGS", "");
+    for (r = 0; r < 7u; r++) {
+        const char *v = ">";
+        if (r == 0u)
+            v = OUT[smk_out_mode % 3u];
+        else if (r == 1u) {
+            fmt_int(b, (uint32_t)smk_out_ch + 1u);
+            v = b;
+        } else if (r <= 4u) {
+            uint8_t c = r == 2u ? fm_ch_up : r == 3u ? fm_ch_lo : fm_ch_pd;
+            if (c)
+                fmt_int(b, c);
+            else
+                str_cpy(b, r == 2u ? "ALL" : "OFF", 4);
+            v = b;
+        }
+        oa_gl_line((int32_t)(34u + 24u * r), LB[r], v, oa_ms_row == r);
+    }
+    footer("SELECT: ITEM   ALGO: VALUE   GLO: BACK");
+}
+static void ms_keys_smk(void)
+{
+    int32_t s;
+    if ((s = panel_enc(EN_SELECT)) != 0)
+        oa_ms_row = (uint8_t)clamp((int32_t)oa_ms_row + (s > 0 ? 1 : -1), 0, 6);
+    if ((s = panel_enc(EN_ALGO)) != 0) {
+        int32_t d = s > 0 ? 1 : -1;
+        if (oa_ms_row == 0u) {                        /* MIDI OUT: ALL, USB, TRS */
+            smk_out_mode = (uint8_t)clamp((int32_t)smk_out_mode + d, 0, 2);
+            smk_trs_reset();                          /* a jack given up may try again */
+            oa_cfg_dirty = 1;
+        } else if (oa_ms_row == 1u) {                 /* MIDI OUT CH: 1..16 */
+            smk_out_ch = (uint8_t)clamp((int32_t)smk_out_ch + d, 0, 15);
+            oa_cfg_dirty = 1;
+        } else if (oa_ms_row <= 4u) {                 /* the three channels (ALL / OFF, 1..16) */
+            volatile uint8_t *ch = oa_ms_row == 2u ? &fm_ch_up : oa_ms_row == 3u ? &fm_ch_lo : &fm_ch_pd;
+            *ch = (uint8_t)clamp((int32_t)*ch + d, 0, 16);
+            panic_req |= 1u;
+            oa_cfg_dirty = 1;
+        } else if (oa_ms_row == 5u)
+            oa_gl = 2;                                /* MIDI IN CC */
+        else {
+            oa_gl = 7;                                /* MIDI MONITOR */
+            oa_mon_off = 0;
+        }
+    }
+}
+#endif
+
 /* MIDI SETTINGS (0.9.77, as FMini-1's: one GLOBAL line opens it): the MIDI IN, the three channels, MIDI CC and MIDI MONITOR */
 static void scr_midi(void)
 {
+#if BOARD_SMK37
+    scr_midi_smk();
+    return;
+#endif
     static const char *const MS_LB[6] = {"MIDI IN", "UPPER CHANNEL", "LOWER CHANNEL", "PEDAL CHANNEL", "MIDI CC", "MIDI MONITOR"};
     char b[8];
     uint32_t r;
@@ -1786,7 +1857,7 @@ static void oa_cc_dialog(void)
 {
     uint32_t at = oa_cc_row, i, n = at;
     int32_t k;
-    oa_frame("MIDI CC");
+    oa_frame(BOARD_SMK37 ? "MIDI IN CC" : "MIDI CC");
     for (k = -2; k <= 2; k++) {                           /* five controls around the highlighted one */
         char nm[16], v[8];
         int32_t m = (int32_t)at;
@@ -2403,6 +2474,10 @@ static void oa_input(void)
             if (panel_enc(EN_ALGO) != 0)
                 bench_req = 1;
         } else if (oa_gl == 6u) {                         /* MIDI SETTINGS: SELECT the line, ALGORITHM changes it; MIDI CC and MIDI MONITOR open theirs */
+#if BOARD_SMK37
+            ms_keys_smk();
+        } else if (0) {
+#endif
             if ((s = panel_enc(EN_SELECT)) != 0)
                 oa_ms_row = (uint8_t)clamp((int32_t)oa_ms_row + (s > 0 ? 1 : -1), 0, 5);
             if ((s = panel_enc(EN_ALGO)) != 0) {

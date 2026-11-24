@@ -267,6 +267,11 @@ static int midi_local_held(uint32_t note)
     return 0;
 }
 
+#if BOARD_SMK37
+#define MO_CH (smk_out_ch & 15u)                 /* SMK-37: MIDI OUT CH (smk_midi_out.c) */
+#else
+#define MO_CH 0u
+#endif
 /* key k plays kb_note[k] on track t. A note another key or MIDI holds already sounds: it is not started again (nor
  * sent to MIDI OUT) */
 static void key_on(uint32_t k, track_t *t)
@@ -280,7 +285,7 @@ static void key_on(uint32_t k, track_t *t)
     in_key = (uint8_t)(k + 1u);                     /* (the arp keeps the key: arp_add) */
     input_on(t, x, KB_VEL);
     in_key = 0;
-    midi_out_event(0x09u | 0x90u << 8 | x << 16 | KB_VEL << 24);
+    midi_out_event(0x09u | (0x90u | MO_CH) << 8 | x << 16 | KB_VEL << 24);
 }
 
 /* key k is up: its note ends, but not while another key holds it */
@@ -290,7 +295,7 @@ static void key_off(uint32_t k, track_t *t)
     if (midi_local_held(x))
         return;
     input_off(t, x);
-    midi_out_event(0x08u | 0x80u << 8 | x << 16);
+    midi_out_event(0x08u | (0x80u | MO_CH) << 8 | x << 16);
 }
 
 
@@ -302,6 +307,11 @@ static uint8_t ext_note[FM1_NKEY];               /* note + 1 sounding, 0 = none 
 static void ext_keys_block(void)
 {
     int32_t e;
+    {   /* MIDI OUT (smk_midi_out.c): the main loop's messages (the pads' notes, the faders' and knobs' CCs) first */
+        uint32_t pkt;
+        while (smk_out_ui_take(&pkt))
+            midi_out_event(pkt);
+    }
     while ((e = smk_extkey_take()) >= 0) {
         uint32_t kk = (uint32_t)e >> 8, v = (uint32_t)e & 0x7Fu, x;
         if (kk >= FM1_NKEY)
@@ -312,7 +322,7 @@ static void ext_keys_block(void)
                 ext_note[kk] = 0;
                 if (!midi_local_held(x)) {
                     input_off(TSEL, x);
-                    midi_out_event(0x08u | 0x80u << 8 | x << 16);
+                    midi_out_event(0x08u | (0x80u | MO_CH) << 8 | x << 16);
                 }
             }
             continue;
@@ -324,7 +334,7 @@ static void ext_keys_block(void)
         if (midi_note_held(TSEL, x))
             continue;
         input_on(TSEL, x, KB_VEL);
-        midi_out_event(0x09u | 0x90u << 8 | x << 16 | KB_VEL << 24);
+        midi_out_event(0x09u | (0x90u | MO_CH) << 8 | x << 16 | KB_VEL << 24);
     }
 }
 #endif
@@ -477,7 +487,7 @@ static void seq_tick(track_t *t, uint32_t n)
 /* MIDI IN (organ_app.c, GLO): the one instrument is track 1 on every channel the setting accepts; the sources are 1 USB,
  * 2 MIDI (TRS), 3 Bluetooth (no radio driver in this firmware yet: nothing arrives with that number). The CC map is the
  * app's own: the ISR only notes the last value of each CC (fm_cc_rx, bit cc of fm_cc_pend); the main loop applies it */
-static volatile uint8_t fm_midi_src = 3;                 /* 0 USB, 1 MIDI, 2 BLUETOOTH, 3 ALL */
+static volatile uint8_t fm_midi_src = BOARD_SMK37 ? 0 : 3;   /* SMK-37: MIDI IN is USB, always */                 /* 0 USB, 1 MIDI, 2 BLUETOOTH, 3 ALL */
 static volatile uint8_t fm_ch_up;                        /* the UPPER manual's MIDI channel: 0 ALL (every channel the other two do not take), 1..16 */
 static volatile uint8_t fm_ch_lo = 2;                    /* the LOWER manual's: 0 OFF, 1..16 */
 static volatile uint8_t fm_ch_pd = 3;                    /* the PEDALS': 0 OFF, 1..16 */

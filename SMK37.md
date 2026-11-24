@@ -46,7 +46,19 @@ The FM-1's manual still applies; the SMK-37's controls map onto the FM-1's like 
 | OCTAVE- / OCTAVE+ | OCT- / OCT+ |
 | OCTAVE- + OCTAVE+ held at power-on | HARDWARE CALIBRATION: teach the buttons and knobs again |
 
-The SMK-37's TRS jack is a MIDI output and this build does not use it; there is no TRS MIDI IN. MIDI works over USB.
+The SMK-37's TRS jack is a MIDI output only (there is no TRS MIDI IN); MIDI IN is always USB. The MIDI SETTINGS list (GLOBAL) is:
+
+| Row | Setting |
+|---|---|
+| MIDI OUT | ALL (USB and TRS), USB or TRS: where the keyboard's MIDI goes |
+| MIDI OUT CH | the channel of the MIDI OUT messages, 1..16 |
+| UPPER / LOWER / PEDAL CHANNEL | the organ's manuals and pedals, ALL or OFF |
+| MIDI IN CC | the CC that the incoming MIDI controls, as on the FM-1 |
+| MIDI MONITOR | the incoming MIDI on the screen |
+
+The keyboard sends MIDI all the time, as on FMini-1, whatever the page: the 37 keys (notes on MIDI OUT CH), the pads (notes 36..51 on channel 10), the faders (CC 110..113), the knobs K1..K8 (CC 102..109), and K1's MASTER volume (CC 102). With MIDI OUT set to USB the USB port gets them; set to TRS the jack gets them; ALL sends to both.
+
+The TRS output (UART, 31250 baud) is not yet confirmed on a unit.
 
 ## Build
 
